@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -40,7 +39,7 @@ const Dashboard: React.FC = () => {
     navigate('/');
   };
 
-  const logoUrl = "https://lh3.googleusercontent.com/d/1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
 
   if (loading) return <div className="p-20 text-center font-bold text-xl">Verifica accesso in corso...</div>;
 
@@ -48,7 +47,7 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col h-full overflow-hidden bg-brandDark">
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="Logo" className="h-10 w-10 object-cover rounded-full border border-white/20" />
+          <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="h-10 w-10 object-cover rounded-full border border-white/20" />
           <span className="font-bold text-sm tracking-tight">Admin Panel</span>
         </div>
       </div>
@@ -95,7 +94,7 @@ const Dashboard: React.FC = () => {
       <div className="flex-grow flex flex-col lg:ml-64 w-full h-full overflow-hidden">
         <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-gray-100 sticky top-0 z-30 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" className="h-8 w-8 object-cover rounded-full border border-gray-100" />
+            <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="h-8 w-8 object-cover rounded-full border border-gray-100" />
             <span className="font-bold text-sm">Dashboard Admin</span>
           </div>
           <button 
@@ -169,7 +168,7 @@ const ManagePortfolio = () => {
     ];
     for (let regex of driveRegex) {
       const match = url.match(regex);
-      if (match && match[1]) return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      if (match && match[1]) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
     }
     return url;
   }
@@ -309,7 +308,7 @@ const ManagePortfolio = () => {
                 <label className="block text-xs font-bold text-gray-400 uppercase">Anteprima Visiva</label>
                 <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 flex items-center justify-center relative group">
                   {newItem.image_url ? (
-                    <img src={convertDriveUrl(newItem.image_url)} alt="Preview" className="w-full h-full object-cover" />
+                    <img src={convertDriveUrl(newItem.image_url)} alt="Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   ) : (
                     <div className="text-center p-6 text-gray-300">
                       <ImageIcon size={32} className="mx-auto mb-2" />
@@ -342,7 +341,7 @@ const ManagePortfolio = () => {
               />
             </button>
             <div className="aspect-video relative overflow-hidden bg-gray-100">
-              <img src={item.image_url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
+              <img src={item.image_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
               <div className="absolute inset-0 bg-black/60 lg:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                 <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="bg-white text-primary p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Pencil size={20} className="pointer-events-none" /></button>
                 <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="bg-white text-red-500 p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Trash2 size={20} className="pointer-events-none" /></button>
@@ -481,7 +480,6 @@ const ManageLeads = () => {
                       <Mail size={18} />
                     </div>
                     
-                    {/* SELETTORE MANUALE BANDIERINA - COLORI INVERTITI */}
                     <button 
                       onClick={(e) => toggleReadStatus(e, lead.id, lead.is_read, 'simple')}
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
@@ -534,7 +532,6 @@ const ManageLeads = () => {
                       <div className="flex items-center gap-3">
                         <h4 className="font-bold text-gray-900 leading-tight">{lead.name}</h4>
                         
-                        {/* SELETTORE MANUALE BANDIERINA - COLORI INVERTITI */}
                         <button 
                           onClick={(e) => toggleReadStatus(e, lead.id, lead.is_read, 'brief')}
                           className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border transition-all ${

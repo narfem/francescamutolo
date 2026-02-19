@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { PortfolioItem } from '../types';
@@ -11,7 +10,6 @@ const PortfolioGrid: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  // Rinominata la categoria per coerenza
   const categories = ['Tutti', 'Branding', 'Flyer & Poster', 'Social Media'];
 
   useEffect(() => {
@@ -31,23 +29,19 @@ const PortfolioGrid: React.FC = () => {
     setLoading(false);
   };
 
-  // Filtra per categoria, supportando sia 'Flyer' che 'Flayer' (legacy) per la categoria specifica
   const categoryItems = activeCategory === 'Tutti' 
     ? items 
     : items.filter(item => {
         if (activeCategory === 'Flyer & Poster') {
-            return item.category === 'Flyer & Poster' || item.category === 'Flayer & Poster' || item.category === 'Flyer & Poster';
+            return item.category === 'Flyer & Poster' || item.category === 'Flayer & Poster';
         }
         return item.category === activeCategory;
     });
 
-  // Mostra TUTTI i lavori se è selezionata una categoria specifica, 
-  // altrimenti (vista 'Tutti') mostra solo i featured a meno che non si prema 'Mostra altro'
   const filteredItems = (showAll || activeCategory !== 'Tutti')
     ? categoryItems 
     : categoryItems.filter(item => item.is_featured);
 
-  // Il pulsante appare solo nella vista 'Tutti' se ci sono elementi nascosti (non featured)
   const hasHiddenItems = activeCategory === 'Tutti' && categoryItems.some(item => !item.is_featured);
 
   if (loading) {
@@ -92,6 +86,7 @@ const PortfolioGrid: React.FC = () => {
                 <img 
                   src={item.image_url} 
                   alt={item.title} 
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -131,7 +126,6 @@ const PortfolioGrid: React.FC = () => {
         )}
       </div>
 
-      {/* Pulsante Mostra altro / Mostra meno */}
       {hasHiddenItems && (
         <div className="mt-20 text-center">
           {!showAll ? (
@@ -175,6 +169,7 @@ const PortfolioGrid: React.FC = () => {
                 <img 
                   src={selectedItem.image_url} 
                   alt={selectedItem.title} 
+                  referrerPolicy="no-referrer"
                   className="w-full h-auto object-contain mx-auto"
                   onError={(e) => { (e.target as any).src = 'https://placehold.co/1200x800?text=Errore+Caricamento' }}
                 />

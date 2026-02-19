@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Instagram, Lock, ArrowUp } from 'lucide-react';
@@ -28,9 +27,7 @@ const Layout: React.FC = () => {
     setIsMenuOpen(false);
 
     if (location.pathname !== '/') {
-      // Se non siamo nella home, navighiamo prima alla home
       navigate('/');
-      // Ritardiamo leggermente lo scroll per permettere il rendering della home
       setTimeout(() => {
         const element = document.getElementById(targetId);
         if (element) {
@@ -38,7 +35,6 @@ const Layout: React.FC = () => {
         }
       }, 100);
     } else {
-      // Se siamo già nella home, scrolliamo direttamente
       const element = document.getElementById(targetId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
@@ -50,8 +46,8 @@ const Layout: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Link nuova immagine (Logo/Profilo)
-  const logoUrl = "https://lh3.googleusercontent.com/d/1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  // URL standard per Google Drive con bypass referrer
+  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
 
   if (isDashboard) return <Outlet />;
 
@@ -60,12 +56,12 @@ const Layout: React.FC = () => {
       <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            {/* Logo non più cliccabile come richiesto */}
             <div className="flex items-center space-x-3 group">
               <div className="relative">
                 <img 
                   src={logoUrl} 
                   alt="Francesca Mutolo Logo" 
+                  referrerPolicy="no-referrer"
                   className="h-10 w-10 object-cover rounded-full border-2 border-primary shadow-sm transition-transform group-hover:scale-105"
                 />
                 <div className="absolute -inset-1 bg-gradient-brand rounded-full -z-10 opacity-20 blur-sm group-hover:opacity-40 transition-opacity"></div>
@@ -80,7 +76,6 @@ const Layout: React.FC = () => {
               </div>
             </div>
 
-            {/* Desktop Menu */}
             <div className="hidden md:flex space-x-8 items-center">
               {navLinks.map((link) => (
                 <a 
@@ -101,7 +96,6 @@ const Layout: React.FC = () => {
               </Link>
             </div>
 
-            {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center">
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-slate-900 p-2">
                 {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -110,7 +104,6 @@ const Layout: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-white border-b border-gray-100 py-8 px-4 space-y-6 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
             {navLinks.map((link) => (
@@ -139,7 +132,6 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* Pulsante Torna Su Flottante */}
       {showScrollTop && (
         <button
           onClick={scrollToTop}
@@ -159,6 +151,7 @@ const Layout: React.FC = () => {
                   <img 
                     src={logoUrl} 
                     alt="Logo White" 
+                    referrerPolicy="no-referrer"
                     className="h-10 w-10 md:h-12 md:w-12 object-cover rounded-full border border-white/20 shadow-sm transition-transform" 
                   />
                 </div>

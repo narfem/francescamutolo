@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, User, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
@@ -9,7 +8,7 @@ interface Message {
 }
 
 const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const logoUrl = "https://lh3.googleusercontent.com/d/1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
   
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: "Ciao! Sono **Mutey**, la mascotte creativa di Francesca.\n\nPosso raccontarti il suo percorso, come integra l'IA nel design o rispondere a domande sulle sue esperienze lavorative. Cosa vorresti sapere?" }
@@ -51,17 +50,13 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         
         Istruzioni per le risposte:
         - Sii ESTREMAMENTE SINTETICO e CONCISO.
-        - LINGUAGGIO SEMPLICE: Evita assolutamente tecnicismi (niente termini come "LLM", "workflow", "branding strategico" se non spiegati o semplificati). Usa parole che chiunque possa capire immediatamente.
-        - Rispondi basandoti sul suo CV e sulla sua filosofia: "Il design deve funzionare".
-        - Se ti chiedono dettagli molto tecnici o date specifiche che non hai, invita l'utente a scaricare il PDF originale dal pulsante nella Hero o a scriverle via form.
-        - Parla di Francesca in terza persona con ammirazione, presentandoti come il suo compagno digitale.
+        - LINGUAGGIO SEMPLICE: Evita tecnicismi inutili.
+        - Parla di Francesca in terza persona con ammirazione.
 
-        REGOLE DI IMPAGINAZIONE (MOLTO IMPORTANTI):
-        - NON scrivere mai blocchi di testo lunghi o densi.
-        - Dividi le informazioni in paragrafi brevi (2-3 righe massimo) separati da una riga vuota.
-        - Usa ELENCHI PUNTATI (utilizzando il carattere "•") ogni volta che devi elencare più di due elementi.
-        - Utilizza il GRASSETTO (racchiudendo le parole tra doppie asterischi, es: **concetto**) per dare risalto a concetti chiave.
-        - Assicurati che la risposta sia leggibile a colpo d'occhio.
+        REGOLE DI IMPAGINAZIONE:
+        - Dividi le informazioni in paragrafi brevi.
+        - Usa ELENCHI PUNTATI (•).
+        - Usa il GRASSETTO (**testo**) per i concetti chiave.
       `;
 
       const response = await ai.models.generateContent({
@@ -87,7 +82,6 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   const renderFormattedText = (text: string) => {
-    // Split per gestire il grassetto **testo**
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return (
       <span className="whitespace-pre-wrap">
@@ -107,11 +101,10 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         className="bg-white w-full max-w-2xl h-[80vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="bg-gradient-brand p-6 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white/20 shadow-inner">
-              <img src={logoUrl} alt="Mutey" className="w-full h-full object-cover" />
+              <img src={logoUrl} alt="Mutey" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             </div>
             <div>
               <h3 className="font-bold text-lg leading-tight">Mutey</h3>
@@ -126,7 +119,6 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Chat Area */}
         <div 
           ref={scrollRef}
           className="flex-grow overflow-y-auto p-6 space-y-6 chat-scrollbar bg-slate-50/50"
@@ -141,7 +133,7 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   {msg.role === 'user' ? (
                     <User size={16} />
                   ) : (
-                    <img src={logoUrl} alt="Mutey" className="w-full h-full object-cover" />
+                    <img src={logoUrl} alt="Mutey" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${
@@ -158,7 +150,7 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <div className="flex justify-start animate-pulse">
               <div className="flex gap-3 items-center">
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden border border-slate-100">
-                  <img src={logoUrl} alt="Mutey" className="w-full h-full object-cover opacity-50" />
+                  <img src={logoUrl} alt="Mutey" referrerPolicy="no-referrer" className="w-full h-full object-cover opacity-50" />
                 </div>
                 <div className="bg-white p-3 rounded-2xl border border-slate-100 text-xs text-slate-400">
                   Mutey sta scrivendo...
@@ -168,7 +160,6 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           )}
         </div>
 
-        {/* Input Area */}
         <form onSubmit={handleSendMessage} className="p-6 bg-white border-t border-slate-100">
           <div className="relative flex items-center">
             <input 

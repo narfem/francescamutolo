@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowDown, FileText, Sparkles } from 'lucide-react';
 import AIChatModal from './AIChatModal';
@@ -6,10 +5,9 @@ import AIChatModal from './AIChatModal';
 const Hero: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   
-  // Link immagine da Google Drive (formato per visualizzazione diretta)
-  const imageUrl = "https://lh3.googleusercontent.com/d/14TXBzLOzcZvIt-O2Q5LDHmSfQvX7Jixx";
+  // URL standard per Google Drive
+  const imageUrl = "https://drive.google.com/uc?export=view&id=14TXBzLOzcZvIt-O2Q5LDHmSfQvX7Jixx";
   
-  // Link diretto al download del CV
   const cvDownloadUrl = "https://drive.google.com/uc?export=download&id=16eFV00cfPNk2UAtfNX8QZk8MLTwvTVAs";
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
@@ -22,14 +20,12 @@ const Hero: React.FC = () => {
 
   return (
     <section id="home" className="relative min-h-[80vh] pt-6 lg:pt-10 pb-20 flex items-start bg-white overflow-hidden">
-      {/* Elementi decorativi di sfondo */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F39637]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4"></div>
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#C13C8D]/5 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full">
         <div className="relative">
           
-          {/* Immagine posizionata a DESTRA tramite Float */}
           <div className="float-right ml-4 mb-4 md:ml-8 md:mb-8 lg:ml-16 lg:mb-12 w-[45%] lg:w-[440px] group relative"
                style={{ 
                  shapeOutside: 'inset(0 round 2.5rem)', 
@@ -39,6 +35,7 @@ const Hero: React.FC = () => {
               <img 
                 src={imageUrl} 
                 alt="Francesca Mutolo Professional Portrait" 
+                referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"
               />
@@ -49,7 +46,6 @@ const Hero: React.FC = () => {
             <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-[#F39637]/10 rounded-full -z-0 blur-2xl"></div>
           </div>
 
-          {/* Intestazione e Contenuto Testuale */}
           <div className="mb-8 md:mb-12">
             <h1 className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] text-slate-900 tracking-tight mb-4 md:mb-8">
               Esperienza, <br />
@@ -102,7 +98,6 @@ const Hero: React.FC = () => {
                 <FileText size={18} className="text-primary group-hover:scale-110 transition-transform" />
               </a>
               
-              {/* Pulsante AI Personale */}
               <button 
                 onClick={() => setIsAIChatOpen(true)}
                 className="group px-6 md:px-10 py-3 md:py-5 bg-slate-900 text-white rounded-full font-bold hover:bg-black transition-all flex items-center space-x-3 text-sm md:text-base shadow-xl hover:shadow-primary/20"
@@ -115,7 +110,6 @@ const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Chat AI */}
       {isAIChatOpen && <AIChatModal onClose={() => setIsAIChatOpen(false)} />}
     </section>
   );
