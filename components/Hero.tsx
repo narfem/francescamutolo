@@ -5,8 +5,9 @@ import AIChatModal from './AIChatModal';
 const Hero: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   
-  // URL standard per Google Drive
-  const imageUrl = "https://drive.google.com/uc?export=view&id=14TXBzLOzcZvIt-O2Q5LDHmSfQvX7Jixx";
+  // URL ottimizzato per Google Drive (Thumbnail bypassa meglio i blocchi CORS e Referrer)
+  const imageId = "1NkHD9_y1_YPJjlNIuzIuNR93Iw0GnbD0";
+  const imageUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1200`;
   
   const cvDownloadUrl = "https://drive.google.com/uc?export=download&id=16eFV00cfPNk2UAtfNX8QZk8MLTwvTVAs";
 

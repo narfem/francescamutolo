@@ -46,8 +46,9 @@ const Layout: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // URL standard per Google Drive con bypass referrer
-  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  // URL ottimizzato per Google Drive (Thumbnail bypassa meglio i blocchi CORS)
+  const logoId = "14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU";
+  const logoUrl = `https://drive.google.com/thumbnail?id=${logoId}&sz=w500`;
 
   if (isDashboard) return <Outlet />;
 

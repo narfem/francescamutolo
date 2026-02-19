@@ -39,7 +39,8 @@ const Dashboard: React.FC = () => {
     navigate('/');
   };
 
-  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  const logoId = "14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU";
+  const logoUrl = `https://drive.google.com/thumbnail?id=${logoId}&sz=w500`;
 
   if (loading) return <div className="p-20 text-center font-bold text-xl">Verifica accesso in corso...</div>;
 
@@ -168,7 +169,7 @@ const ManagePortfolio = () => {
     ];
     for (let regex of driveRegex) {
       const match = url.match(regex);
-      if (match && match[1]) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
     }
     return url;
   }

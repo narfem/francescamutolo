@@ -8,7 +8,8 @@ interface Message {
 }
 
 const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const logoUrl = "https://drive.google.com/uc?export=view&id=1-1MNPNU_LjsOB1ETjNMKk0R8OgUANR3b";
+  const logoId = "14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU";
+  const logoUrl = `https://drive.google.com/thumbnail?id=${logoId}&sz=w500`;
   
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: "Ciao! Sono **Mutey**, la mascotte creativa di Francesca.\n\nPosso raccontarti il suo percorso, come integra l'IA nel design o rispondere a domande sulle sue esperienze lavorative. Cosa vorresti sapere?" }
