@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
@@ -148,8 +148,15 @@ const ManagePortfolio = () => {
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [newItem, setNewItem] = useState({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false });
   const [loading, setLoading] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchItems(); }, []);
+
+  useEffect(() => {
+    if (isAdding && formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isAdding]);
 
   const fetchItems = async () => {
     const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
@@ -263,7 +270,7 @@ const ManagePortfolio = () => {
       </div>
 
       {isAdding && (
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-100 mb-8 animate-in fade-in slide-in-from-top-4">
+        <div ref={formRef} className="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-100 mb-8 animate-in fade-in slide-in-from-top-4 scroll-mt-24">
           <h2 className="text-xl font-bold mb-6 text-gray-900">
             {editingItem ? 'Modifica Progetto' : 'Aggiungi Nuovo Progetto'}
           </h2>

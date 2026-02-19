@@ -150,37 +150,41 @@ const PortfolioGrid: React.FC = () => {
 
       {selectedItem && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/95 backdrop-blur-md animate-in fade-in duration-300"
           onClick={() => setSelectedItem(null)}
         >
           <button 
-            className="absolute top-6 right-6 text-white hover:text-primary transition-colors p-2"
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-white hover:text-primary transition-colors p-2 z-[110]"
             onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
           >
-            <X size={32} />
+            <X size={36} />
           </button>
           
           <div 
-            className="max-w-5xl w-full flex flex-col items-center animate-in zoom-in-95 duration-300"
+            className="max-w-6xl w-full h-full max-h-full flex flex-col items-center animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white rounded-3xl overflow-hidden shadow-2xl w-full max-h-[90vh] flex flex-col">
-              <div className="flex-grow overflow-auto bg-gray-100">
+            <div className="bg-white rounded-[2rem] overflow-hidden shadow-2xl w-full h-full flex flex-col">
+              <div className="flex-grow flex items-center justify-center bg-gray-50 overflow-hidden p-4 md:p-6 min-h-0">
                 <img 
                   src={selectedItem.image_url} 
                   alt={selectedItem.title} 
                   referrerPolicy="no-referrer"
-                  className="w-full h-auto object-contain mx-auto"
+                  className="max-w-full max-h-full w-auto h-auto object-contain mx-auto transition-all"
                   onError={(e) => { (e.target as any).src = 'https://placehold.co/1200x800?text=Errore+Caricamento' }}
                 />
               </div>
-              <div className="p-8 bg-white border-t border-gray-100">
+              <div className="p-6 md:p-8 bg-white border-t border-gray-100 flex-shrink-0">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-xs font-black text-primary uppercase tracking-widest">{selectedItem.category?.replace(/flayer/i, 'Flyer')}</span>
                   {selectedItem.is_featured && <Star size={14} className="fill-primary text-primary" />}
                 </div>
-                <h2 className="text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
-                <p className="mt-4 text-gray-600 leading-relaxed italic">{selectedItem.description}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
+                {selectedItem.description && (
+                  <p className="mt-2 md:mt-4 text-gray-600 leading-relaxed italic text-sm md:text-base line-clamp-2 md:line-clamp-none">
+                    {selectedItem.description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
