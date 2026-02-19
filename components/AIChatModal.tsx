@@ -49,10 +49,16 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         - Sei una mascotte amichevole, arguta e creativa.
         - Il tuo tono è professionale ma brioso, riflettendo lo spirito innovativo di Francesca.
         
+        CONTATTI E LINK (Fornisci solo questi dati se l'utente chiede come contattarla):
+        - Instagram: [Instagram di Francesca](https://www.instagram.com/francescamutolographicdesigner/)
+        - Modulo di Contatto Rapido: [Scrivile qui](#contact)
+        - Brief di Progetto: [Inizia un Brief](#contact) (situato nella sezione contatti)
+        
         Istruzioni per le risposte:
         - Sii ESTREMAMENTE SINTETICO e CONCISO.
         - LINGUAGGIO SEMPLICE: Evita tecnicismi inutili.
         - Parla di Francesca in terza persona con ammirazione.
+        - Quando fornisci i link di contatto, usa SEMPRE il formato markdown: [Testo](URL o #anchor).
 
         REGOLE DI IMPAGINAZIONE:
         - Dividi le informazioni in paragrafi brevi.
@@ -82,13 +88,43 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
-  const renderFormattedText = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
+  const renderFormattedText = (text: string, isUser: boolean) => {
+    // Split by bold (**text**) and links ([text](url))
+    const parts = text.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
     return (
       <span className="whitespace-pre-wrap">
         {parts.map((part, i) => {
+          // Handle Bold
           if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={i} className="font-extrabold text-slate-900">{part.slice(2, -2)}</strong>;
+            return (
+              <strong key={i} className={`font-extrabold ${isUser ? 'text-white' : 'text-slate-900'}`}>
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          // Handle Links
+          const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+          if (linkMatch) {
+            const linkText = linkMatch[1];
+            const url = linkMatch[2];
+            const isAnchor = url.startsWith('#');
+            
+            return (
+              <a 
+                key={i} 
+                href={url} 
+                target={isAnchor ? undefined : "_blank"}
+                rel={isAnchor ? undefined : "noopener noreferrer"}
+                onClick={(e) => {
+                  if (isAnchor) {
+                    onClose(); // Close modal on internal anchor click
+                  }
+                }}
+                className={`font-bold underline transition-opacity hover:opacity-80 ${isUser ? 'text-white' : 'text-primary'}`}
+              >
+                {linkText}
+              </a>
+            );
           }
           return part;
         })}
@@ -142,7 +178,7 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     ? 'bg-primary text-white rounded-tr-none' 
                     : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none font-medium'
                 }`}>
-                  {renderFormattedText(msg.text)}
+                  {renderFormattedText(msg.text, msg.role === 'user')}
                 </div>
               </div>
             </div>
