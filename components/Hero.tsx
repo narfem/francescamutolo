@@ -1,15 +1,41 @@
-import React, { useState } from 'react';
-import { ArrowDown, FileText, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowDown, FileText, Sparkles, X } from 'lucide-react';
 import AIChatModal from './AIChatModal';
+import { supabase } from '../lib/supabase';
 
 const Hero: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isCVOpen, setIsCVOpen] = useState(false);
+  const [cvUrl, setCvUrl] = useState('');
   
   // URL ottimizzato per Google Drive (Thumbnail bypassa meglio i blocchi CORS e Referrer)
   const imageId = "1NkHD9_y1_YPJjlNIuzIuNR93Iw0GnbD0";
   const imageUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1200`;
   
-  const cvDownloadUrl = "https://drive.google.com/uc?export=download&id=16eFV00cfPNk2UAtfNX8QZk8MLTwvTVAs";
+  useEffect(() => {
+    fetchCV();
+  }, []);
+
+  const fetchCV = async () => {
+    const { data, error } = await supabase.from('settings').select('cv_url').eq('id', 'global').single();
+    if (!error && data) {
+      setCvUrl(data.cv_url || '');
+    }
+  };
+
+  const getPreviewUrl = (url: string) => {
+    if (!url) return '';
+    const driveRegex = [
+      /\/d\/([a-zA-Z0-9_-]+)/,
+      /[?&]id=([a-zA-Z0-9_-]+)/,
+      /file\/d\/([a-zA-Z0-9_-]+)/
+    ];
+    for (let regex of driveRegex) {
+      const match = url.match(regex);
+      if (match && match[1]) return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    return url;
+  };
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
@@ -89,15 +115,13 @@ const Hero: React.FC = () => {
                 <span>Guarda i lavori</span>
                 <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform text-[#F39637]" />
               </a>
-              <a 
-                href={cvDownloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button 
+                onClick={() => setIsCVOpen(true)}
                 className="group px-6 md:px-10 py-3 md:py-5 bg-white text-slate-900 border border-slate-200 rounded-full font-bold hover:border-primary transition-all flex items-center space-x-3 text-sm md:text-base"
               >
                 <span>Il mio CV</span>
                 <FileText size={18} className="text-primary group-hover:scale-110 transition-transform" />
-              </a>
+              </button>
               
               <button 
                 onClick={() => setIsAIChatOpen(true)}
@@ -110,6 +134,38 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isCVOpen && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in p-4 md:p-8"
+          onClick={() => setIsCVOpen(false)}
+        >
+          <button 
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-white hover:text-primary transition-colors p-2 z-[110]"
+            onClick={() => setIsCVOpen(false)}
+          >
+            <X size={36} />
+          </button>
+          <div 
+            className="w-full h-full max-w-6xl bg-white rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {cvUrl ? (
+              <iframe 
+                src={getPreviewUrl(cvUrl)} 
+                className="w-full h-full border-none"
+                title="Curriculum Vitae Francesca Mutolo"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center">
+                <FileText size={64} className="text-gray-200 mb-6" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">CV non disponibile</h3>
+                <p className="text-gray-500">Al momento il link al curriculum non è stato configurato.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {isAIChatOpen && <AIChatModal onClose={() => setIsAIChatOpen(false)} />}
     </section>

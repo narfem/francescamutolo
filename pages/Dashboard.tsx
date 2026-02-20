@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
-  X, Mail, RefreshCw, Menu as MenuIcon, Flag
+  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact } from '../types';
 import JSZip from 'jszip';
@@ -49,11 +49,11 @@ const Dashboard: React.FC = () => {
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="h-10 w-10 object-cover rounded-full border border-white/20" />
-          <span className="font-bold text-sm tracking-tight">Admin Panel</span>
+          <span className="font-bold text-sm tracking-tight text-white">Admin Panel</span>
         </div>
       </div>
       
-      <nav className="flex-grow p-4 space-y-2 overflow-y-auto chat-scrollbar">
+      <nav className="flex-grow p-4 space-y-2 overflow-y-auto chat-scrollbar text-white">
         <Link to="/dashboard" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname === '/dashboard' ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <LayoutDashboard size={18} /> Dashboard
         </Link>
@@ -62,6 +62,9 @@ const Dashboard: React.FC = () => {
         </Link>
         <Link to="/dashboard/leads" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/leads') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <MessageSquare size={18} /> Messaggi & Brief
+        </Link>
+        <Link to="/dashboard/cv" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/cv') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <FileText size={18} /> Gestione CV
         </Link>
         
         <div className="pt-4 mt-4 border-t border-white/10">
@@ -112,6 +115,7 @@ const Dashboard: React.FC = () => {
               <Route index element={<DashboardHome />} />
               <Route path="portfolio" element={<ManagePortfolio />} />
               <Route path="leads" element={<ManageLeads />} />
+              <Route path="cv" element={<ManageCV />} />
             </Routes>
           </div>
         </main>
@@ -138,9 +142,128 @@ const DashboardHome = () => (
         <p className="text-gray-500 text-sm font-medium">Lead</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Contatti ricevuti</p>
       </Link>
+      <Link to="/dashboard/cv" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+          <FileText size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">CV</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestione link CV</p>
+      </Link>
     </div>
   </div>
 );
+
+const ManageCV = () => {
+  const [cvUrl, setCvUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  useEffect(() => {
+    fetchCV();
+  }, []);
+
+  const fetchCV = async () => {
+    try {
+      const { data, error } = await supabase.from('settings').select('cv_url').eq('id', 'global').maybeSingle();
+      if (!error && data) {
+        setCvUrl(data.cv_url || '');
+      }
+    } catch (e) {
+      console.error("Fetch settings error:", e);
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setStatus(null);
+
+    try {
+      // Usiamo upsert per creare o aggiornare la riga 'global'
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ 
+          id: 'global', 
+          cv_url: cvUrl, 
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'id' });
+
+      if (error) {
+        if (error.message.includes("not found")) {
+          setStatus({ 
+            type: 'error', 
+            message: 'Errore: La tabella "settings" non esiste ancora nel database. Assicurati di aver eseguito lo script SQL fornito.' 
+          });
+        } else {
+          setStatus({ type: 'error', message: 'Errore durante il salvataggio: ' + error.message });
+        }
+      } else {
+        setStatus({ type: 'success', message: 'Link del CV aggiornato con successo!' });
+      }
+    } catch (err: any) {
+      setStatus({ type: 'error', message: 'Errore critico: ' + err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-medium">Caricamento impostazioni...</div>;
+
+  return (
+    <div className="animate-in fade-in duration-500 max-w-2xl">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Gestione CV</h1>
+      
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="p-4 bg-primary/10 text-primary rounded-2xl">
+            <FileText size={32} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Aggiorna il tuo CV</h2>
+            <p className="text-gray-500 text-sm">Inserisci il link di condivisione di Google Drive del tuo PDF.</p>
+          </div>
+        </div>
+
+        {status && (
+          <div className={`mb-6 p-6 rounded-2xl text-sm font-bold border ${status.type === 'success' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+            {status.message}
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-gray-400 uppercase mb-2 tracking-widest">Link Google Drive</label>
+            <input 
+              required
+              type="url"
+              placeholder="https://drive.google.com/file/d/.../view"
+              className="w-full p-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm font-medium"
+              value={cvUrl}
+              onChange={(e) => setCvUrl(e.target.value)}
+            />
+          </div>
+          
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Suggerimento</p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Assicurati che il file sia impostato su <strong>"Chiunque abbia il link"</strong> in Google Drive affinché possa essere visualizzato dai visitatori del sito.
+            </p>
+          </div>
+
+          <button 
+            type="submit"
+            disabled={saving}
+            className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+          >
+            {saving ? 'Salvataggio in corso...' : 'Salva Link CV'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const ManagePortfolio = () => {
   const [items, setItems] = useState<PortfolioItem[]>([]);
@@ -278,12 +401,12 @@ const ManagePortfolio = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Titolo</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Titolo</label>
                   <input required className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700" 
                     value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Categoria</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Categoria</label>
                   <select className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
                     value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
                     <option>Branding</option>
@@ -307,13 +430,13 @@ const ManagePortfolio = () => {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Link Google Drive</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Link Google Drive</label>
                   <input required placeholder="Incolla il link 'Condividi' di Drive" className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm dark:text-white dark:bg-gray-800 dark:border-gray-700"
                     value={newItem.image_url} onChange={e => setNewItem({...newItem, image_url: e.target.value})} />
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="block text-xs font-bold text-gray-400 uppercase">Anteprima Visiva</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Anteprima Visiva</label>
                 <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 flex items-center justify-center relative group">
                   {newItem.image_url ? (
                     <img src={convertDriveUrl(newItem.image_url)} alt="Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
