@@ -91,7 +91,7 @@ const Dashboard: React.FC = () => {
       <div className="p-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="h-10 w-10 object-cover rounded-full border border-white/20" />
-          <span className="font-bold text-sm tracking-tight text-white">Admin Panel</span>
+          <span className="font-bold text-sm tracking-tight text-white">Dashboard</span>
         </div>
       </div>
       
