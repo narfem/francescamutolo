@@ -25,13 +25,33 @@ const Dashboard: React.FC = () => {
   }, [location.pathname]);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      console.log("Checking user session...");
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error("Supabase auth error:", error);
+        // Se c'è un errore ma abbiamo una sessione locale, proviamo a usarla
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log("Using session user as fallback");
+          setUser(session.user);
+        } else {
+          navigate('/login');
+        }
+      } else if (!user) {
+        console.log("No user found, redirecting to login");
+        navigate('/login');
+      } else {
+        console.log("User authenticated:", user.email);
+        setUser(user);
+      }
+    } catch (err) {
+      console.error("Critical error in checkUser:", err);
       navigate('/login');
-    } else {
-      setUser(user);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSignOut = async () => {
@@ -282,11 +302,17 @@ const ManagePortfolio = () => {
   }, [isAdding]);
 
   const fetchItems = async () => {
-    const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
-    if (error) {
-      console.error("Errore fetch:", error);
-    } else if (data) {
-      setItems(data);
+    try {
+      console.log("Dashboard: Fetching portfolio items...");
+      const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
+      if (error) {
+        console.error("Errore fetch dashboard:", error);
+      } else if (data) {
+        console.log("Dashboard: Items fetched:", data.length);
+        setItems(data);
+      }
+    } catch (err) {
+      console.error("Critical error in fetchItems dashboard:", err);
     }
   };
 

@@ -17,16 +17,25 @@ const PortfolioGrid: React.FC = () => {
   }, []);
 
   const fetchPortfolio = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('portfolio')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      console.log("Fetching portfolio items for grid...");
+      const { data, error } = await supabase
+        .from('portfolio')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setItems(data);
+      if (error) {
+        console.error("Errore fetch portfolio grid:", error);
+      } else if (data) {
+        console.log("Portfolio items fetched for grid:", data.length);
+        setItems(data);
+      }
+    } catch (err) {
+      console.error("Critical error in fetchPortfolio grid:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const categoryItems = activeCategory === 'Tutti' 
@@ -38,7 +47,7 @@ const PortfolioGrid: React.FC = () => {
         return item.category === activeCategory;
     });
 
-  const filteredItems = (showAll || activeCategory !== 'Tutti')
+  const filteredItems = (showAll || activeCategory !== 'Tutti' || !categoryItems.some(item => item.is_featured))
     ? categoryItems 
     : categoryItems.filter(item => item.is_featured);
 

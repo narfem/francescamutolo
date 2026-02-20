@@ -16,14 +16,17 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    console.log("Attempting login for:", email);
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (authError) {
+      console.error("Login error:", authError.message);
       setError(authError.message);
     } else {
+      console.log("Login successful, user:", data.user?.email);
       navigate('/dashboard');
     }
     setLoading(false);
