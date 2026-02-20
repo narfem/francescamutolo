@@ -326,7 +326,12 @@ const ManagePortfolio = () => {
   const fetchItems = async () => {
     try {
       console.log("Dashboard: Fetching portfolio items...");
-      const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('portfolio')
+        .select('*')
+        .not('category', 'ilike', '%CV%')
+        .not('category', 'ilike', '%Curriculum%')
+        .order('created_at', { ascending: false });
       if (error) {
         console.error("Errore fetch dashboard:", error);
       } else if (data) {

@@ -23,6 +23,8 @@ const PortfolioGrid: React.FC = () => {
       const { data, error } = await supabase
         .from('portfolio')
         .select('*')
+        .not('category', 'ilike', '%CV%')
+        .not('category', 'ilike', '%Curriculum%')
         .order('created_at', { ascending: false });
 
       if (error) {
