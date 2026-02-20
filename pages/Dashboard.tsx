@@ -4,10 +4,32 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
-  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText
+  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact } from '../types';
 import JSZip from 'jszip';
+
+const CopyButton = ({ text, colorClass = "text-primary" }: { text: string, colorClass?: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button 
+      onClick={handleCopy}
+      className={`p-1.5 rounded-lg transition-all hover:bg-gray-100 ${colorClass} flex items-center gap-1`}
+      title="Copia email"
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+      {copied && <span className="text-[10px] font-bold uppercase">Copiato!</span>}
+    </button>
+  );
+};
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -743,7 +765,10 @@ const ManageLeads = () => {
             <div className="flex-grow overflow-y-auto p-6 md:p-10 space-y-6 md:space-y-10 chat-scrollbar">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
                 <div className="bg-slate-50 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100">
-                  <div className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Email</div>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</div>
+                    <CopyButton text={selectedLead.data.email} colorClass={selectedLead.type === 'simple' ? "text-primary" : "text-secondary"} />
+                  </div>
                   <div className="font-bold text-gray-900 break-all text-sm md:text-base">{selectedLead.data.email}</div>
                 </div>
                 <div className="bg-slate-50 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border border-slate-100">
