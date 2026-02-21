@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
-  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check
+  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact } from '../types';
 import JSZip from 'jszip';
@@ -108,6 +108,9 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/cv" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/cv') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <FileText size={18} /> Gestione CV
         </Link>
+        <Link to="/dashboard/mutey" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/mutey') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <Sparkles size={18} /> Gestione Mutey
+        </Link>
         
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
@@ -158,6 +161,7 @@ const Dashboard: React.FC = () => {
               <Route path="portfolio" element={<ManagePortfolio />} />
               <Route path="leads" element={<ManageLeads />} />
               <Route path="cv" element={<ManageCV />} />
+              <Route path="mutey" element={<ManageMutey />} />
             </Routes>
           </div>
         </main>
@@ -190,6 +194,13 @@ const DashboardHome = () => (
         </div>
         <p className="text-gray-500 text-sm font-medium">CV</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestione link CV</p>
+      </Link>
+      <Link to="/dashboard/mutey" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+          <Sparkles size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Mutey AI</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Istruzioni assistente</p>
       </Link>
     </div>
   </div>
@@ -300,6 +311,112 @@ const ManageCV = () => {
             className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
           >
             {saving ? 'Salvataggio in corso...' : 'Salva Link CV'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const ManageMutey = () => {
+  const [rules, setRules] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  useEffect(() => {
+    fetchRules();
+  }, []);
+
+  const fetchRules = async () => {
+    try {
+      const { data, error } = await supabase.from('settings').select('mutey_rules').eq('id', 'global').maybeSingle();
+      if (!error && data) {
+        setRules(data.mutey_rules || '');
+      }
+    } catch (e) {
+      console.error("Fetch rules error:", e);
+    }
+    setLoading(false);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setStatus(null);
+
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ 
+          id: 'global', 
+          mutey_rules: rules, 
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'id' });
+
+      if (error) {
+        setStatus({ type: 'error', message: 'Errore durante il salvataggio: ' + error.message });
+      } else {
+        setStatus({ type: 'success', message: 'Regole di Mutey aggiornate con successo!' });
+      }
+    } catch (err: any) {
+      setStatus({ type: 'error', message: 'Errore critico: ' + err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-medium">Caricamento istruzioni...</div>;
+
+  return (
+    <div className="animate-in fade-in duration-500 max-w-3xl">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Gestione Mutey AI</h1>
+      
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="p-4 bg-secondary/10 text-secondary rounded-2xl">
+            <Sparkles size={32} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Istruzioni di Sistema</h2>
+            <p className="text-gray-500 text-sm">Definisci come Mutey deve rispondere ai visitatori.</p>
+          </div>
+        </div>
+
+        {status && (
+          <div className={`mb-6 p-6 rounded-2xl text-sm font-bold border ${status.type === 'success' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+            {status.message}
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-gray-400 uppercase mb-2 tracking-widest">Regole e Personalità</label>
+            <textarea 
+              required
+              rows={12}
+              placeholder="Esempio: Rispondi sempre in modo gentile, usa molte emoji, non parlare di politica..."
+              className="w-full p-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-secondary outline-none transition-all text-sm font-medium resize-none chat-scrollbar"
+              value={rules}
+              onChange={(e) => setRules(e.target.value)}
+            />
+          </div>
+          
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Guida rapida</p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-4">
+              <li>Sii specifico sul tono di voce (es. "professionale", "ironico").</li>
+              <li>Indica cosa Mutey <strong>deve</strong> o <strong>non deve</strong> dire.</li>
+              <li>Puoi inserire informazioni extra che Mutey deve conoscere.</li>
+            </ul>
+          </div>
+
+          <button 
+            type="submit"
+            disabled={saving}
+            className="w-full py-4 bg-secondary text-white rounded-2xl font-black shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+          >
+            {saving ? 'Salvataggio in corso...' : 'Aggiorna Regole Mutey'}
           </button>
         </form>
       </div>

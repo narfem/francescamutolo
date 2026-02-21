@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS contacts_brief (
 CREATE TABLE IF NOT EXISTS settings (
   id TEXT PRIMARY KEY,
   cv_url TEXT,
+  mutey_rules TEXT,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

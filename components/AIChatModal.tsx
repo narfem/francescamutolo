@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, User, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
+import { supabase } from '../lib/supabase';
 
 interface Message {
   role: 'user' | 'model';
@@ -16,7 +17,23 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [customRules, setCustomRules] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchCustomRules();
+  }, []);
+
+  const fetchCustomRules = async () => {
+    try {
+      const { data } = await supabase.from('settings').select('mutey_rules').eq('id', 'global').maybeSingle();
+      if (data?.mutey_rules) {
+        setCustomRules(data.mutey_rules);
+      }
+    } catch (e) {
+      console.error("Error fetching Mutey rules:", e);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -34,7 +51,7 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
       const systemInstruction = `
         Sei Mutey, la mascotte ufficiale e assistente virtuale di Francesca Mutolo. 
@@ -48,6 +65,9 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         Tua Identità (Mutey):
         - Sei una mascotte amichevole, arguta e creativa.
         - Il tuo tono è professionale ma brioso, riflettendo lo spirito innovativo di Francesca.
+
+        REGOLE PERSONALIZZATE (Segui queste regole sopra ogni altra cosa):
+        ${customRules || "Nessuna regola aggiuntiva fornita."}
         
         CONTATTI E LINK (Fornisci solo questi dati se l'utente chiede come contattarla):
         - Instagram: [Instagram di Francesca](https://www.instagram.com/francescamutolographicdesigner/)
