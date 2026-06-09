@@ -37,6 +37,42 @@ CREATE TABLE IF NOT EXISTS contacts_brief (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tabella per i questionari di brand identity completi
+CREATE TABLE IF NOT EXISTS questionnaires (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_name TEXT NOT NULL,
+  name_meaning TEXT,
+  business_description TEXT,
+  products_services TEXT,
+  strength_point TEXT,
+  slogan TEXT,
+  target_customers TEXT,
+  age_range TEXT,
+  customer_type TEXT,
+  market_scope TEXT,
+  brand_perception_target TEXT,
+  keywords TEXT[] DEFAULT '{}',
+  brand_perception TEXT,
+  brand_personified TEXT,
+  palette_favorite TEXT,
+  palette_avoid TEXT,
+  logo_style TEXT,
+  logo_composition TEXT,
+  logos_liked TEXT,
+  logos_disliked TEXT,
+  competitors TEXT,
+  admired_companies TEXT,
+  differentiation_strategy TEXT,
+  logo_applications TEXT[] DEFAULT '{}',
+  deadline TEXT,
+  extra_deliverables TEXT[] DEFAULT '{}',
+  five_years_vision TEXT,
+  notes TEXT,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Tabella per impostazioni globali (CV, etc)
 CREATE TABLE IF NOT EXISTS settings (
   id TEXT PRIMARY KEY,
@@ -49,6 +85,7 @@ CREATE TABLE IF NOT EXISTS settings (
 ALTER TABLE portfolio ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts_simple ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts_brief ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
 -- 3. DEFINIZIONE DELLE POLITICHE (Policies)
@@ -78,6 +115,16 @@ DROP POLICY IF EXISTS "Admin Update Brief" ON contacts_brief;
 CREATE POLICY "Admin Update Brief" ON contacts_brief FOR UPDATE TO authenticated USING (true);
 DROP POLICY IF EXISTS "Admin Delete Brief" ON contacts_brief;
 CREATE POLICY "Admin Delete Brief" ON contacts_brief FOR ALL TO authenticated USING (true);
+
+-- Questionari
+DROP POLICY IF EXISTS "Inserimento pubblico questionari" ON questionnaires;
+CREATE POLICY "Inserimento pubblico questionari" ON questionnaires FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin Select Questionnaires" ON questionnaires;
+CREATE POLICY "Admin Select Questionnaires" ON questionnaires FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin Update Questionnaires" ON questionnaires;
+CREATE POLICY "Admin Update Questionnaires" ON questionnaires FOR UPDATE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin Delete Questionnaires" ON questionnaires;
+CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authenticated USING (true);
 
 -- Settings
 DROP POLICY IF EXISTS "Accesso pubblico in lettura settings" ON settings;

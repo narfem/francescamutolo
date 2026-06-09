@@ -19,6 +19,7 @@ const Layout: React.FC = () => {
 
   const navLinks = [
     { name: 'Portfolio', targetId: 'portfolio' },
+    { name: 'Questionario', path: '/questionario' },
     { name: 'Contatti', targetId: 'contact' },
   ];
 
@@ -57,7 +58,7 @@ const Layout: React.FC = () => {
       <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-3 group">
+            <Link to="/" className="flex items-center space-x-3 group cursor-pointer">
               <div className="relative">
                 <img 
                   src={logoUrl} 
@@ -75,19 +76,36 @@ const Layout: React.FC = () => {
                   Graphic & AI Product Designer
                 </span>
               </div>
-            </div>
+            </Link>
 
             <div className="hidden md:flex space-x-8 items-center">
-              {navLinks.map((link) => (
-                <a 
-                  key={link.name} 
-                  href={`#${link.targetId}`}
-                  onClick={(e) => handleNavClick(e, link.targetId)}
-                  className="text-slate-600 hover:text-primary transition-colors font-semibold"
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                if (link.path) {
+                  return (
+                    <Link
+                      key={link.name}
+                      to={link.path}
+                      className={`${
+                        location.pathname === link.path
+                          ? 'text-primary font-bold'
+                          : 'text-slate-600 hover:text-primary'
+                      } transition-colors font-semibold`}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                }
+                return (
+                  <a 
+                    key={link.name} 
+                    href={`#${link.targetId}`}
+                    onClick={(e) => handleNavClick(e, link.targetId || '')}
+                    className="text-slate-600 hover:text-primary transition-colors font-semibold"
+                  >
+                    {link.name}
+                  </a>
+                );
+              })}
               <Link 
                 to="/login" 
                 aria-label="Area Riservata"
@@ -107,16 +125,34 @@ const Layout: React.FC = () => {
 
         {isMenuOpen && (
           <div className="md:hidden bg-white border-b border-gray-100 py-8 px-4 space-y-6 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-            {navLinks.map((link) => (
-              <a 
-                key={link.name} 
-                href={`#${link.targetId}`}
-                onClick={(e) => handleNavClick(e, link.targetId)}
-                className="block text-slate-800 font-bold text-xl hover:text-primary"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              if (link.path) {
+                return (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block font-bold text-xl ${
+                      location.pathname === link.path
+                        ? 'text-primary'
+                        : 'text-slate-800 hover:text-primary'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              }
+              return (
+                <a 
+                  key={link.name} 
+                  href={`#${link.targetId}`}
+                  onClick={(e) => handleNavClick(e, link.targetId || '')}
+                  className="block text-slate-800 font-bold text-xl hover:text-primary"
+                >
+                  {link.name}
+                </a>
+              );
+            })}
             <Link 
               to="/login" 
               aria-label="Area Riservata"

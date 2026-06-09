@@ -53,12 +53,12 @@ const Hero: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full">
         <div className="relative">
           
-          <div className="float-right ml-4 mb-4 md:ml-8 md:mb-8 lg:ml-16 lg:mb-12 w-[45%] lg:w-[440px] group relative"
+          <div className="float-right ml-3 mb-2 md:ml-8 md:mb-8 lg:ml-16 lg:mb-12 w-[35%] sm:w-[45%] lg:w-[440px] group relative"
                style={{ 
                  shapeOutside: 'inset(0 round 2.5rem)', 
-                 shapeMargin: '1.5rem' 
+                 shapeMargin: '1.25rem' 
                }}>
-            <div className="relative z-10 aspect-[4/5] overflow-hidden rounded-2xl md:rounded-[2.5rem] shadow-2xl border-2 md:border-4 border-white bg-slate-100">
+            <div className="relative z-10 aspect-[4/5] overflow-hidden rounded-xl md:rounded-[2.5rem] shadow-2xl border md:border-4 border-white bg-slate-100">
               <img 
                 src={imageUrl} 
                 alt="Francesca Mutolo Professional Portrait" 
@@ -73,10 +73,10 @@ const Hero: React.FC = () => {
             <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-[#F39637]/10 rounded-full -z-0 blur-2xl"></div>
           </div>
 
-          <div className="mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] text-slate-900 tracking-tight mb-4 md:mb-8">
-              Esperienza, <br />
-              <span className="brand-orange italic text-[#F39637]">Creatività</span> <br />
+          <div className="mb-4 md:mb-12">
+            <h1 className="text-[1.35rem] sm:text-3xl md:text-5xl lg:text-7xl xl:text-8xl font-bold leading-[1.15] text-slate-900 tracking-tight mb-2 md:mb-8">
+              Esperienza, <br className="hidden sm:inline" />{" "}
+              <span className="brand-orange italic text-[#F39637]">Creatività</span> <br />{" "}
               & <span className="relative inline-block">
                 Strategia.
                 <span className="absolute bottom-1 md:bottom-2 left-0 w-full h-2 md:h-3 bg-[#C13C8D]/10 -z-10"></span>
@@ -84,18 +84,18 @@ const Hero: React.FC = () => {
             </h1>
           </div>
 
-          <div className="text-slate-600 space-y-4 md:space-y-8">
-            <p className="text-lg md:text-xl lg:text-3xl font-medium leading-tight text-slate-800">
-              Mi chiamo Francesca, classe 1986. <br />
-              Sono sarda, per nascita e per scelta. <br />
+          <div className="text-slate-600 space-y-3 md:space-y-8">
+            <p className="text-sm sm:text-lg md:text-xl lg:text-3xl font-medium leading-normal sm:leading-tight text-slate-800">
+              Mi chiamo Francesca, classe 1986. <br className="hidden sm:inline" />{" "}
+              Sono sarda, per nascita e per scelta. <br className="hidden sm:inline" />{" "}
               Unisco la solida base della comunicazione visiva alle infinite potenzialità dell'<strong>Intelligenza Artificiale</strong>.
             </p>
             
-            <p className="text-base md:text-lg lg:text-xl leading-relaxed">
+            <p className="text-xs sm:text-base md:text-lg lg:text-xl leading-relaxed">
               Il mio percorso è iniziato con la curiosità di chi vuole capire come le immagini influenzano le emozioni, evolvendo poi in una ricerca costante tra estetica classica e tecnologia d'avanguardia. Credo fermamente che il design non debba solo essere "bello", ma debba assolvere a una funzione precisa.
             </p>
 
-            <div className="font-medium text-base md:text-lg lg:text-2xl text-slate-900 border-l-4 border-[#F39637] pl-4 md:pl-8 py-2 italic bg-slate-50/30 rounded-r-xl">
+            <div className="font-medium text-xs sm:text-base md:text-lg lg:text-2xl text-slate-900 border-l-2 sm:border-l-4 border-[#F39637] pl-3 md:pl-8 py-1 md:py-2 italic bg-slate-50/30 rounded-r-xl">
               Aiuto professionisti e aziende a raccontarsi con autenticità, eleganza e quel pizzico di innovazione che fa la differenza.
             </div>
 

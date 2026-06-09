@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
-  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles
+  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
+  ClipboardList, Building, Users, Target, Palette, Shield, Monitor
 } from 'lucide-react';
-import { PortfolioItem, SimpleContact, BriefContact } from '../types';
+import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
 
 const CopyButton = ({ text, colorClass = "text-primary" }: { text: string, colorClass?: string }) => {
@@ -105,6 +106,9 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/leads" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/leads') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <MessageSquare size={18} /> Messaggi & Brief
         </Link>
+        <Link to="/dashboard/questionari" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/questionari') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <ClipboardList size={18} /> Questionari
+        </Link>
         <Link to="/dashboard/cv" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/cv') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <FileText size={18} /> Gestione CV
         </Link>
@@ -160,6 +164,7 @@ const Dashboard: React.FC = () => {
               <Route index element={<DashboardHome />} />
               <Route path="portfolio" element={<ManagePortfolio />} />
               <Route path="leads" element={<ManageLeads />} />
+              <Route path="questionari" element={<ManageQuestionnaires />} />
               <Route path="cv" element={<ManageCV />} />
               <Route path="mutey" element={<ManageMutey />} />
             </Routes>
@@ -187,6 +192,13 @@ const DashboardHome = () => (
         </div>
         <p className="text-gray-500 text-sm font-medium">Lead</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Contatti ricevuti</p>
+      </Link>
+      <Link to="/dashboard/questionari" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary text-gradient-brand">
+          <ClipboardList size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Questionari</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
       </Link>
       <Link to="/dashboard/cv" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
@@ -927,5 +939,584 @@ const ManageLeads = () => {
     </div>
   );
 };
+
+const ManageQuestionnaires = () => {
+  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedQuest, setSelectedQuest] = useState<Questionnaire | null>(null);
+  const [errorInfo, setErrorInfo] = useState<string | null>(null);
+
+  useEffect(() => { fetchQuestionnaires(); }, []);
+
+  const fetchQuestionnaires = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('questionnaires')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setQuestionnaires(data || []);
+      setErrorInfo(null);
+    } catch (err: any) {
+      console.error("Fetch questionnaires error:", err);
+      if (err.message && err.message.includes("relation") && err.message.includes("does not exist")) {
+        setErrorInfo("La tabella 'questionnaires' non esiste nel tuo database Supabase. Assicurati di aver eseguito lo script SQL per creare la tabella e le politiche di sicurezza.");
+      } else {
+        setErrorInfo(err.message || "Impossibile recuperare i questionari.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleReadStatus = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {
+    e.stopPropagation();
+    const newStatus = !currentStatus;
+
+    setQuestionnaires(prev => prev.map(q => q.id === id ? { ...q, is_read: newStatus } : q));
+
+    const { error } = await supabase
+      .from('questionnaires')
+      .update({ is_read: newStatus })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Errore aggiornamento lettura questionario:", error);
+      fetchQuestionnaires();
+    }
+  };
+
+  const downloadQuestTxt = (quest: Questionnaire) => {
+    const formattedDate = new Date(quest.created_at).toLocaleString('it-IT');
+    const content = `==================================================
+QUESTIONARIO BRAND IDENTITY - ${quest.company_name}
+Inviato il: ${formattedDate}
+==================================================
+
+1. ATTIVITÀ
+--------------------------------------------------
+- Nome Azienda/Brand: ${quest.company_name}
+- Significato del nome: ${quest.name_meaning || 'N/D'}
+- Settore/Attività: ${quest.business_description || 'N/D'}
+- Prodotti/Servizi: ${quest.products_services || 'N/D'}
+- Punto di forza: ${quest.strength_point || 'N/D'}
+- Slogan/Payoff: ${quest.slogan || 'N/D'}
+
+2. TARGET
+--------------------------------------------------
+- Clienti ideali: ${quest.target_customers || 'N/D'}
+- Fascia d'età: ${quest.age_range || 'N/D'}
+- Tipo cliente: ${quest.customer_type || 'N/D'}
+- Ambito mercato: ${quest.market_scope || 'N/D'}
+- Percezione desiderata: ${quest.brand_perception_target || 'N/D'}
+
+3. POSIZIONAMENTO E PERSONALITÀ
+--------------------------------------------------
+- Parole chiave: ${quest.keywords?.join(', ') || 'Nessuna'}
+- Percezione brand: ${quest.brand_perception || 'N/D'}
+- Se fosse una persona: ${quest.brand_personified || 'N/D'}
+
+4. PREFERENZE ESTETICHE
+--------------------------------------------------
+- Colori preferiti: ${quest.palette_favorite || 'N/D'}
+- Colori da evitare: ${quest.palette_avoid || 'N/D'}
+- Stile logo: ${quest.logo_style || 'N/D'}
+- Composizione logo: ${quest.logo_composition || 'N/D'}
+- Esempi graditi: ${quest.logos_liked || 'N/D'}
+- Esempi sgraditi: ${quest.logos_disliked || 'N/D'}
+
+5. CONCORRENZA
+--------------------------------------------------
+- Concorrenti principali: ${quest.competitors || 'N/D'}
+- Aziende apprezzate: ${quest.admired_companies || 'N/D'}
+- Differenziazione: ${quest.differentiation_strategy || 'N/D'}
+
+6. UTILIZZO DEL LOGO
+--------------------------------------------------
+- Canali di applicazione: ${quest.logo_applications?.join(', ') || 'Nessuno'}
+
+7. CONSEGNA E BRAND MANUAL
+--------------------------------------------------
+- Scadenza richiesta: ${quest.deadline || 'N/D'}
+- Elementi aggiuntivi richiesti: ${quest.extra_deliverables?.join(', ') || 'Nessuno'}
+
+8. ULTIMA DOMANDA IMPORTANTE
+--------------------------------------------------
+- Visione a 5 anni: ${quest.five_years_vision || 'N/D'}
+
+9. NOTE AGGIUNTIVE
+--------------------------------------------------
+- Note: ${quest.notes || 'N/D'}
+
+==================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `questionario_${quest.company_name.toLowerCase().replace(/\s+/g, '_')}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUpdate = async (quest: Questionnaire, updates: Partial<Questionnaire>) => {
+    setQuestionnaires(prev => prev.map(q => q.id === quest.id ? { ...q, ...updates } as Questionnaire : q));
+    if (selectedQuest && selectedQuest.id === quest.id) {
+       setSelectedQuest(prev => prev ? ({ ...prev, ...updates } as Questionnaire) : null);
+    }
+    const { error } = await supabase.from('questionnaires').update(updates).eq('id', quest.id);
+    if (error) {
+       console.error("Errore aggiornamento:", error);
+       fetchQuestionnaires();
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-medium">Caricamento questionari...</div>;
+
+  return (
+    <div className="space-y-12 pb-24 relative animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Questionari Ricevuti</h1>
+          <p className="text-sm text-gray-500 mt-1">Indagini approfondite per la progettazione del brand</p>
+        </div>
+      </div>
+
+      {errorInfo && (
+        <div className="bg-red-50 text-red-600 border border-red-100 p-6 rounded-2xl text-sm font-semibold max-w-4xl">
+          <p className="font-extrabold mb-2 uppercase tracking-wider text-xs">Attenzione:</p>
+          <p className="mb-4">{errorInfo}</p>
+          <div className="bg-gray-900 p-4 rounded-xl text-gray-100 font-mono text-xs overflow-x-auto whitespace-pre">
+{`CREATE TABLE IF NOT EXISTS questionnaires (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_name TEXT NOT NULL,
+  name_meaning TEXT,
+  business_description TEXT,
+  products_services TEXT,
+  strength_point TEXT,
+  slogan TEXT,
+  target_customers TEXT,
+  age_range TEXT,
+  customer_type TEXT,
+  market_scope TEXT,
+  brand_perception_target TEXT,
+  keywords TEXT[] DEFAULT '{}',
+  brand_perception TEXT,
+  brand_personified TEXT,
+  palette_favorite TEXT,
+  palette_avoid TEXT,
+  logo_style TEXT,
+  logo_composition TEXT,
+  logos_liked TEXT,
+  logos_disliked TEXT,
+  competitors TEXT,
+  admired_companies TEXT,
+  differentiation_strategy TEXT,
+  logo_applications TEXT[] DEFAULT '{}',
+  deadline TEXT,
+  extra_deliverables TEXT[] DEFAULT '{}',
+  five_years_vision TEXT,
+  notes TEXT,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Inserimento pubblico questionari" ON questionnaires FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admin Select Questionnaires" ON questionnaires FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin Update Questionnaires" ON questionnaires FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authenticated USING (true);`}
+          </div>
+          <p className="mt-4 text-xs">Esegui questa query nel SQL Editor di Supabase per sincronizzare.</p>
+        </div>
+      )}
+
+      <div className="rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 bg-white border border-gray-100 shadow-sm">
+        <h2 className="text-xl md:text-2xl font-black text-gray-950 mb-8 flex items-center gap-3">
+          <ClipboardList size={28} className="text-primary" />
+          <span>Questionari Attivi ({questionnaires.filter(q => !q.is_deleted).length})</span>
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {questionnaires.filter(q => !q.is_deleted).map(quest => (
+            <div 
+              key={quest.id}
+              onClick={() => setSelectedQuest(quest)}
+              className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <ClipboardList size={22} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">{quest.company_name}</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                        {new Date(quest.created_at).toLocaleDateString('it-IT')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
+                      quest.is_read 
+                        ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
+                        : 'bg-green-50 text-green-600 border-green-100/50'
+                    }`}
+                    title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
+                  >
+                    <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
+                    {quest.is_read ? 'Letto' : 'Nuovo'}
+                  </button>
+                </div>
+
+                <div className="space-y-2 my-4">
+                  {quest.slogan && (
+                    <p className="text-xs italic text-gray-500 font-medium">"{quest.slogan}"</p>
+                  )}
+                  {quest.business_description && (
+                    <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium">
+                      {quest.business_description}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
+                <div className="flex flex-wrap gap-1 max-w-[70%]">
+                  {quest.keywords?.slice(0, 3).map(k => (
+                    <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
+                  ))}
+                  {quest.keywords?.length > 3 && (
+                    <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
+                  )}
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
+                  className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
+                  title="Scarica come TXT"
+                >
+                  <Download size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {questionnaires.filter(q => !q.is_deleted).length === 0 && !loading && (
+            <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
+              Nessun questionario di brand identity ricevuto
+            </div>
+          )}
+        </div>
+      </div>
+
+      {selectedQuest && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brandDark/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setSelectedQuest(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-4xl max-h-[92vh] rounded-[2rem] md:rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-brand text-white flex items-center justify-center shadow-lg shadow-primary/10">
+                  <ClipboardList size={26} />
+                </div>
+                <div>
+                  <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">{selectedQuest.company_name}</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                    Questionario Brand Identity • Ricevuto il {new Date(selectedQuest.created_at).toLocaleString('it-IT')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handleUpdate(selectedQuest, { is_read: !selectedQuest.is_read })}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
+                    selectedQuest.is_read 
+                      ? 'bg-gray-100 text-gray-500 border-gray-200' 
+                      : 'bg-green-50 text-green-600 border-green-100'
+                  }`}
+                >
+                  <Flag size={12} fill={selectedQuest.is_read ? "none" : "currentColor"} />
+                  {selectedQuest.is_read ? 'Segna come non letto' : 'Segna come letto'}
+                </button>
+                <button 
+                  onClick={() => setSelectedQuest(null)}
+                  className="p-3 bg-gray-100 text-gray-400 hover:text-gray-950 rounded-full transition-all hover:bg-gray-200"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-grow overflow-y-auto p-6 md:p-10 space-y-8 chat-scrollbar bg-slate-50/30 font-sans">
+              
+              <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                  <Building size={16} /> 1. Attività & Brand
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nome Brand</span>
+                    <p className="font-bold text-gray-900 text-base">{selectedQuest.company_name}</p>
+                  </div>
+                  {selectedQuest.slogan && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Slogan o Payoff</span>
+                      <p className="font-bold text-gradient-brand italic text-base">"{selectedQuest.slogan}"</p>
+                    </div>
+                  )}
+                  {selectedQuest.name_meaning && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Significato del nome</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.name_meaning}</p>
+                    </div>
+                  )}
+                  {selectedQuest.business_description && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Di cosa si occupa esattamente</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.business_description}</p>
+                    </div>
+                  )}
+                  {selectedQuest.products_services && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Prodotti o servizi offerti</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.products_services}</p>
+                    </div>
+                  )}
+                  {selectedQuest.strength_point && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Principale punto di forza rispetto alla concorrenza</span>
+                      <p className="text-gray-750 font-bold whitespace-pre-wrap text-sm leading-relaxed mt-1 bg-yellow-50/40 border border-yellow-100 p-4 rounded-xl">{selectedQuest.strength_point}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                  <Users size={16} /> 2. Target Clienti
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {selectedQuest.customer_type && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipologia Clienti</span>
+                      <p className="font-bold text-gray-900 text-sm">{selectedQuest.customer_type}</p>
+                    </div>
+                  )}
+                  {selectedQuest.market_scope && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mercato di Riferimento</span>
+                      <p className="font-bold text-gray-900 text-sm">{selectedQuest.market_scope}</p>
+                    </div>
+                  )}
+                  {selectedQuest.age_range && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Fascia d'età prevalente</span>
+                      <p className="font-bold text-gray-900 text-sm">{selectedQuest.age_range}</p>
+                    </div>
+                  )}
+                  {selectedQuest.target_customers && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Chi sono i clienti ideali</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.target_customers}</p>
+                    </div>
+                  )}
+                  {selectedQuest.brand_perception_target && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Percezione che si vuole trasmettere</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.brand_perception_target}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                  <Target size={16} /> 3. Posizionamento e Personalità
+                </h4>
+                <div className="space-y-4">
+                  {selectedQuest.keywords?.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Parole chiave selezionate</span>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedQuest.keywords.map(k => (
+                          <span key={k} className="px-3.5 py-1.5 bg-gradient-brand text-white text-xs font-bold rounded-xl shadow-sm">{k}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedQuest.brand_perception && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Come vuoi che il cliente ti percepisca</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.brand_perception}</p>
+                    </div>
+                  )}
+                  {selectedQuest.brand_personified && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Se il brand fosse una persona</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.brand_personified}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                  <Palette size={16} /> 4. Preferenze Estetiche
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {selectedQuest.palette_favorite && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Colori Preferiti</span>
+                      <p className="font-bold text-green-600 text-sm">{selectedQuest.palette_favorite}</p>
+                    </div>
+                  )}
+                  {selectedQuest.palette_avoid && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-red-500">Colori da Evitare</span>
+                      <p className="font-bold text-red-600 text-sm">{selectedQuest.palette_avoid}</p>
+                    </div>
+                  )}
+                  {selectedQuest.logo_style && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Stile preferito</span>
+                      <p className="font-bold text-gray-900 text-sm">{selectedQuest.logo_style}</p>
+                    </div>
+                  )}
+                  {selectedQuest.logo_composition && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Composizione desiderata</span>
+                      <p className="font-bold text-gray-900 text-sm">{selectedQuest.logo_composition}</p>
+                    </div>
+                  )}
+                  {selectedQuest.logos_liked && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Loghi preferiti o modelli graditi</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.logos_liked}</p>
+                    </div>
+                  )}
+                  {selectedQuest.logos_disliked && (
+                    <div className="col-span-full">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Loghi da evitare o stili sgraditi</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.logos_disliked}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                  <Shield size={16} /> 5. Concorrenza
+                </h4>
+                <div className="space-y-4">
+                  {selectedQuest.competitors && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Principali concorrenti</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.competitors}</p>
+                    </div>
+                  )}
+                  {selectedQuest.admired_companies && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Aziende del settore che apprezza particolarmente</span>
+                      <p className="text-gray-700 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-1">{selectedQuest.admired_companies}</p>
+                    </div>
+                  )}
+                  {selectedQuest.differentiation_strategy && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Strategia di differenziazione</span>
+                      <p className="font-bold text-gray-900 text-sm mt-1">{selectedQuest.differentiation_strategy}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                  <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                    <Monitor size={16} /> 6. Utilizzo Logo
+                  </h4>
+                  {selectedQuest.logo_applications?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedQuest.logo_applications.map(app => (
+                        <span key={app} className="px-2.5 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg">{app}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400">Nessuna precisazione</p>
+                  )}
+                </div>
+
+                <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                  <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                    <FileText size={16} /> 7. Consegna e Brand Manual
+                  </h4>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Scadenza</span>
+                    <p className="font-bold text-gray-900 text-sm">{selectedQuest.deadline || 'Nessuna indicata'}</p>
+                  </div>
+                  {selectedQuest.extra_deliverables?.length > 0 && (
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Elementi aggiuntivi</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedQuest.extra_deliverables.map(item => (
+                          <span key={item} className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase">{item}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 col-span-full">
+                  <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                    <Sparkles size={16} className="text-secondary" /> Visione a 5 Anni (Focus Strategico)
+                  </h4>
+                  <div className="p-6 bg-secondary/5 border-2 border-dashed border-secondary/15 rounded-2xl italic font-serif text-slate-700 leading-relaxed text-base">
+                    "{selectedQuest.five_years_vision}"
+                  </div>
+                </div>
+
+                {selectedQuest.notes && (
+                  <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 col-span-full">
+                    <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                      <FileText size={16} className="text-primary" /> Note Aggiuntive
+                    </h4>
+                    <div className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-slate-700 leading-relaxed text-sm whitespace-pre-wrap">
+                      {selectedQuest.notes}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+            </div>
+
+            <div className="p-6 md:p-8 bg-gray-50/50 border-t border-gray-100 flex-shrink-0">
+               <button 
+                 onClick={() => downloadQuestTxt(selectedQuest)} 
+                 className="w-full py-4 bg-brandDark text-white rounded-2xl font-black flex items-center justify-center gap-3 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base"
+               >
+                 <Download size={20} /> 
+                 <span>Scarica Questionario (.TXT)</span>
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export default Dashboard;

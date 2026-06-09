@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Send, CheckCircle } from 'lucide-react';
 
@@ -75,6 +76,18 @@ const ContactSection: React.FC = () => {
         <h2 className="text-4xl font-bold text-gray-900 mb-4">Parliamo del tuo Brand</h2>
         <p className="text-gray-600">Scegli la modalità che preferisci per contattarmi.</p>
         
+        <div className="mt-4 flex flex-col items-center gap-3 justify-center">
+          <p className="text-sm text-slate-500 font-medium">
+            Vuoi un'analisi strategica completa? Compila il
+          </p>
+          <Link 
+            to="/questionario" 
+            className="px-6 py-2.5 bg-gradient-brand text-white font-bold rounded-xl shadow-md hover:opacity-95 transition-all text-xs sm:text-sm inline-flex items-center gap-2"
+          >
+            Questionario di Brand Identity →
+          </Link>
+        </div>
+
         <div className="flex justify-center mt-8 p-1 bg-gray-200 rounded-lg w-fit mx-auto">
           <button 
             onClick={() => setActiveForm('simple')}
