@@ -81,12 +81,25 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Tabella per i feedback dei clienti
+CREATE TABLE IF NOT EXISTS feedbacks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  company TEXT,
+  rating INTEGER NOT NULL DEFAULT 5,
+  message TEXT NOT NULL,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  is_approved BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- 2. ABILITAZIONE DELLA SICUREZZA (Row Level Security)
 ALTER TABLE portfolio ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts_simple ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts_brief ENABLE ROW LEVEL SECURITY;
 ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
 
 -- 3. DEFINIZIONE DELLE POLITICHE (Policies)
 
@@ -131,6 +144,16 @@ DROP POLICY IF EXISTS "Accesso pubblico in lettura settings" ON settings;
 CREATE POLICY "Accesso pubblico in lettura settings" ON settings FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Accesso totale admin settings" ON settings;
 CREATE POLICY "Accesso totale admin settings" ON settings FOR ALL TO authenticated USING (true);
+
+-- Feedbacks
+DROP POLICY IF EXISTS "Inserimento pubblico feedback" ON feedbacks;
+CREATE POLICY "Inserimento pubblico feedback" ON feedbacks FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin Select Feedbacks" ON feedbacks;
+CREATE POLICY "Admin Select Feedbacks" ON feedbacks FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin Update Feedbacks" ON feedbacks;
+CREATE POLICY "Admin Update Feedbacks" ON feedbacks FOR UPDATE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin Delete Feedbacks" ON feedbacks;
+CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USING (true);
 
 -- 4. INIZIALIZZAZIONE DATI
 -- Creiamo la riga 'global' se non esiste già

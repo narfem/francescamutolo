@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
+import ManageFeedbacks from './ManageFeedbacks';
 
 const CopyButton = ({ text, colorClass = "text-primary" }: { text: string, colorClass?: string }) => {
   const [copied, setCopied] = useState(false);
@@ -109,6 +110,9 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/questionari" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/questionari') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <ClipboardList size={18} /> Questionari
         </Link>
+        <Link to="/dashboard/feedback" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/feedback') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <Star size={18} /> Gestisci Feedback
+        </Link>
         <Link to="/dashboard/cv" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/cv') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <FileText size={18} /> Gestione CV
         </Link>
@@ -165,6 +169,7 @@ const Dashboard: React.FC = () => {
               <Route path="portfolio" element={<ManagePortfolio />} />
               <Route path="leads" element={<ManageLeads />} />
               <Route path="questionari" element={<ManageQuestionnaires />} />
+              <Route path="feedback" element={<ManageFeedbacks />} />
               <Route path="cv" element={<ManageCV />} />
               <Route path="mutey" element={<ManageMutey />} />
             </Routes>
@@ -199,6 +204,13 @@ const DashboardHome = () => (
         </div>
         <p className="text-gray-500 text-sm font-medium">Questionari</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
+      </Link>
+      <Link to="/dashboard/feedback" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+          <Star size={24} className="text-[#F39637] fill-[#F39637]" />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Feedback</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci le recensioni</p>
       </Link>
       <Link to="/dashboard/cv" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">

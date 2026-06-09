@@ -12,9 +12,26 @@ const Questionnaire: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [hasOtherKeyword, setHasOtherKeyword] = useState(false);
+  const [otherKeywordText, setOtherKeywordText] = useState('');
+
+  const [hasOtherLogoApp, setHasOtherLogoApp] = useState(false);
+  const [otherLogoAppText, setOtherLogoAppText] = useState('');
+
+  const [hasOtherDeliverable, setHasOtherDeliverable] = useState(false);
+  const [otherDeliverableText, setOtherDeliverableText] = useState('');
+
+  const toggleOtherKeyword = () => {
+    if (!hasOtherKeyword && formData.keywords.length >= 4) {
+      alert("Puoi selezionare al massimo 4 parole chiave.");
+      return;
+    }
+    setHasOtherKeyword(!hasOtherKeyword);
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [submitted]);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -80,7 +97,7 @@ const Questionnaire: React.FC = () => {
   const toggleArrayItem = (field: 'keywords' | 'logo_applications' | 'extra_deliverables', item: string) => {
     setFormData(prev => {
       const arr = prev[field] as string[];
-      if (field === 'keywords' && !arr.includes(item) && arr.length >= 4) {
+      if (field === 'keywords' && !arr.includes(item) && arr.length + (hasOtherKeyword ? 1 : 0) >= 4) {
         return prev;
       }
       return {
@@ -117,16 +134,38 @@ const Questionnaire: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
 
+    const finalKeywords = [...formData.keywords];
+    if (hasOtherKeyword && otherKeywordText.trim()) {
+      finalKeywords.push(`Altro: ${otherKeywordText.trim()}`);
+    }
+
+    const finalLogoApps = [...formData.logo_applications];
+    if (hasOtherLogoApp && otherLogoAppText.trim()) {
+      finalLogoApps.push(`Altro: ${otherLogoAppText.trim()}`);
+    }
+
+    const finalDeliverables = [...formData.extra_deliverables];
+    if (hasOtherDeliverable && otherDeliverableText.trim()) {
+      finalDeliverables.push(`Altro: ${otherDeliverableText.trim()}`);
+    }
+
+    const payload = {
+      ...formData,
+      keywords: finalKeywords,
+      logo_applications: finalLogoApps,
+      extra_deliverables: finalDeliverables
+    };
+
     try {
       const { error } = await supabase
         .from('questionnaires')
-        .insert([formData]);
+        .insert([payload]);
 
       if (error) {
         // Se la colonna 'notes' non esiste nel database (es. schema cache vecchio o non ancora aggiornato)
         if (error.message && error.message.includes("'notes'")) {
           console.warn("Colonna 'notes' non trovata nel database. Tento l'invio alternativo unendo le note alla visione a 5 anni...");
-          const fallbackData = { ...formData };
+          const fallbackData = { ...payload };
           if (fallbackData.notes) {
             fallbackData.five_years_vision = `${fallbackData.five_years_vision || ''}\n\n[Note aggiuntive]: ${fallbackData.notes}`;
           }
@@ -145,6 +184,7 @@ const Questionnaire: React.FC = () => {
         }
       }
       setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error: any) {
       console.error("Errore salvataggio questionario:", error);
       const systemError = error?.message || error?.details || JSON.stringify(error);
@@ -422,7 +462,7 @@ const Questionnaire: React.FC = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {keywordOptions.map((keyword) => {
                       const isSelected = formData.keywords.includes(keyword);
-                      const isLimitReached = !isSelected && formData.keywords.length >= 4;
+                      const isLimitReached = !isSelected && formData.keywords.length + (hasOtherKeyword ? 1 : 0) >= 4;
                       return (
                         <button
                           key={keyword}
@@ -441,7 +481,32 @@ const Questionnaire: React.FC = () => {
                         </button>
                       );
                     })}
+                    <button
+                      type="button"
+                      onClick={toggleOtherKeyword}
+                      className={`p-3 border rounded-xl text-xs font-bold transition-all text-center ${
+                        hasOtherKeyword
+                          ? 'bg-gradient-brand text-white border-transparent shadow-md shadow-primary/10'
+                          : (formData.keywords.length >= 4)
+                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                      disabled={!hasOtherKeyword && (formData.keywords.length >= 4)}
+                    >
+                      Altro
+                    </button>
                   </div>
+                  {hasOtherKeyword && (
+                    <div className="mt-3 animate-in fade-in duration-200">
+                      <input
+                        type="text"
+                        value={otherKeywordText}
+                        onChange={e => setOtherKeywordText(e.target.value)}
+                        placeholder="Specifica altre parole chiave..."
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -651,7 +716,33 @@ const Questionnaire: React.FC = () => {
                         </label>
                       );
                     })}
+                    <label 
+                      className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                        hasOtherLogoApp 
+                          ? 'border-primary bg-primary/5 text-primary' 
+                          : 'border-gray-100 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input 
+                        type="checkbox" 
+                        className="w-5 h-5 shrink-0 accent-primary"
+                        checked={hasOtherLogoApp}
+                        onChange={() => setHasOtherLogoApp(!hasOtherLogoApp)}
+                      />
+                      <span className="text-sm font-medium">Altro</span>
+                    </label>
                   </div>
+                  {hasOtherLogoApp && (
+                    <div className="mt-4 animate-in fade-in duration-200">
+                      <input
+                        type="text"
+                        value={otherLogoAppText}
+                        onChange={e => setOtherLogoAppText(e.target.value)}
+                        placeholder="Specifica altre applicazioni..."
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -699,7 +790,33 @@ const Questionnaire: React.FC = () => {
                         </label>
                       );
                     })}
+                    <label 
+                      className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                        hasOtherDeliverable 
+                          ? 'border-primary bg-primary/5 text-primary' 
+                          : 'border-gray-100 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input 
+                        type="checkbox" 
+                        className="w-5 h-5 shrink-0 accent-primary"
+                        checked={hasOtherDeliverable}
+                        onChange={() => setHasOtherDeliverable(!hasOtherDeliverable)}
+                      />
+                      <span className="text-sm font-medium">Altro</span>
+                    </label>
                   </div>
+                  {hasOtherDeliverable && (
+                    <div className="mt-4 animate-in fade-in duration-200">
+                      <input
+                        type="text"
+                        value={otherDeliverableText}
+                        onChange={e => setOtherDeliverableText(e.target.value)}
+                        placeholder="Specifica altri materiali o servizi..."
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
@@ -779,13 +896,11 @@ const Questionnaire: React.FC = () => {
                   type="button"
                   onClick={submitQuestionnaire}
                   disabled={loading}
-                  className="relative flex items-center justify-center bg-gradient-brand text-white h-12 text-sm sm:text-base font-black tracking-wide rounded-xl hover:opacity-95 transition-all shadow-lg hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex-1 sm:flex-initial min-w-[125px] sm:min-w-[145px]"
+                  className="flex items-center justify-center gap-2 bg-gradient-brand text-white px-6 h-12 text-sm sm:text-base font-black tracking-wide rounded-xl hover:opacity-95 transition-all shadow-lg hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex-1 sm:flex-initial min-w-[125px] sm:min-w-[145px]"
                 >
-                  <span>{loading ? 'Invio...' : 'Invia Questionario'}</span>
+                  <span>{loading ? 'Invio...' : 'Invia'}</span>
                   {!loading && (
-                    <span className="absolute right-4 flex items-center">
-                      <Send size={18} />
-                    </span>
+                    <Send size={18} className="shrink-0" />
                   )}
                 </button>
               )}

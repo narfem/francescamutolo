@@ -1,4 +1,3 @@
-
 export interface PortfolioItem {
   id: string;
   title: string;
@@ -86,3 +85,13 @@ export interface Questionnaire {
   created_at: string;
 }
 
+export interface Feedback {
+  id: string;
+  name: string;
+  company?: string;
+  rating: number;
+  message: string;
+  is_deleted: boolean;
+  is_approved: boolean;
+  created_at: string;
+}
