@@ -5,11 +5,13 @@ import {
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
-  ClipboardList, Building, Users, Target, Palette, Shield, Monitor
+  ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
 import ManageFeedbacks from './ManageFeedbacks';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const CopyButton = ({ text, colorClass = "text-primary" }: { text: string, colorClass?: string }) => {
   const [copied, setCopied] = useState(false);
@@ -958,6 +960,753 @@ const ManageQuestionnaires = () => {
   const [selectedQuest, setSelectedQuest] = useState<Questionnaire | null>(null);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
 
+  const [logoBase64, setLogoBase64] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+    const fetchLogoAsBase64 = async () => {
+      const uId = "14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU";
+      const uUrl = `https://drive.google.com/thumbnail?id=${uId}&sz=w500`;
+      const proxiedUrls = [
+        `https://corsproxy.io/?${encodeURIComponent(uUrl)}`,
+        `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(uUrl)}`,
+        uUrl
+      ];
+
+      for (const url of proxiedUrls) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) continue;
+          const blob = await response.blob();
+          const reader = new FileReader();
+          const p = new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+          });
+          reader.readAsDataURL(blob);
+          const base64 = await p;
+          if (active && base64 && base64.startsWith('data:image')) {
+            setLogoBase64(base64);
+            break;
+          }
+        } catch (e) {
+          console.warn("Failed to load logo from", url, e);
+        }
+      }
+    };
+
+    fetchLogoAsBase64();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // States for dynamic quote formulator
+  const [pricingQuote, setPricingQuote] = useState<{
+    questId: string;
+    company_name: string;
+    includeBaseService: boolean;
+    baseServiceName: string;
+    baseServiceItems: { description: string; price: number; discount?: number }[];
+    projectReference: string;
+    applications: { name: string; price: number; included: boolean; discount?: number }[];
+    deliverables: { name: string; price: number; included: boolean; discount?: number }[];
+    customItems: { name: string; price: number; included: boolean; discount?: number }[];
+    notes: string;
+    taxType: 'forfettario' | 'iva22' | 'esente';
+    discount: number;
+    created_at: string;
+  } | null>(null);
+
+  const [newCustomItemName, setNewCustomItemName] = useState("");
+  const [newCustomItemPrice, setNewCustomItemPrice] = useState<number | "">("");
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [showFullPdfPreview, setShowFullPdfPreview] = useState(false);
+  const [previewZoom, setPreviewZoom] = useState<number>(0.75);
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  const handleFormulaQuote = (quest: Questionnaire) => {
+    setPricingQuote({
+      questId: quest.id,
+      company_name: quest.company_name,
+      includeBaseService: true,
+      baseServiceName: "Studio Brand Identity, Logo Design & Linee Guida",
+      baseServiceItems: [
+        { description: "Studio strategico del brand", price: 150, discount: 0 },
+        { description: "Logo design vettoriale (3-4 proposte iniziali)", price: 250, discount: 0 },
+        { description: "Revisioni incluse", price: 100, discount: 0 },
+        { description: "Fornitura del Brand Manual finale completo", price: 150, discount: 0 }
+      ],
+      projectReference: `Studio d'identità visiva elaborato sulla base del questionario ricevuto il ${new Date(quest.created_at).toLocaleDateString('it-IT')}.`,
+      applications: quest.logo_applications?.map(app => ({ name: app, price: 0, included: true, discount: 0 })) || [],
+      deliverables: quest.extra_deliverables?.map(del => ({ name: del, price: 0, included: true, discount: 0 })) || [],
+      customItems: [],
+      notes: "Condizioni generali:\n- Acconto del 50% all'approvazione del presente preventivo.\n- Saldo del 50% alla consegna finale di tutti i formati concordati.\n- Tempi di produzione stimati in circa 15-20 giorni lavorativi.",
+      taxType: 'forfettario',
+      discount: 0,
+      created_at: quest.created_at
+    });
+  };
+
+  const addCustomItem = () => {
+    if (!newCustomItemName || !pricingQuote) return;
+    const price = typeof newCustomItemPrice === 'number' ? newCustomItemPrice : 0;
+    setPricingQuote(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        customItems: [...prev.customItems, { name: newCustomItemName, price, included: true }]
+      };
+    });
+    setNewCustomItemName("");
+    setNewCustomItemPrice("");
+  };
+
+  const removeCustomItem = (index: number) => {
+    if (!pricingQuote) return;
+    setPricingQuote(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        customItems: prev.customItems.filter((_, i) => i !== index)
+      };
+    });
+  };
+
+  const [pdfActiveQuote, setPdfActiveQuote] = useState<any | null>(null);
+
+  const renderQuoteTemplate = (quote: NonNullable<typeof pricingQuote>, isPristine: boolean = false) => {
+    const baseServiceFull = quote.includeBaseService 
+      ? quote.baseServiceItems.reduce((acc, item) => acc + (item.price || 0), 0) 
+      : 0;
+    const baseServiceDiscount = quote.includeBaseService 
+      ? quote.baseServiceItems.reduce((acc, item) => acc + (item.discount || 0), 0) 
+      : 0;
+
+    const appsFull = quote.applications?.reduce((acc, app) => acc + (app.included && app.price ? app.price : 0), 0) || 0;
+    const appsDiscount = quote.applications?.reduce((acc, app) => acc + (app.included && app.discount ? app.discount : 0), 0) || 0;
+
+    const delsFull = quote.deliverables?.reduce((acc, del) => acc + (del.included && del.price ? del.price : 0), 0) || 0;
+    const delsDiscount = quote.deliverables?.reduce((acc, del) => acc + (del.included && del.discount ? del.discount : 0), 0) || 0;
+
+    const customFull = quote.customItems?.reduce((acc, item) => acc + (item.included && item.price ? item.price : 0), 0) || 0;
+    const customDiscount = quote.customItems?.reduce((acc, item) => acc + (item.included && item.discount ? item.discount : 0), 0) || 0;
+
+    const totalFullPrice = baseServiceFull + appsFull + delsFull + customFull;
+    const totalItemDiscounts = baseServiceDiscount + appsDiscount + delsDiscount + customDiscount;
+    const itemsSum = Math.max(0, totalFullPrice - totalItemDiscounts);
+    
+    const afterDiscount = Math.max(0, itemsSum - (quote.discount || 0));
+    const taxRate = quote.taxType === 'iva22' ? 0.22 : 0;
+    const taxAmount = afterDiscount * taxRate;
+    const totalNet = afterDiscount + taxAmount;
+
+    return (
+      <div 
+        className="bg-white p-12 md:p-14 flex flex-col justify-between font-sans text-gray-900 select-none relative"
+        style={{ minHeight: '842px', width: '595px', boxSizing: 'border-box' }}
+      >
+        {/* Top Accent Gradient Line */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-brand animate-none"></div>
+
+        {/* Header: Francesca Identity */}
+        <div>
+          <div className="flex justify-between items-start gap-4 border-b border-gray-100 pb-5 mt-4 text-left">
+            <div className="flex items-center space-x-3 text-left">
+              <div className="relative shrink-0">
+                <img 
+                  src={logoBase64 || "https://drive.google.com/thumbnail?id=14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU&sz=w500"} 
+                  alt="Francesca Mutolo Logo" 
+                  referrerPolicy="no-referrer"
+                  className="h-10 w-10 object-cover rounded-full border-2 border-primary shadow-sm"
+                />
+                <div className="absolute -inset-1 bg-gradient-brand rounded-full -z-10 opacity-20 blur-sm"></div>
+              </div>
+              <div className="flex flex-col text-left">
+                {isPristine ? (
+                  <span className="text-lg font-bold leading-none tracking-tight text-[#C13C8D] font-sans">
+                    Francesca Mutolo
+                  </span>
+                ) : (
+                  <span className="text-lg font-bold leading-none tracking-tight text-transparent bg-clip-text bg-gradient-brand font-sans">
+                    Francesca Mutolo
+                  </span>
+                )}
+                <span className="text-[10px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
+                  Graphic & AI Product Designer
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right flex flex-col justify-start shrink-0">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#C13C8D] font-sans">Proposta di Preventivo</span>
+              <span className="text-[9px] text-gray-500 font-semibold mt-1.5 block font-sans">
+                Data: {new Date(quote.created_at).toLocaleDateString('it-IT')}
+              </span>
+            </div>
+          </div>
+
+          {/* Recipient / Client context */}
+          <div className="flex justify-between gap-4 py-5 border-b border-gray-100/60 text-left">
+            <div className="w-[48%]">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1 font-sans">Destinatario / Brand</span>
+              <p className="text-xs font-black text-gray-900 leading-tight font-sans">{quote.company_name}</p>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 font-sans">Cliente Brand Identity</p>
+            </div>
+            <div className="w-[48%]">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1 font-sans">Riferimento Progetto</span>
+              <p className="text-[10px] font-semibold text-gray-600 leading-relaxed font-sans">{quote.projectReference}</p>
+            </div>
+          </div>
+
+          {/* Pricing Table */}
+          <div className="py-5 border-none">
+            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-2.5 text-left font-sans">Dettaglio Voci e Tariffe</span>
+            
+            <div className="border border-gray-150 rounded-xl overflow-hidden bg-white shadow-sm font-sans text-left text-[11px]">
+              {/* Table Header */}
+              <div className="flex justify-between bg-gray-50/70 border-b border-gray-150 text-gray-400 p-2.5 text-[8.5px] font-black uppercase tracking-wider">
+                <div className="w-[70%]">Descrizione Servizio</div>
+                <div className="w-[30%] text-right font-sans">Prezzo</div>
+              </div>
+
+              {/* 1. Base Service Row */}
+              {quote.includeBaseService && (
+                <div className="p-3 text-[11px] font-medium border-b border-gray-50 text-gray-750 hover:bg-gray-50/20">
+                  <div className="w-full">
+                    <p className="font-bold text-gray-950 text-[11px] mb-2 text-left">{quote.baseServiceName}</p>
+                    <div className="space-y-1.5 pl-2">
+                      {quote.baseServiceItems.map((item, idx) => {
+                        const hasDisc = item.discount && item.discount > 0;
+                        const netItem = Math.max(0, (item.price || 0) - (item.discount || 0));
+                        return (
+                          <div key={idx} className="flex justify-between items-center text-[10px] text-gray-600 font-medium font-sans">
+                            <span>• {item.description}</span>
+                            <span className="font-mono text-gray-500 text-right shrink-0 gap-1.5 flex items-center">
+                              {hasDisc ? (
+                                <>
+                                  <span className="line-through text-gray-400">€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                                  <span className="text-[#C13C8D] font-bold">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                                </>
+                              ) : (
+                                <span>€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Applications */}
+              {quote.applications && quote.applications.filter(app => app.included && app.price > 0).map((app, appIdx) => {
+                const hasDisc = app.discount && app.discount > 0;
+                const netItem = Math.max(0, (app.price || 0) - (app.discount || 0));
+                return (
+                  <div key={`app-${appIdx}`} className="flex justify-between items-center p-3 text-[11px] font-medium border-b border-gray-50 text-gray-750 hover:bg-gray-50/20">
+                    <div className="w-[70%] flex items-center text-left">
+                      <div>
+                        <p className="font-bold text-gray-950">{app.name}</p>
+                        <p className="text-[8px] text-gray-400">Canale di applicazione ed ottimizzazione layout</p>
+                      </div>
+                    </div>
+                    <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
+                      {hasDisc ? (
+                        <>
+                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {app.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                        </>
+                      ) : (
+                        <span>€ {app.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 3. Deliverables */}
+              {quote.deliverables && quote.deliverables.filter(del => del.included && del.price > 0).map((del, delIdx) => {
+                const hasDisc = del.discount && del.discount > 0;
+                const netItem = Math.max(0, (del.price || 0) - (del.discount || 0));
+                return (
+                  <div key={`del-${delIdx}`} className="flex justify-between items-center p-3 text-[11px] font-medium border-b border-gray-50 text-gray-750 hover:bg-gray-50/20">
+                    <div className="w-[70%] text-left">
+                      <p className="font-bold text-gray-950">{del.name}</p>
+                      <p className="text-[8px] text-gray-400">Fornitura di modello stampabile o risorsa brand</p>
+                    </div>
+                    <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
+                      {hasDisc ? (
+                        <>
+                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {del.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                        </>
+                      ) : (
+                        <span>€ {del.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 4. Custom Items */}
+              {quote.customItems && quote.customItems.filter(item => item.included && item.price > 0).map((item, itemIdx) => {
+                const hasDisc = item.discount && item.discount > 0;
+                const netItem = Math.max(0, (item.price || 0) - (item.discount || 0));
+                return (
+                  <div key={`custom-${itemIdx}`} className="flex justify-between items-center p-3 text-[11px] font-medium border-b border-gray-50 text-gray-750 hover:bg-gray-50/20">
+                    <div className="w-[70%] text-left">
+                      <p className="font-bold text-gray-950">{item.name}</p>
+                      <p className="text-[8px] text-gray-400">Servizio di design personalizzato su misura</p>
+                    </div>
+                    <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
+                      {hasDisc ? (
+                        <>
+                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                        </>
+                      ) : (
+                        <span>€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Area: Totals, Signatures and Notes */}
+        <div className="mt-auto">
+          <div className="flex justify-between gap-6 items-start py-4 border-t border-gray-100 text-left">
+            <div className="w-[58%]">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Condizioni Generali</span>
+              <p className="text-[9px] text-gray-500 leading-relaxed whitespace-pre-wrap font-sans">
+                {quote.notes}
+              </p>
+            </div>
+
+            {/* Totals Summary */}
+            <div className="w-[38%] bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-1.5 shrink-0 select-none">
+              <div className="flex justify-between items-center text-[10px] font-semibold text-gray-500">
+                <span>Subtotale pieno:</span>
+                <span className="font-mono">€ {totalFullPrice.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+              </div>
+              {totalItemDiscounts > 0 && (
+                <div className="flex justify-between items-center text-[10px] font-bold text-green-600">
+                  <span>Sconto Voci:</span>
+                  <span className="font-mono">- € {totalItemDiscounts.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {totalItemDiscounts > 0 && (
+                <div className="flex justify-between items-center text-[10.5px] font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
+                  <span>Subtotale netto:</span>
+                  <span className="font-mono">€ {itemsSum.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {quote.discount > 0 && (
+                <div className="flex justify-between items-center text-[10px] font-bold text-green-600">
+                  <span>Sconto Extra:</span>
+                  <span className="font-mono">- € {quote.discount.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {quote.taxType === 'iva22' && (
+                <div className="flex justify-between items-center text-[10px] font-semibold text-gray-500">
+                  <span>IVA (22%):</span>
+                  <span className="font-mono">€ {taxAmount.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+
+              <div className="pt-2 mt-1 border-t border-gray-200 flex justify-between items-center">
+                <span className="text-[10px] font-black text-gray-900 uppercase tracking-wider">Totale:</span>
+                <span className="text-sm font-black text-[#C13C8D] font-mono">
+                  € {totalNet.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer signatures and information */}
+          <div className="flex justify-between items-end gap-6 pt-6 mt-6 border-t border-gray-100 text-[8px] text-gray-400 text-left">
+            <div className="space-y-0.5">
+              <p className="font-black text-gray-850 uppercase tracking-wider font-sans">Francesca Mutolo</p>
+              <p className="font-sans">Graphic & AI Product Designer</p>
+            </div>
+
+            <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">
+              <span className="font-black uppercase tracking-wider block text-gray-650">Contatti</span>
+              <div className="flex flex-col items-end space-y-1">
+                <a href="https://francescamutolo.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                  <Globe size={9} className="text-[#C13C8D] shrink-0" />
+                  <span>francescamutolo.vercel.app</span>
+                </a>
+                <a href="https://instagram.com/francescamutolographicdesigner" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                  <Instagram size={9} className="text-[#C13C8D] shrink-0" />
+                  <span>@francescamutolographicdesigner</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderQuestionnaireTemplate = (quest: Questionnaire) => {
+    return (
+      <div 
+        className="bg-white p-10 md:p-12 flex flex-col justify-between font-sans text-gray-900 select-none relative"
+        style={{ width: '595px', minHeight: '842px', boxSizing: 'border-box' }}
+      >
+        {/* Top Accent Gradient Line */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-brand animate-none"></div>
+
+        <div>
+          {/* Header Profile */}
+          <div className="flex justify-between items-start gap-4 border-b border-gray-150 pb-5 mt-4 text-left">
+            <div className="flex items-center space-x-3 text-left">
+              <div className="relative shrink-0">
+                <img 
+                  src={logoBase64 || "https://drive.google.com/thumbnail?id=14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU&sz=w500"} 
+                  alt="Francesca Mutolo Logo" 
+                  referrerPolicy="no-referrer"
+                  className="h-9 w-9 object-cover rounded-full border-2 border-[#C13C8D] shadow-sm"
+                />
+                <div className="absolute -inset-1 bg-gradient-brand rounded-full -z-10 opacity-20 blur-sm"></div>
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-base font-bold leading-none tracking-tight text-[#C13C8D] font-sans">
+                  Francesca Mutolo
+                </span>
+                <span className="text-[9px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
+                  Graphic & AI Product Designer
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right flex flex-col justify-start shrink-0">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#C13C8D] font-sans">Brand Identity Brief</span>
+              <span className="text-[9px] text-gray-500 font-semibold mt-1 block font-sans">
+                Inviato il: {new Date(quest.created_at).toLocaleDateString('it-IT')}
+              </span>
+            </div>
+          </div>
+
+          {/* Recipient info & Brand */}
+          <div className="py-4 border-b border-gray-150 text-left">
+            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1 font-sans">Brand / Azienda</span>
+            <p className="text-sm font-black text-gray-900 leading-tight font-sans">{quest.company_name}</p>
+            {quest.slogan && (
+              <p className="text-[10px] italic text-gray-600 mt-1 font-sans">"{quest.slogan}"</p>
+            )}
+          </div>
+
+          {/* Questionnaire Details */}
+          <div className="py-5 space-y-5 text-left text-[11px] leading-relaxed">
+            
+            {/* 1. Attività & Brand */}
+            <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+              <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                <Building size={12} /> 1. Attività & Brand
+              </h4>
+              <div className="grid grid-cols-1 gap-2">
+                {quest.name_meaning && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Significato del nome</span>
+                    <p className="font-semibold text-gray-700">{quest.name_meaning}</p>
+                  </div>
+                )}
+                {quest.business_description && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Di cosa si occupa</span>
+                    <p className="font-semibold text-gray-700">{quest.business_description}</p>
+                  </div>
+                )}
+                {quest.products_services && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Prodotti o servizi</span>
+                    <p className="font-semibold text-gray-700">{quest.products_services}</p>
+                  </div>
+                )}
+                {quest.strength_point && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Punto di forza principale</span>
+                    <p className="font-semibold text-gray-700 bg-yellow-50/20 border border-yellow-150 p-2 rounded-lg">{quest.strength_point}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Target & Mercato */}
+            {(quest.target_customers || quest.customer_type || quest.market_scope || quest.brand_perception_target) && (
+              <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+                <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                  <Target size={12} /> 2. Target & Mercato
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {quest.target_customers && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Clienti ideali</span>
+                      <p className="font-semibold text-gray-700">{quest.target_customers}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-3 gap-2">
+                    {quest.customer_type && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Tipo cliente</span>
+                        <p className="font-semibold text-gray-700">{quest.customer_type}</p>
+                      </div>
+                    )}
+                    {quest.market_scope && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Ambito</span>
+                        <p className="font-semibold text-gray-700">{quest.market_scope}</p>
+                      </div>
+                    )}
+                    {quest.age_range && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Età target</span>
+                        <p className="font-semibold text-gray-700">{quest.age_range}</p>
+                      </div>
+                    )}
+                  </div>
+                  {quest.brand_perception_target && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Percezione desiderata</span>
+                      <p className="font-semibold text-gray-700">{quest.brand_perception_target}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Personalità del Brand */}
+            {(quest.brand_perception || quest.brand_personified || (quest.keywords && quest.keywords.length > 0)) && (
+              <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+                <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                  <Users size={12} /> 3. Personalità del Brand
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  {quest.keywords && quest.keywords.length > 0 && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Parole chiave</span>
+                      <p className="font-semibold text-gray-700">{quest.keywords.join(', ')}</p>
+                    </div>
+                  )}
+                  {quest.brand_perception && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Percezione brand</span>
+                      <p className="font-semibold text-gray-700">{quest.brand_perception}</p>
+                    </div>
+                  )}
+                  {quest.brand_personified && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Se fosse una persona</span>
+                      <p className="font-semibold text-gray-700">{quest.brand_personified}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 4. Preferenze Estetiche */}
+            {(quest.palette_favorite || quest.palette_avoid || quest.logo_style || quest.logo_composition || quest.logos_liked) && (
+              <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+                <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                  <Palette size={12} /> 4. Preferenze Estetiche
+                </h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {quest.palette_favorite && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Colori preferiti</span>
+                        <p className="font-bold text-green-600">{quest.palette_favorite}</p>
+                      </div>
+                    )}
+                    {quest.palette_avoid && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Colori da evitare</span>
+                        <p className="font-bold text-red-500">{quest.palette_avoid}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {quest.logo_style && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Stile logo preferito</span>
+                        <p className="font-semibold text-gray-700">{quest.logo_style}</p>
+                      </div>
+                    )}
+                    {quest.logo_composition && (
+                      <div>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Composizione logo</span>
+                        <p className="font-semibold text-gray-700">{quest.logo_composition}</p>
+                      </div>
+                    )}
+                  </div>
+                  {quest.logos_liked && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Loghi graditi ed esempi</span>
+                      <p className="font-semibold text-gray-700">{quest.logos_liked}</p>
+                    </div>
+                  )}
+                  {quest.logos_disliked && (
+                    <div>
+                      <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Loghi sgraditi ed esempi</span>
+                      <p className="font-semibold text-gray-700">{quest.logos_disliked}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 5. Competitor, Applicazioni & Focus strategico */}
+            <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+              <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                <Sparkles size={12} /> 5. Canali, Visione e Note
+              </h4>
+              <div className="grid grid-cols-1 gap-2">
+                {quest.competitors && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Concorrenti principali</span>
+                    <p className="font-semibold text-gray-700">{quest.competitors}</p>
+                  </div>
+                )}
+                {quest.differentiation_strategy && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Differenziazione</span>
+                    <p className="font-semibold text-gray-700">{quest.differentiation_strategy}</p>
+                  </div>
+                )}
+                {quest.logo_applications && quest.logo_applications.length > 0 && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Applicazioni logo richieste</span>
+                    <p className="font-semibold text-gray-700">{quest.logo_applications.join(', ')}</p>
+                  </div>
+                )}
+                {quest.extra_deliverables && quest.extra_deliverables.length > 0 && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Elementi aggiuntivi richiesti</span>
+                    <p className="font-semibold text-gray-700">{quest.extra_deliverables.join(', ')}</p>
+                  </div>
+                )}
+                {quest.five_years_vision && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Visione a 5 anni</span>
+                    <p className="font-bold text-gray-800 italic">"{quest.five_years_vision}"</p>
+                  </div>
+                )}
+                {quest.notes && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Note aggiuntive</span>
+                    <p className="font-semibold text-gray-700 whitespace-pre-wrap">{quest.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Footer info & contacts */}
+        <div className="flex justify-between items-end gap-6 pt-5 mt-5 border-t border-gray-150 text-[8px] text-gray-400 text-left">
+          <div className="space-y-0.5">
+            <p className="font-black text-gray-850 uppercase tracking-wider font-sans">Francesca Mutolo</p>
+            <p className="font-sans">Graphic & AI Product Designer</p>
+          </div>
+
+          <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">
+            <span className="font-black uppercase tracking-wider block text-gray-650">Contatti</span>
+            <div className="flex flex-col items-end space-y-1">
+              <a href="https://francescamutolo.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Globe size={9} className="text-[#C13C8D] shrink-0" />
+                <span>francescamutolo.vercel.app</span>
+              </a>
+              <a href="https://instagram.com/francescamutolographicdesigner" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Instagram size={9} className="text-[#C13C8D] shrink-0" />
+                <span>@francescamutolographicdesigner</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleDownloadQuestPdf = (quest: Questionnaire) => {
+    setPdfActiveQuote({
+      isQuestionnaire: true,
+      company_name: quest.company_name,
+      questData: quest
+    });
+  };
+
+  useEffect(() => {
+    if (pdfActiveQuote) {
+      setExportingPdf(true);
+      const timer = setTimeout(() => {
+        const element = document.getElementById('pristine-pdf-template');
+        if (!element) {
+          setExportingPdf(false);
+          setPdfActiveQuote(null);
+          return;
+        }
+
+        html2canvas(element, {
+          scale: 2.5,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: 595,
+          windowHeight: 842
+        }).then((canvas) => {
+          const imgData = canvas.toDataURL('image/jpeg', 0.98);
+          const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+          });
+
+          const imgWidth = 210;
+          const pageHeight = 297;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+          heightLeft -= pageHeight;
+
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pageHeight;
+          }
+
+          const fileName = pdfActiveQuote.isQuestionnaire
+            ? `Questionario ${pdfActiveQuote.company_name} - Francesca Mutolo.pdf`
+            : `Preventivo ${pdfActiveQuote.company_name} - Francesca Mutolo.pdf`;
+          pdf.save(fileName);
+          setExportingPdf(false);
+          setPdfActiveQuote(null);
+        }).catch((err) => {
+          console.error("PDF generation failed:", err);
+          alert("Si è verificato un errore durante la generazione del PDF. Riprova.");
+          setExportingPdf(false);
+          setPdfActiveQuote(null);
+        });
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [pdfActiveQuote]);
+
+  const exportQuoteToPdf = () => {
+    if (!pricingQuote) return;
+    setPdfActiveQuote(pricingQuote);
+  };
+
   useEffect(() => { fetchQuestionnaires(); }, []);
 
   const fetchQuestionnaires = async () => {
@@ -1210,13 +1959,35 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
                   )}
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
-                  className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
-                  title="Scarica come TXT"
-                >
-                  <Download size={16} />
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleFormulaQuote(quest); }}
+                    className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
+                    title="Formula Preventivo"
+                  >
+                    <Sparkles size={11} />
+                    <span>Formula preventivo</span>
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
+                    className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
+                    title="Scarica come TXT"
+                  >
+                    <Download size={16} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleDownloadQuestPdf(quest); }}
+                    className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                    title="Scarica come PDF"
+                    disabled={exportingPdf}
+                  >
+                    {exportingPdf && pdfActiveQuote?.questId === quest.id ? (
+                      <RefreshCw size={16} className="animate-spin text-primary" />
+                    ) : (
+                      <FileText size={16} />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1457,37 +2228,110 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
                   <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
-                    <Monitor size={16} /> 6. Utilizzo Logo
+                    <Monitor size={16} /> 6. Utilizzo Logo (Voci Selezionate e Scartate)
                   </h4>
-                  {selectedQuest.logo_applications?.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedQuest.logo_applications.map(app => (
-                        <span key={app} className="px-2.5 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg">{app}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-400">Nessuna precisazione</p>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const standardApps = ['Online', 'Social', 'Sito web', 'Biglietti da visita', 'Insegne', 'Veicoli', 'Abbigliamento', 'Packaging'];
+                      const selectedApps = selectedQuest.logo_applications || [];
+                      const isSelected = (standard: string) => 
+                        selectedApps.some(sel => sel.toLowerCase().trim() === standard.toLowerCase().trim());
+                      const customApps = selectedApps.filter(sel => 
+                        !standardApps.some(std => std.toLowerCase().trim() === sel.toLowerCase().trim())
+                      );
+
+                      return (
+                        <>
+                          {standardApps.map(app => {
+                            const active = isSelected(app);
+                            return (
+                              <span 
+                                key={app} 
+                                className={`px-2.5 py-1.5 text-xs font-bold rounded-lg border flex items-center gap-1.5 transition-all ${
+                                  active 
+                                    ? 'bg-green-50 text-green-700 border-green-250 shadow-sm' 
+                                    : 'bg-gray-50/70 text-gray-300 border-gray-100 line-through opacity-50'
+                                }`}
+                              >
+                                {active ? '✓' : '✗'} {app}
+                              </span>
+                            );
+                          })}
+                          {customApps.map(app => (
+                            <span 
+                              key={app} 
+                              className="px-2.5 py-1.5 text-xs font-bold rounded-lg border bg-primary/15 text-primary border-primary/20 flex items-center gap-1.5"
+                            >
+                              ✓ {app}
+                            </span>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
                   <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
                     <FileText size={16} /> 7. Consegna e Brand Manual
                   </h4>
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Scadenza</span>
+                  <div className="mb-4">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Scadenza Richiesta</span>
                     <p className="font-bold text-gray-900 text-sm">{selectedQuest.deadline || 'Nessuna indicata'}</p>
                   </div>
-                  {selectedQuest.extra_deliverables?.length > 0 && (
-                    <div>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Elementi aggiuntivi</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedQuest.extra_deliverables.map(item => (
-                          <span key={item} className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg uppercase">{item}</span>
-                        ))}
-                      </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Elementi aggiuntivi (Selezionati e Scartati)</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(() => {
+                        const standardDeliverables = [
+                          'palette colori', 
+                          'versioni monocromatiche', 
+                          'logo orizzontale', 
+                          'logo verticale', 
+                          'favicon',
+                          'biglietto da visita', 
+                          'carta intestata', 
+                          'landing page', 
+                          'grafica insegna', 
+                          'flyer, locandina, menu o simili'
+                        ];
+                        const selectedDels = selectedQuest.extra_deliverables || [];
+                        const isSelected = (standard: string) => 
+                          selectedDels.some(sel => sel.toLowerCase().trim() === standard.toLowerCase().trim());
+                        const customDels = selectedDels.filter(sel => 
+                          !standardDeliverables.some(std => std.toLowerCase().trim() === sel.toLowerCase().trim())
+                        );
+
+                        return (
+                          <>
+                            {standardDeliverables.map(item => {
+                              const active = isSelected(item);
+                              return (
+                                <span 
+                                  key={item} 
+                                  className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg border uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                                    active 
+                                      ? 'bg-green-50 text-green-700 border-green-250 shadow-sm' 
+                                      : 'bg-gray-50/70 text-gray-300 border-gray-100 line-through opacity-50'
+                                  }`}
+                                >
+                                  {active ? '✓' : '✗'} {item}
+                                </span>
+                              );
+                            })}
+                            {customDels.map(item => (
+                              <span 
+                                key={item} 
+                                className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg border bg-primary/15 text-primary border-primary/20 uppercase tracking-wider flex items-center gap-1.5"
+                              >
+                                ✓ {item}
+                              </span>
+                            ))}
+                          </>
+                        );
+                      })()}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 col-span-full">
@@ -1514,15 +2358,643 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
 
             </div>
 
-            <div className="p-6 md:p-8 bg-gray-50/50 border-t border-gray-100 flex-shrink-0">
+            <div className="p-6 md:p-8 bg-gray-50/50 border-t border-gray-100 flex-shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4">
                <button 
+                 type="button"
                  onClick={() => downloadQuestTxt(selectedQuest)} 
-                 className="w-full py-4 bg-brandDark text-white rounded-2xl font-black flex items-center justify-center gap-3 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base"
+                 className="w-full py-4 bg-white text-gray-755 hover:bg-gray-50 border border-gray-200 rounded-2xl font-bold flex items-center justify-center gap-2.5 transition-all active:scale-95 text-sm"
                >
-                 <Download size={20} /> 
-                 <span>Scarica Questionario (.TXT)</span>
+                 <Download size={18} /> 
+                 <span>Scarica .TXT</span>
+               </button>
+               <button 
+                 type="button"
+                 disabled={exportingPdf}
+                 onClick={() => handleDownloadQuestPdf(selectedQuest)} 
+                 className="w-full py-4 bg-white text-gray-755 hover:bg-gray-50 border border-gray-200 rounded-2xl font-bold flex items-center justify-center gap-2.5 transition-all active:scale-95 text-sm cursor-pointer disabled:opacity-50"
+               >
+                 {exportingPdf && pdfActiveQuote?.questId === selectedQuest.id ? (
+                   <>
+                     <RefreshCw size={18} className="animate-spin text-primary" />
+                     <span>Generando...</span>
+                   </>
+                 ) : (
+                   <>
+                     <FileText size={18} /> 
+                     <span>Scarica PDF A4</span>
+                   </>
+                 )}
+               </button>
+               <button 
+                 type="button"
+                 onClick={() => { setSelectedQuest(null); handleFormulaQuote(selectedQuest); }} 
+                 className="w-full py-4 bg-gradient-brand text-white rounded-2xl font-black flex items-center justify-center gap-2.5 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base"
+               >
+                 <Sparkles size={18} /> 
+                 <span>Formula preventivo</span>
                </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quote formula creator modal overlay */}
+      {pricingQuote && (
+        <div 
+          className="fixed inset-0 z-[100] overflow-y-auto bg-brandDark p-0 md:p-6 lg:p-8 flex justify-center items-start"
+          onClick={() => setPricingQuote(null)}
+        >
+          <div 
+            className="bg-gray-100 w-full max-w-7xl rounded-none md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 min-h-[100dvh] md:min-h-0 md:my-4 lg:my-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-6 md:p-8 bg-white border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+              <div className="flex items-center gap-4 text-left">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-brand text-white flex items-center justify-center shadow-lg">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl md:text-2xl font-black text-gray-900 leading-tight">Formula Preventivo</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                    Cliente: {pricingQuote.company_name}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPricingQuote(null)}
+                className="p-3 bg-gray-100 text-gray-400 hover:text-gray-950 rounded-full transition-all hover:bg-gray-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Main Interactive Grid */}
+            <div className="flex-grow p-4 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-y-auto max-h-[72vh] bg-gray-50">
+              {/* Left Column: Form Controls */}
+              <div className="space-y-6 overflow-y-auto pr-2 chat-scrollbar">
+                
+                {/* 1. Base Service Price */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 text-left">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                    <Building size={14} /> 1. Servizio principale
+                  </h4>
+                  
+                  {/* Inclusion Toggle */}
+                  <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-150 p-3 rounded-xl mb-4">
+                    <input 
+                      type="checkbox" 
+                      id="includeBaseService"
+                      checked={pricingQuote.includeBaseService}
+                      onChange={(e) => setPricingQuote(prev => prev ? { ...prev, includeBaseService: e.target.checked } : null)}
+                      className="w-4 h-4 rounded text-primary focus:ring-primary border-gray-300 transition-all cursor-pointer"
+                    />
+                    <label htmlFor="includeBaseService" className="text-xs font-bold text-gray-700 cursor-pointer select-none">
+                      Includi servizio principale nel preventivo
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Nome Servizio Principale</label>
+                      <input 
+                        type="text" 
+                        value={pricingQuote.baseServiceName}
+                        onChange={(e) => setPricingQuote(prev => prev ? { ...prev, baseServiceName: e.target.value } : null)}
+                        className="w-full text-xs font-bold p-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800"
+                        placeholder="Nome Servizio Principale"
+                      />
+                    </div>
+                    
+                    <div className="space-y-3 pt-2">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Voci della Descrizione Servizio & Prezzi singoli</label>
+                      {pricingQuote.baseServiceItems.map((item, idx) => (
+                        <div key={idx} className="flex gap-2 items-center flex-wrap sm:flex-nowrap bg-gray-50/50 p-2 rounded-xl border border-gray-150">
+                          <input 
+                            type="text" 
+                            value={item.description}
+                            onChange={(e) => {
+                              const newDesc = e.target.value;
+                              setPricingQuote(prev => {
+                                if (!prev) return null;
+                                const updated = [...prev.baseServiceItems];
+                                updated[idx] = { ...updated[idx], description: newDesc };
+                                return { ...prev, baseServiceItems: updated };
+                              });
+                            }}
+                            className="flex-grow text-xs font-medium p-2.5 rounded-lg border border-gray-205 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800"
+                            placeholder={`Voce ${idx + 1}`}
+                          />
+                          
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-bold text-gray-400">Prezzo €</span>
+                            <input 
+                              type="number" 
+                              value={item.price || ''}
+                              onChange={(e) => {
+                                const newPrice = e.target.value !== "" ? Number(e.target.value) : 0;
+                                setPricingQuote(prev => {
+                                  if (!prev) return null;
+                                  const updated = [...prev.baseServiceItems];
+                                  updated[idx] = { ...updated[idx], price: newPrice };
+                                  return { ...prev, baseServiceItems: updated };
+                                });
+                              }}
+                              className="w-16 text-right text-xs font-bold p-2 rounded-lg border border-gray-205 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800 font-mono"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0 bg-pink-50/40 px-2 py-1 rounded-lg border border-pink-100">
+                            <span className="text-[9px] font-black text-pink-500 uppercase tracking-wider">Sconto €</span>
+                            <input 
+                              type="number" 
+                              value={item.discount || ''}
+                              onChange={(e) => {
+                                const newDiscount = e.target.value !== "" ? Number(e.target.value) : 0;
+                                setPricingQuote(prev => {
+                                  if (!prev) return null;
+                                  const updated = [...prev.baseServiceItems];
+                                  updated[idx] = { ...updated[idx], discount: newDiscount };
+                                  return { ...prev, baseServiceItems: updated };
+                                });
+                              }}
+                              className="w-14 text-right text-xs font-bold p-1 rounded border border-pink-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary text-gray-800 font-mono"
+                              placeholder="0"
+                            />
+                          </div>
+
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              setPricingQuote(prev => {
+                                if (!prev) return null;
+                                return {
+                                  ...prev,
+                                  baseServiceItems: prev.baseServiceItems.filter((_, i) => i !== idx)
+                                };
+                              });
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-red-100 shrink-0"
+                            title="Elimina voce"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setPricingQuote(prev => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              baseServiceItems: [...prev.baseServiceItems, { description: "", price: 0, discount: 0 }]
+                            };
+                          });
+                        }}
+                        className="w-full mt-2 py-2.5 bg-gray-50 hover:bg-gray-100 text-slate-700 rounded-xl font-bold text-xs border border-gray-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Plus size={14} />
+                        <span>Aggiungi Voce Descrizione</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Project Reference Field */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-3 text-left">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                    <Briefcase size={14} /> Riferimento Progetto
+                  </h4>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Testo della proposta o riferimento</label>
+                    <textarea 
+                      rows={3}
+                      value={pricingQuote.projectReference}
+                      onChange={(e) => setPricingQuote(prev => prev ? { ...prev, projectReference: e.target.value } : null)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-850 resize-none leading-relaxed"
+                      placeholder="E.g., Studio d'identità visiva..."
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Logo Applications selected by client */}
+                {pricingQuote.applications.length > 0 && (
+                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 text-left">
+                    <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                      <Monitor size={14} /> 2. Utilizzo Logo (Scelte cliente)
+                    </h4>
+                    <p className="text-[11px] text-gray-400 font-medium">Flagga le applicazioni da includere, assegna un prezzo e imposta sconti facoltativi:</p>
+                    <div className="space-y-3">
+                      {pricingQuote.applications.map((app, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-gray-50 border border-gray-150 rounded-xl">
+                          <div className="flex items-center gap-2.5">
+                            <input 
+                              type="checkbox" 
+                              checked={app.included}
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setPricingQuote(prev => {
+                                  if (!prev) return null;
+                                  const updated = [...prev.applications];
+                                  updated[idx] = { ...updated[idx], included: val };
+                                  return { ...prev, applications: updated };
+                                });
+                              }}
+                              className="w-4 h-4 rounded text-primary focus:ring-primary border-gray-300 transition-all cursor-pointer"
+                            />
+                            <span className={`text-xs font-bold transition-colors ${app.included ? 'text-gray-800' : 'text-gray-400 line-through'}`}>{app.name}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-gray-400">Prezzo €</span>
+                              <input 
+                                type="number" 
+                                value={app.price || ''}
+                                placeholder="0"
+                                disabled={!app.included}
+                                onChange={(e) => {
+                                  const newval = Number(e.target.value);
+                                  setPricingQuote(prev => {
+                                    if (!prev) return null;
+                                    const updated = [...prev.applications];
+                                    updated[idx] = { ...updated[idx], price: newval };
+                                    return { ...prev, applications: updated };
+                                  });
+                                }}
+                                className="w-20 text-right text-xs font-bold p-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800 disabled:opacity-40"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-pink-50/40 px-2.5 py-1 rounded-lg border border-pink-100">
+                              <span className="text-[9px] font-black text-pink-500 uppercase tracking-wider">Sconto €</span>
+                              <input 
+                                type="number" 
+                                value={app.discount || ''}
+                                placeholder="0"
+                                disabled={!app.included}
+                                onChange={(e) => {
+                                  const newval = Number(e.target.value);
+                                  setPricingQuote(prev => {
+                                    if (!prev) return null;
+                                    const updated = [...prev.applications];
+                                    updated[idx] = { ...updated[idx], discount: newval };
+                                    return { ...prev, applications: updated };
+                                  });
+                                }}
+                                className="w-14 text-right text-xs font-bold p-1 rounded border border-pink-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800 disabled:opacity-40 font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Extra Deliverables selected by client */}
+                {pricingQuote.deliverables.length > 0 && (
+                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 text-left">
+                    <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                      <FileText size={14} /> 3. Elementi aggiuntivi richiesti
+                    </h4>
+                    <p className="text-[11px] text-gray-400 font-medium">Flagga gli elementi da includere, assegna un prezzo e imposta sconti facoltativi:</p>
+                    <div className="space-y-3">
+                      {pricingQuote.deliverables.map((del, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-gray-50 border border-gray-150 rounded-xl">
+                          <div className="flex items-center gap-2.5">
+                            <input 
+                              type="checkbox" 
+                              checked={del.included}
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setPricingQuote(prev => {
+                                  if (!prev) return null;
+                                  const updated = [...prev.deliverables];
+                                  updated[idx] = { ...updated[idx], included: val };
+                                  return { ...prev, deliverables: updated };
+                                });
+                              }}
+                              className="w-4 h-4 rounded text-primary focus:ring-primary border-gray-300 transition-all cursor-pointer"
+                            />
+                            <span className={`text-xs font-bold transition-colors ${del.included ? 'text-gray-800' : 'text-gray-400 line-through'}`}>{del.name}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-gray-400">Prezzo €</span>
+                              <input 
+                                type="number" 
+                                value={del.price || ''}
+                                placeholder="0"
+                                disabled={!del.included}
+                                onChange={(e) => {
+                                  const newval = Number(e.target.value);
+                                  setPricingQuote(prev => {
+                                    if (!prev) return null;
+                                    const updated = [...prev.deliverables];
+                                    updated[idx] = { ...updated[idx], price: newval };
+                                    return { ...prev, deliverables: updated };
+                                  });
+                                }}
+                                className="w-20 text-right text-xs font-bold p-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800 disabled:opacity-40"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-pink-50/40 px-2.5 py-1 rounded-lg border border-pink-100">
+                              <span className="text-[9px] font-black text-pink-500 uppercase tracking-wider">Sconto €</span>
+                              <input 
+                                type="number" 
+                                value={del.discount || ''}
+                                placeholder="0"
+                                disabled={!del.included}
+                                onChange={(e) => {
+                                  const newval = Number(e.target.value);
+                                  setPricingQuote(prev => {
+                                    if (!prev) return null;
+                                    const updated = [...prev.deliverables];
+                                    updated[idx] = { ...updated[idx], discount: newval };
+                                    return { ...prev, deliverables: updated };
+                                  });
+                                }}
+                                className="w-14 text-right text-xs font-bold p-1 rounded border border-pink-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary transition-all text-gray-800 disabled:opacity-40 font-mono"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Manual Custom Voci */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 text-left">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                    <Plus size={14} /> 4. Altre voci di spesa personalizzate
+                  </h4>
+                  {pricingQuote.customItems.length > 0 && (
+                    <div className="space-y-2">
+                      {pricingQuote.customItems.map((item, idx) => (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-2.5 bg-pink-50/30 border border-pink-100 rounded-xl">
+                          <div className="flex items-center gap-2.5">
+                            <input 
+                              type="checkbox" 
+                              checked={item.included}
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setPricingQuote(prev => {
+                                  if (!prev) return null;
+                                  const updated = [...prev.customItems];
+                                  updated[idx] = { ...updated[idx], included: val };
+                                  return { ...prev, customItems: updated };
+                                });
+                              }}
+                              className="w-3.5 h-3.5 rounded text-primary focus:ring-primary border-gray-200 transition-all cursor-pointer"
+                            />
+                            <span className={`text-xs font-bold transition-colors ${item.included ? 'text-gray-750' : 'text-gray-400 line-through'}`}>{item.name}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-[10px] font-bold text-gray-400">€ {item.price}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 bg-pink-50/40 px-2 py-0.5 rounded-lg border border-pink-100">
+                              <span className="text-[9px] font-black text-pink-500 uppercase tracking-wider">Sconto €</span>
+                              <input 
+                                type="number" 
+                                value={item.discount || ''}
+                                placeholder="0"
+                                disabled={!item.included}
+                                onChange={(e) => {
+                                  const newval = Number(e.target.value);
+                                  setPricingQuote(prev => {
+                                    if (!prev) return null;
+                                    const updated = [...prev.customItems];
+                                    updated[idx] = { ...updated[idx], discount: newval };
+                                    return { ...prev, customItems: updated };
+                                  });
+                                }}
+                                className="w-14 text-right text-xs font-bold p-1 rounded border border-pink-200 bg-white focus:outline-none focus:ring-1 focus:ring-primary text-gray-800 disabled:opacity-40 font-mono"
+                              />
+                            </div>
+
+                            <button 
+                              type="button" 
+                              onClick={() => removeCustomItem(idx)}
+                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-white rounded-md transition-all border border-transparent hover:border-red-100"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <input 
+                      type="text" 
+                      placeholder="E.g., Sviluppo Sito Web o Stampa"
+                      value={newCustomItemName}
+                      onChange={(e) => setNewCustomItemName(e.target.value)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none text-gray-800 animate-none"
+                    />
+                    <div className="flex gap-2">
+                      <input 
+                        type="number" 
+                        placeholder="Prezzo (€)"
+                        value={newCustomItemPrice}
+                        onChange={(e) => setNewCustomItemPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                        className="w-full text-xs font-medium p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none text-gray-800"
+                      />
+                      <button 
+                        type="button" 
+                        onClick={addCustomItem}
+                        className="px-4 bg-primary text-white text-xs font-bold rounded-xl hover:scale-102 transition-transform shadow-md shrink-0"
+                      >
+                        Aggiungi
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Imposte, Sconti e Note */}
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 text-left">
+                  <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2 border-b border-gray-50 pb-2">
+                    <Target size={14} /> 5. Impostazioni fiscali, Sconto & Condizioni generali
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Regime o Imposta</label>
+                      <select 
+                        value={pricingQuote.taxType}
+                        onChange={(e) => setPricingQuote(prev => prev ? { ...prev, taxType: e.target.value as any } : null)}
+                        className="w-full text-xs font-bold p-3 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none text-gray-800 focus:bg-white"
+                      >
+                        <option value="forfettario">Regime Forfettario (Senza IVA)</option>
+                        <option value="iva22">IVA ordinaria al 22%</option>
+                        <option value="esente">Esente IVA</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sconto applicato (€)</label>
+                      <input 
+                        type="number" 
+                        value={pricingQuote.discount || ''}
+                        placeholder="0"
+                        onChange={(e) => setPricingQuote(prev => prev ? { ...prev, discount: Number(e.target.value) } : null)}
+                        className="w-full text-xs font-bold p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none text-gray-800"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Data Preventivo</label>
+                      <input 
+                        type="date" 
+                        value={pricingQuote.created_at ? pricingQuote.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            setPricingQuote(prev => prev ? { ...prev, created_at: new Date(val).toISOString() } : null);
+                          }
+                        }}
+                        className="w-full text-xs font-bold p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none text-gray-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Condizioni Generali di pagamento</label>
+                    <textarea 
+                      rows={5}
+                      value={pricingQuote.notes}
+                      onChange={(e) => setPricingQuote(prev => prev ? { ...prev, notes: e.target.value } : null)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none text-gray-850 resize-none leading-relaxed font-sans"
+                    />
+                  </div>
+                </div>
+
+              </div>
+              <div className="flex flex-col items-center justify-start bg-gray-150 p-4 md:p-6 rounded-[2rem] border-2 border-dashed border-gray-350 min-h-[500px] overflow-hidden">
+                
+                {/* Visual Preview Slider & Context */}
+                <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-4 bg-white px-5 py-3 rounded-2xl border border-gray-150 shadow-sm shrink-0 text-left">
+                  <div className="text-left col-span-12">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block font-sans">Stile e Integrazione A4</span>
+                    <p className="text-xs font-bold text-gray-900 mt-0.5 font-sans">Fai clic sul foglio per visualizzare a dimensione intera</p>
+                  </div>
+                  <div className="flex items-center gap-3 self-end sm:self-auto">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Zoom: {(previewZoom * 100).toFixed(0)}%</span>
+                    <input 
+                      type="range" 
+                      min="0.35" 
+                      max="1.1" 
+                      step="0.05"
+                      value={previewZoom} 
+                      onChange={(e) => setPreviewZoom(Number(e.target.value))}
+                      className="w-24 accent-primary cursor-pointer h-1.5 bg-gray-100 rounded-lg appearance-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Styled Container with dynamic CSS zoom */}
+                <div className="w-full overflow-auto flex-grow flex justify-center items-start py-4 chat-scrollbar max-h-[55vh]">
+                  <div 
+                    onClick={() => setShowFullPdfPreview(true)}
+                    className="shadow-2xl rounded-2xl overflow-hidden cursor-zoom-in hover:shadow-primary/20 transition-all active:scale-[0.98] outline outline-0 hover:outline-4 outline-primary/10 bg-white"
+                    style={{ 
+                      zoom: previewZoom, 
+                      transform: `scale(1)`, 
+                      transformOrigin: 'top center' 
+                    }}
+                    title="Clicca per aprire l'anteprima completa 1:1"
+                  >
+                    {/* The exact region captured for PDF */}
+                    <div ref={pdfRef} className="hidden" />
+                    {renderQuoteTemplate(pricingQuote)}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div className="p-6 md:p-8 bg-white border-t border-gray-200 flex justify-between items-center flex-shrink-0">
+              <button 
+                type="button"
+                onClick={() => setPricingQuote(null)}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-xl font-bold text-sm transition-all shadow-sm"
+              >
+                Annulla
+              </button>
+              
+              <button 
+                type="button"
+                disabled={exportingPdf}
+                onClick={exportQuoteToPdf}
+                className="px-8 py-3 bg-gradient-brand text-white rounded-xl font-black text-sm hover:scale-[1.02] flex items-center gap-2 shadow-lg hover:shadow-primary/10 transition-all cursor-pointer"
+              >
+                {exportingPdf ? (
+                  <>
+                    <RefreshCw size={18} className="animate-spin" />
+                    <span>Generazione PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} />
+                    <span>Esporta PDF A4</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFullPdfPreview && pricingQuote && (
+        <div className="fixed inset-0 bg-slate-950/80 z-[300] backdrop-blur-md flex flex-col items-center justify-center p-4">
+          <div className="absolute inset-0 cursor-pointer" onClick={() => setShowFullPdfPreview(false)} />
+          
+          <div className="relative bg-gray-100 rounded-3xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center shrink-0">
+              <div className="text-left">
+                <span className="text-[10px] font-black text-[#5C27D3] uppercase tracking-widest block font-sans">Anteprima Completa 1:1</span>
+                <h3 className="text-sm font-black text-gray-900 font-sans">Proposta di Preventivo — {pricingQuote.company_name}</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowFullPdfPreview(false)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Chiudi
+              </button>
+            </div>
+
+            {/* Modal Scroll area */}
+            <div className="flex-grow overflow-y-auto p-6 md:p-8 flex justify-center bg-gray-100/50 chat-scrollbar">
+              {renderQuoteTemplate(pricingQuote)}
+
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Hidden offscreen container for pristine, unzoomed A4 PDF generation */}
+      {pdfActiveQuote && (
+        <div style={{ position: 'fixed', top: 0, left: '-10000px', width: '595px', height: 'auto', zIndex: -10000 }}>
+          <div id="pristine-pdf-template" style={{ width: '595px', minHeight: '842px', boxSizing: 'border-box' }}>
+            {pdfActiveQuote.isQuestionnaire ? (
+              renderQuestionnaireTemplate(pdfActiveQuote.questData)
+            ) : (
+              renderQuoteTemplate(pdfActiveQuote, true)
+            )}
           </div>
         </div>
       )}

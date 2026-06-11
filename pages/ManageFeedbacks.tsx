@@ -22,6 +22,7 @@ const ManageFeedbacks: React.FC = () => {
       const { data, error } = await supabase
         .from('feedbacks')
         .select('*')
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -79,7 +80,7 @@ const ManageFeedbacks: React.FC = () => {
     try {
       const { error } = await supabase
         .from('feedbacks')
-        .update({ is_deleted: true })
+        .delete()
         .eq('id', feedbackToDelete);
 
       if (error) throw error;

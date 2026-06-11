@@ -119,7 +119,7 @@ const FeedbackSection: React.FC = () => {
                     </button>
                   );
                 })}
-                <span className="ml-3 text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded hidden sm:inline-block">
+                <span className="ml-3 text-xs font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-1 rounded hidden md:inline-block">
                   {rating} / 5 stelle
                 </span>
               </div>
