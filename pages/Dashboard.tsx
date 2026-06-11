@@ -12,6 +12,7 @@ import JSZip from 'jszip';
 import ManageFeedbacks from './ManageFeedbacks';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { logoBase64String } from './logoBase64';
 
 const CopyButton = ({ text, colorClass = "text-primary" }: { text: string, colorClass?: string }) => {
   const [copied, setCopied] = useState(false);
@@ -960,46 +961,7 @@ const ManageQuestionnaires = () => {
   const [selectedQuest, setSelectedQuest] = useState<Questionnaire | null>(null);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
 
-  const [logoBase64, setLogoBase64] = useState<string>('');
-
-  useEffect(() => {
-    let active = true;
-    const fetchLogoAsBase64 = async () => {
-      const uId = "14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU";
-      const uUrl = `https://drive.google.com/thumbnail?id=${uId}&sz=w500`;
-      const proxiedUrls = [
-        `https://corsproxy.io/?${encodeURIComponent(uUrl)}`,
-        `https://images1-focus-opensocial.googleusercontent.com/gadgets/proxy?container=focus&refresh=2592000&url=${encodeURIComponent(uUrl)}`,
-        uUrl
-      ];
-
-      for (const url of proxiedUrls) {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) continue;
-          const blob = await response.blob();
-          const reader = new FileReader();
-          const p = new Promise<string>((resolve, reject) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-          });
-          reader.readAsDataURL(blob);
-          const base64 = await p;
-          if (active && base64 && base64.startsWith('data:image')) {
-            setLogoBase64(base64);
-            break;
-          }
-        } catch (e) {
-          console.warn("Failed to load logo from", url, e);
-        }
-      }
-    };
-
-    fetchLogoAsBase64();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const logoBase64 = logoBase64String;
 
   // States for dynamic quote formulator
   const [pricingQuote, setPricingQuote] = useState<{
@@ -1185,7 +1147,10 @@ const ManageQuestionnaires = () => {
                             <span className="font-mono text-gray-500 text-right shrink-0 gap-1.5 flex items-center">
                               {hasDisc ? (
                                 <>
-                                  <span className="line-through text-gray-400">€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                                  <span className="relative inline-block text-gray-400 px-0.5">
+                                    <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                                    € {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                                  </span>
                                   <span className="text-[#C13C8D] font-bold">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
                                 </>
                               ) : (
@@ -1215,7 +1180,10 @@ const ManageQuestionnaires = () => {
                     <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
                       {hasDisc ? (
                         <>
-                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {app.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
+                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            € {app.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                          </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
                         </>
                       ) : (
@@ -1239,7 +1207,10 @@ const ManageQuestionnaires = () => {
                     <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
                       {hasDisc ? (
                         <>
-                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {del.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
+                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            € {del.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                          </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
                         </>
                       ) : (
@@ -1263,7 +1234,10 @@ const ManageQuestionnaires = () => {
                     <div className="w-[30%] text-right font-bold text-gray-900 flex items-center justify-end font-mono font-sans gap-1.5">
                       {hasDisc ? (
                         <>
-                          <span className="line-through text-gray-400 text-[10px] font-normal">€ {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                          <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
+                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            € {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
+                          </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
                         </>
                       ) : (
