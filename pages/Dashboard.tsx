@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
-  ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram
+  ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
+  Archive
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -693,6 +694,33 @@ const ManageLeads = () => {
   const [briefLeads, setBriefLeads] = useState<BriefContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<{ type: 'simple' | 'brief', data: any } | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<{ type: 'simple' | 'brief', data: any } | null>(null);
+
+  const [archivedLeadIds, setArchivedLeadIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('archived_lead_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+
+  useEffect(() => {
+    localStorage.setItem('archived_lead_ids', JSON.stringify(archivedLeadIds));
+  }, [archivedLeadIds]);
+
+  const handleToggleArchiveLead = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (archivedLeadIds.includes(id)) {
+      setArchivedLeadIds(prev => prev.filter(item => item !== id));
+    } else {
+      setArchivedLeadIds(prev => [...prev, id]);
+    }
+    if (selectedLead?.data?.id === id) {
+      setSelectedLead(null);
+    }
+  };
 
   useEffect(() => { fetchLeads(); }, []);
 
@@ -707,6 +735,31 @@ const ManageLeads = () => {
     setBriefLeads(allBrief.filter(l => !l.is_deleted));
     
     setLoading(false);
+  };
+
+  const handleDeleteLead = async (id: string, type: 'simple' | 'brief') => {
+    if (type === 'simple') {
+      setSimpleLeads(prev => prev.filter(l => l.id !== id));
+    } else {
+      setBriefLeads(prev => prev.filter(l => l.id !== id));
+    }
+    setArchivedLeadIds(prev => prev.filter(item => item !== id));
+
+    if (selectedLead?.data?.id === id && selectedLead?.type === type) {
+      setSelectedLead(null);
+    }
+    setLeadToDelete(null);
+
+    const table = type === 'simple' ? 'contacts_simple' : 'contacts_brief';
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Errore eliminazione lead:", error);
+      fetchLeads();
+    }
   };
 
   const toggleReadStatus = async (e: React.MouseEvent, id: string, currentStatus: boolean, type: 'simple' | 'brief') => {
@@ -767,6 +820,17 @@ const ManageLeads = () => {
 
   if (loading) return <div className="p-10 text-center font-medium">Caricamento messaggi...</div>;
 
+  const totalActiveLeadsCount = simpleLeads.filter(l => !archivedLeadIds.includes(l.id)).length + briefLeads.filter(l => !archivedLeadIds.includes(l.id)).length;
+  const totalArchivedLeadsCount = simpleLeads.filter(l => archivedLeadIds.includes(l.id)).length + briefLeads.filter(l => archivedLeadIds.includes(l.id)).length;
+
+  const filteredSimpleLeads = activeTab === 'active' 
+    ? simpleLeads.filter(l => !archivedLeadIds.includes(l.id))
+    : simpleLeads.filter(l => archivedLeadIds.includes(l.id));
+
+  const filteredBriefLeads = activeTab === 'active' 
+    ? briefLeads.filter(l => !archivedLeadIds.includes(l.id))
+    : briefLeads.filter(l => archivedLeadIds.includes(l.id));
+
   return (
     <div className="space-y-12 pb-24 relative animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -779,15 +843,40 @@ const ManageLeads = () => {
       </div>
 
       <div className="rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 bg-white border border-gray-100 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-3xl bg-primary/10 text-primary">
+            <div className="p-4 rounded-2xl bg-primary/10 text-primary">
                <RefreshCw size={28} />
             </div>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-gray-900">Messaggi Attivi</h2>
+              <h2 className="text-xl md:text-2xl font-black text-gray-900">
+                {activeTab === 'active' ? 'Messaggi Attivi' : 'Messaggi Archiviati'}
+              </h2>
               <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">Clicca sull'icona flag per selezionare se il messaggio è letto</p>
             </div>
+          </div>
+
+          <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full md:w-auto">
+            <button 
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === 'active' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Attivi ({totalActiveLeadsCount})
+            </button>
+            <button 
+              onClick={() => setActiveTab('archived')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === 'archived' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Archiviati ({totalArchivedLeadsCount})
+            </button>
           </div>
         </div>
 
@@ -796,7 +885,7 @@ const ManageLeads = () => {
             <Mail size={16} /> Contatti Rapidi
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {simpleLeads.map(lead => (
+            {filteredSimpleLeads.map(lead => (
               <div 
                 key={lead.id} 
                 className={`bg-white p-6 rounded-[2rem] border border-gray-100 hover:border-primary/30 transition-all cursor-pointer relative group`}
@@ -810,7 +899,7 @@ const ManageLeads = () => {
                     
                     <button 
                       onClick={(e) => toggleReadStatus(e, lead.id, lead.is_read, 'simple')}
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
+                      className={`flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
                         lead.is_read 
                           ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
                           : 'bg-green-50 text-green-600 border-green-100/50'
@@ -821,9 +910,31 @@ const ManageLeads = () => {
                       {lead.is_read ? 'Letto' : 'Da Leggere'}
                     </button>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={(e) => { e.stopPropagation(); downloadLeadTxt(lead, 'simple'); }} className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full">
-                      <Download size={16} />
+                  <div className="flex gap-1.5">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); downloadLeadTxt(lead, 'simple'); }} 
+                      className="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 transition-colors bg-gray-50 rounded-full"
+                      title="Scarica come TXT"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleToggleArchiveLead(e, lead.id)} 
+                      className={`p-1.5 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                        archivedLeadIds.includes(lead.id) 
+                          ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
+                          : 'text-gray-400 hover:text-primary'
+                      }`}
+                      title={archivedLeadIds.includes(lead.id) ? "Ripristina nei Messaggi Attivi" : "Archivia Messaggio"}
+                    >
+                      <Archive size={14} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setLeadToDelete({ type: 'simple', data: lead }); }} 
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors bg-gray-50 rounded-full"
+                      title="Elimina Messaggio"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -834,8 +945,10 @@ const ManageLeads = () => {
                 </div>
               </div>
             ))}
-            {simpleLeads.length === 0 && (
-              <div className="col-span-full py-8 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">Nessun contatto rapido attivo</div>
+            {filteredSimpleLeads.length === 0 && (
+              <div className="col-span-full py-8 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
+                {activeTab === 'active' ? 'Nessun contatto rapido attivo' : 'Nessun contatto rapido archiviato'}
+              </div>
             )}
           </div>
         </section>
@@ -845,7 +958,7 @@ const ManageLeads = () => {
             <Briefcase size={16} /> Brief Dettagliati
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {briefLeads.map(lead => (
+            {filteredBriefLeads.map(lead => (
               <div 
                 key={lead.id} 
                 className={`bg-white p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-gray-100 hover:border-secondary/30 transition-all cursor-pointer relative group`}
@@ -876,9 +989,31 @@ const ManageLeads = () => {
                       <p className="text-[10px] text-secondary font-black tracking-widest uppercase mt-0.5">Lead Dettagliato</p>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={(e) => { e.stopPropagation(); downloadLeadTxt(lead, 'brief'); }} className="p-2 text-gray-400 hover:text-secondary transition-colors bg-gray-50 rounded-full">
-                      <Download size={18} />
+                  <div className="flex gap-1.5">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); downloadLeadTxt(lead, 'brief'); }} 
+                      className="p-2 text-gray-400 hover:text-secondary hover:bg-gray-100 transition-colors bg-gray-50 rounded-full"
+                      title="Scarica come TXT"
+                    >
+                      <Download size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleToggleArchiveLead(e, lead.id)} 
+                      className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                        archivedLeadIds.includes(lead.id) 
+                          ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
+                          : 'text-gray-400 hover:text-secondary'
+                      }`}
+                      title={archivedLeadIds.includes(lead.id) ? "Ripristina nei Messaggi Attivi" : "Archivia Brief"}
+                    >
+                      <Archive size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setLeadToDelete({ type: 'brief', data: lead }); }} 
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors bg-gray-50 rounded-full"
+                      title="Elimina Brief"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -887,8 +1022,10 @@ const ManageLeads = () => {
                 </div>
               </div>
             ))}
-            {briefLeads.length === 0 && (
-              <div className="col-span-full py-8 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">Nessun brief dettagliato attivo</div>
+            {filteredBriefLeads.length === 0 && (
+              <div className="col-span-full py-8 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
+                {activeTab === 'active' ? 'Nessun brief dettagliato attivo' : 'Nessun brief dettagliato archiviato'}
+              </div>
             )}
           </div>
         </section>
@@ -942,11 +1079,70 @@ const ManageLeads = () => {
                 </p>
               </div>
             </div>
-            <div className="p-6 md:p-10 bg-gray-50/50 border-t border-gray-100 flex-shrink-0">
-               <button onClick={() => downloadLeadTxt(selectedLead.data, selectedLead.type)} className="w-full py-4 md:py-5 bg-brandDark text-white rounded-2xl font-black flex items-center justify-center gap-3 md:gap-4 hover:scale-[1.02] transition-all shadow-xl active:scale-95 group text-sm md:text-base">
+            <div className="p-6 md:p-10 bg-gray-50/50 border-t border-gray-100 flex-shrink-0 flex gap-4">
+               <button onClick={() => downloadLeadTxt(selectedLead.data, selectedLead.type)} className="flex-grow py-4 md:py-5 bg-brandDark text-white rounded-2xl font-black flex items-center justify-center gap-3 md:gap-4 hover:scale-[1.02] transition-all shadow-xl active:scale-95 group text-sm md:text-base">
                  <Download size={20} className="md:w-6 md:h-6" /> 
                  <span>Scarica Archivio (.TXT)</span>
                </button>
+               <button 
+                 onClick={(e) => { handleToggleArchiveLead(e, selectedLead.data.id); }}
+                 className={`px-6 py-4 md:py-5 border rounded-2xl font-black flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base ${
+                   archivedLeadIds.includes(selectedLead.data.id)
+                     ? 'bg-green-600 hover:bg-green-700 text-white border-green-750'
+                     : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200 hover:text-primary'
+                 }`}
+                 title={archivedLeadIds.includes(selectedLead.data.id) ? "Ripristina" : "Archivia"}
+               >
+                 <Archive size={20} />
+                 <span className="hidden sm:inline">{archivedLeadIds.includes(selectedLead.data.id) ? 'Ripristina' : 'Archivia'}</span>
+               </button>
+               <button 
+                 onClick={() => setLeadToDelete({ type: selectedLead.type, data: selectedLead.data })}
+                 className="px-6 py-4 md:py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base"
+                 title="Elimina definitivo"
+               >
+                 <Trash2 size={20} />
+                 <span className="hidden sm:inline">Elimina</span>
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {leadToDelete && (
+        <div 
+          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setLeadToDelete(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6 md:p-8 flex flex-col overflow-hidden animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex gap-4 items-start mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 font-sans mt-1">Sei sicuro?</h3>
+                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                  Stai per eliminare questo {leadToDelete.type === 'simple' ? 'messaggio' : 'brief'}. Questa operazione non può essere annullata.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setLeadToDelete(null)}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all"
+              >
+                Annulla
+              </button>
+              <button 
+                onClick={() => handleDeleteLead(leadToDelete.data.id, leadToDelete.type)}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
+              >
+                Conferma ed Elimina
+              </button>
             </div>
           </div>
         </div>
@@ -960,8 +1156,54 @@ const ManageQuestionnaires = () => {
   const [loading, setLoading] = useState(true);
   const [selectedQuest, setSelectedQuest] = useState<Questionnaire | null>(null);
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
+  const [questToDelete, setQuestToDelete] = useState<Questionnaire | null>(null);
+
+  const [archivedQuestIds, setArchivedQuestIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('archived_quest_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+
+  useEffect(() => {
+    localStorage.setItem('archived_quest_ids', JSON.stringify(archivedQuestIds));
+  }, [archivedQuestIds]);
+
+  const handleToggleArchiveQuest = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (archivedQuestIds.includes(id)) {
+      setArchivedQuestIds(prev => prev.filter(item => item !== id));
+    } else {
+      setArchivedQuestIds(prev => [...prev, id]);
+    }
+    if (selectedQuest?.id === id) {
+      setSelectedQuest(null);
+    }
+  };
 
   const logoBase64 = logoBase64String;
+
+  const handleDeleteQuest = async (id: string) => {
+    setQuestionnaires(prev => prev.filter(q => q.id !== id));
+    setArchivedQuestIds(prev => prev.filter(item => item !== id));
+    if (selectedQuest?.id === id) {
+      setSelectedQuest(null);
+    }
+    setQuestToDelete(null);
+
+    const { error } = await supabase
+      .from('questionnaires')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Errore eliminazione questionario:", error);
+      fetchQuestionnaires();
+    }
+  };
 
   // States for dynamic quote formulator
   const [pricingQuote, setPricingQuote] = useState<{
@@ -1148,7 +1390,7 @@ const ManageQuestionnaires = () => {
                               {hasDisc ? (
                                 <>
                                   <span className="relative inline-block text-gray-400 px-0.5">
-                                    <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                                    <span className="absolute left-0 right-0 top-[55%] h-[1px] bg-gray-400" />
                                     € {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                                   </span>
                                   <span className="text-[#C13C8D] font-bold">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
@@ -1181,7 +1423,7 @@ const ManageQuestionnaires = () => {
                       {hasDisc ? (
                         <>
                           <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
-                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            <span className="absolute left-0 right-0 top-[55%] h-[1px] bg-gray-400" />
                             € {app.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                           </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
@@ -1208,7 +1450,7 @@ const ManageQuestionnaires = () => {
                       {hasDisc ? (
                         <>
                           <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
-                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            <span className="absolute left-0 right-0 top-[55%] h-[1px] bg-gray-400" />
                             € {del.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                           </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
@@ -1235,7 +1477,7 @@ const ManageQuestionnaires = () => {
                       {hasDisc ? (
                         <>
                           <span className="relative inline-block text-gray-400 text-[10px] font-normal px-0.5">
-                            <span className="absolute left-0 right-0 top-[50%] h-[1px] bg-gray-400 -translate-y-1/2" />
+                            <span className="absolute left-0 right-0 top-[55%] h-[1px] bg-gray-400" />
                             € {item.price.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                           </span>
                           <span className="text-[#C13C8D]">€ {netItem.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
@@ -1872,13 +2114,40 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
       )}
 
       <div className="rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 bg-white border border-gray-100 shadow-sm">
-        <h2 className="text-xl md:text-2xl font-black text-gray-950 mb-8 flex items-center gap-3">
-          <ClipboardList size={28} className="text-primary" />
-          <span>Questionari Attivi ({questionnaires.filter(q => !q.is_deleted).length})</span>
-        </h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+          <div className="flex items-center gap-3">
+            <ClipboardList size={28} className="text-primary animate-pulse" />
+            <h2 className="text-xl md:text-2xl font-black text-gray-900">
+              {activeTab === 'active' ? 'Questionari Attivi' : 'Questionari Archiviati'}
+            </h2>
+          </div>
+          
+          <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full md:w-auto">
+            <button 
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === 'active' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Attivi ({questionnaires.filter(q => !archivedQuestIds.includes(q.id)).length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('archived')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                activeTab === 'archived' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Archiviati ({questionnaires.filter(q => archivedQuestIds.includes(q.id)).length})
+            </button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {questionnaires.filter(q => !q.is_deleted).map(quest => (
+          {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => (
             <div 
               key={quest.id}
               onClick={() => setSelectedQuest(quest)}
@@ -1925,7 +2194,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
-                <div className="flex flex-wrap gap-1 max-w-[70%]">
+                <div className="flex flex-wrap gap-1 max-w-[50%]">
                   {quest.keywords?.slice(0, 3).map(k => (
                     <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
                   ))}
@@ -1940,7 +2209,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     title="Formula Preventivo"
                   >
                     <Sparkles size={11} />
-                    <span>Formula preventivo</span>
+                    <span className="hidden xl:inline">preventivo</span>
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
@@ -1961,14 +2230,32 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                       <FileText size={16} />
                     )}
                   </button>
+                  <button 
+                    onClick={(e) => handleToggleArchiveQuest(e, quest.id)}
+                    className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                      archivedQuestIds.includes(quest.id)
+                        ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                        : 'text-gray-400 hover:text-primary'
+                    }`}
+                    title={archivedQuestIds.includes(quest.id) ? "Ripristina nei Questionari Attivi" : "Archivia Questionario"}
+                  >
+                    <Archive size={16} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setQuestToDelete(quest); }}
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full hover:bg-red-50"
+                    title="Elimina Questionario"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
             </div>
           ))}
 
-          {questionnaires.filter(q => !q.is_deleted).length === 0 && !loading && (
+          {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).length === 0 && !loading && (
             <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
-              Nessun questionario di brand identity ricevuto
+              {activeTab === 'active' ? 'Nessun questionario di brand identity attivo' : 'Nessun questionario di brand identity archiviato'}
             </div>
           )}
         </div>
@@ -2000,12 +2287,32 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                   onClick={() => handleUpdate(selectedQuest, { is_read: !selectedQuest.is_read })}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
                     selectedQuest.is_read 
-                      ? 'bg-gray-100 text-gray-500 border-gray-200' 
-                      : 'bg-green-50 text-green-600 border-green-100'
+                      ? 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200' 
+                      : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
                   }`}
                 >
                   <Flag size={12} fill={selectedQuest.is_read ? "none" : "currentColor"} />
                   {selectedQuest.is_read ? 'Segna come non letto' : 'Segna come letto'}
+                </button>
+                <button 
+                  onClick={(e) => handleToggleArchiveQuest(e, selectedQuest.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
+                    archivedQuestIds.includes(selectedQuest.id)
+                      ? 'bg-green-50 text-green-700 border-green-100 hover:bg-green-100'
+                      : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200 hover:text-primary'
+                  }`}
+                  title={archivedQuestIds.includes(selectedQuest.id) ? "Ripristina" : "Archivia"}
+                >
+                  <Archive size={12} />
+                  <span>{archivedQuestIds.includes(selectedQuest.id) ? 'Ripristina' : 'Archivia'}</span>
+                </button>
+                <button 
+                  onClick={() => { setQuestToDelete(selectedQuest); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-black uppercase tracking-wider border border-red-100 transition-all"
+                  title="Elimina Questionario"
+                >
+                  <Trash2 size={12} />
+                  <span>Elimina</span>
                 </button>
                 <button 
                   onClick={() => setSelectedQuest(null)}
@@ -2969,6 +3276,45 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
             ) : (
               renderQuoteTemplate(pdfActiveQuote, true)
             )}
+          </div>
+        </div>
+      )}
+
+      {questToDelete && (
+        <div 
+          className="fixed inset-0 z-[310] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setQuestToDelete(null)}
+        >
+          <div 
+            className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-6 md:p-8 flex flex-col overflow-hidden animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex gap-4 items-start mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 font-sans mt-1">Sei sicuro?</h3>
+                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                  Stai per eliminare questo questionario. Questa operazione non può essere annullata.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setQuestToDelete(null)}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all"
+              >
+                Annulla
+              </button>
+              <button 
+                onClick={() => handleDeleteQuest(questToDelete.id)}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
+              >
+                Conferma ed Elimina
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Feedback } from '../types';
-import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X } from 'lucide-react';
+import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X, Archive } from 'lucide-react';
 
 const ManageFeedbacks: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
@@ -10,6 +10,32 @@ const ManageFeedbacks: React.FC = () => {
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [feedbackToDelete, setFeedbackToDelete] = useState<string | null>(null);
+
+  const [archivedFeedbackIds, setArchivedFeedbackIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('archived_feedback_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+
+  useEffect(() => {
+    localStorage.setItem('archived_feedback_ids', JSON.stringify(archivedFeedbackIds));
+  }, [archivedFeedbackIds]);
+
+  const handleToggleArchive = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (archivedFeedbackIds.includes(id)) {
+      setArchivedFeedbackIds(prev => prev.filter(item => item !== id));
+    } else {
+      setArchivedFeedbackIds(prev => [...prev, id]);
+    }
+    if (selectedFeedback?.id === id) {
+      setSelectedFeedback(null);
+    }
+  };
 
   useEffect(() => {
     fetchFeedbacks();
@@ -86,6 +112,7 @@ const ManageFeedbacks: React.FC = () => {
       if (error) throw error;
       
       setFeedbacks(prev => prev.filter(f => f.id !== feedbackToDelete));
+      setArchivedFeedbackIds(prev => prev.filter(id => id !== feedbackToDelete));
       if (selectedFeedback && selectedFeedback.id === feedbackToDelete) {
         setSelectedFeedback(null);
       }
@@ -151,20 +178,47 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
       )}
 
       <div className="rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 bg-white border border-gray-100 shadow-sm">
-        <h2 className="text-xl md:text-2xl font-black text-gray-950 mb-8 flex items-center gap-3">
-          <MessageSquare size={28} className="text-primary" />
-          <span>Tutti i Feedback ricevuti ({feedbacks.filter(f => !f.is_deleted).length})</span>
-        </h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 pb-6 font-sans">
+          <div className="flex items-center gap-3">
+            <MessageSquare size={28} className="text-primary animate-pulse" />
+            <h2 className="text-xl md:text-2xl font-black text-gray-950">
+              {activeTab === 'active' ? 'Feedback Attivi' : 'Feedback Archiviati'}
+            </h2>
+          </div>
+          
+          <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+            <button 
+              onClick={() => setActiveTab('active')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                activeTab === 'active' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Attivi ({feedbacks.filter(f => !archivedFeedbackIds.includes(f.id)).length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('archived')}
+              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                activeTab === 'archived' 
+                  ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Archiviati ({feedbacks.filter(f => archivedFeedbackIds.includes(f.id)).length})
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <div className="py-20 text-center font-bold text-gray-400">Caricamento feedback...</div>
-        ) : feedbacks.filter(f => !f.is_deleted).length === 0 ? (
-          <div className="py-20 text-center text-gray-400 font-medium">
-            Nessun feedback inviato finora.
+        ) : (activeTab === 'active' ? feedbacks.filter(f => !archivedFeedbackIds.includes(f.id)) : feedbacks.filter(f => archivedFeedbackIds.includes(f.id))).length === 0 ? (
+          <div className="py-20 text-center text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
+            {activeTab === 'active' ? 'Nessun feedback attivo.' : 'Nessun feedback archiviato.'}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {feedbacks.filter(f => !f.is_deleted).map((fb) => (
+            {(activeTab === 'active' ? feedbacks.filter(f => !archivedFeedbackIds.includes(f.id)) : feedbacks.filter(f => archivedFeedbackIds.includes(f.id))).map((fb) => (
               <div 
                 key={fb.id}
                 onClick={() => setSelectedFeedback(fb)}
@@ -172,7 +226,7 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 col-span-1">
                       <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
                         <MessageSquare size={22} />
                       </div>
@@ -207,6 +261,18 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
                     </div>
 
                     <div className="flex gap-1">
+                      <button 
+                        type="button"
+                        onClick={(e) => handleToggleArchive(e, fb.id)}
+                        className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                          archivedFeedbackIds.includes(fb.id) 
+                            ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
+                            : 'text-gray-400 hover:text-primary'
+                        }`}
+                        title={archivedFeedbackIds.includes(fb.id) ? "Ripristina nei Feedback Attivi" : "Archivia Feedback"}
+                      >
+                        <Archive size={16} />
+                      </button>
                       <button 
                         type="button"
                         onClick={(e) => handleDeleteClick(e, fb.id)}
@@ -343,6 +409,18 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
                     }`}
                   >
                     {selectedFeedback.is_approved ? 'Ritira Approvazione' : 'Approva e Pubblica'}
+                  </button>
+
+                   <button
+                    onClick={(e) => handleToggleArchive(e, selectedFeedback.id)}
+                    className={`p-2 rounded-xl transition-all border ${
+                      archivedFeedbackIds.includes(selectedFeedback.id)
+                        ? 'bg-green-50 text-green-700 hover:bg-green-100 border-green-100'
+                        : 'bg-gray-55 text-gray-500 hover:bg-gray-100 border-gray-100 hover:text-primary'
+                    }`}
+                    title={archivedFeedbackIds.includes(selectedFeedback.id) ? "Ripristina Feedback" : "Archivia Feedback"}
+                  >
+                    <Archive size={16} />
                   </button>
 
                   <button
