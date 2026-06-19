@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Francesca Mutolo | Graphic & AI Product Designer</title>
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU&sz=w128">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C13C8D',
+                        secondary: '#F39637',
+                        brandDark: '#1a1a1a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        .bg-gradient-brand {
+            background: linear-gradient(135deg, #C13C8D 0%, #F39637 100%);
+        }
+        .text-gradient-brand {
+            background: linear-gradient(135deg, #C13C8D 0%, #F39637 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .chat-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>
