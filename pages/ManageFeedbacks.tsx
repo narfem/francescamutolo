@@ -23,7 +23,7 @@ const ManageFeedbacks: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/valutazione-servizio`;
+    const link = `${window.location.origin}/#/valutazione-servizio`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -197,7 +197,7 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
             <span>{copied ? 'Copiato!' : 'Copia Link Modulo'}</span>
           </button>
           <a
-            href="/valutazione-servizio"
+            href="/#/valutazione-servizio"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs uppercase tracking-wider transition-all"

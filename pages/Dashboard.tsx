@@ -127,6 +127,14 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/sistema-contatti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/sistema-contatti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Globe size={18} /> Sistema Contatti
         </Link>
+        <a 
+          href="/#/valutazione-servizio" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-emerald-450 font-bold border border-emerald-500/10"
+        >
+          <Star size={18} className="text-emerald-400" /> Modulo Valutazione
+        </a>
         
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
@@ -242,6 +250,18 @@ const DashboardHome = () => (
         <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
       </Link>
+      <a 
+        href="/#/valutazione-servizio" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-teal-500/15 hover:border-teal-500/25 hover:shadow-md transition-all group"
+      >
+        <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-teal-600">
+          <Star size={24} className="text-teal-500 fill-teal-500" />
+        </div>
+        <p className="text-teal-600 text-sm font-bold">Modulo Pubblico</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Valutazione Servizio ↗</p>
+      </a>
     </div>
   </div>
 );
