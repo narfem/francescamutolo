@@ -7,6 +7,8 @@ const Hero: React.FC = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isCVOpen, setIsCVOpen] = useState(false);
   const [cvUrl, setCvUrl] = useState('');
+  const [showAIButton, setShowAIButton] = useState(true);
+  const [showCVButton, setShowCVButton] = useState(true);
   
   // URL ottimizzato per Google Drive (Thumbnail bypassa meglio i blocchi CORS e Referrer)
   const imageId = "1NkHD9_y1_YPJjlNIuzIuNR93Iw0GnbD0";
@@ -14,12 +16,44 @@ const Hero: React.FC = () => {
   
   useEffect(() => {
     fetchCV();
+    fetchAIButtonVisibility();
+    fetchCVButtonVisibility();
   }, []);
 
   const fetchCV = async () => {
     const { data, error } = await supabase.from('settings').select('cv_url').eq('id', 'global').single();
     if (!error && data) {
       setCvUrl(data.cv_url || '');
+    }
+  };
+
+  const fetchAIButtonVisibility = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('cv_url')
+        .eq('id', 'ai_button_visibility')
+        .maybeSingle();
+      if (!error && data) {
+        setShowAIButton(data.cv_url !== 'false');
+      }
+    } catch (e) {
+      console.error("Fetch AI button visibility error:", e);
+    }
+  };
+
+  const fetchCVButtonVisibility = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('cv_url')
+        .eq('id', 'cv_button_visibility')
+        .maybeSingle();
+      if (!error && data) {
+        setShowCVButton(data.cv_url !== 'false');
+      }
+    } catch (e) {
+      console.error("Fetch CV button visibility error:", e);
     }
   };
 
@@ -115,21 +149,25 @@ const Hero: React.FC = () => {
                 <span>Guarda i lavori</span>
                 <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform text-[#F39637]" />
               </a>
-              <button 
-                onClick={() => setIsCVOpen(true)}
-                className="group px-6 md:px-10 py-3 md:py-5 bg-white text-slate-900 border border-slate-200 rounded-full font-bold hover:border-primary transition-all flex items-center space-x-3 text-sm md:text-base"
-              >
-                <span>Il mio CV</span>
-                <FileText size={18} className="text-primary group-hover:scale-110 transition-transform" />
-              </button>
+              {showCVButton && (
+                <button 
+                  onClick={() => setIsCVOpen(true)}
+                  className="group px-6 md:px-10 py-3 md:py-5 bg-white text-slate-900 border border-slate-200 rounded-full font-bold hover:border-primary transition-all flex items-center space-x-3 text-sm md:text-base"
+                >
+                  <span>Il mio CV</span>
+                  <FileText size={18} className="text-primary group-hover:scale-110 transition-transform" />
+                </button>
+              )}
               
-              <button 
-                onClick={() => setIsAIChatOpen(true)}
-                className="group px-6 md:px-10 py-3 md:py-5 bg-slate-900 text-white rounded-full font-bold hover:bg-black transition-all flex items-center space-x-3 text-sm md:text-base shadow-xl hover:shadow-primary/20"
-              >
-                <Sparkles size={18} className="text-secondary animate-pulse" />
-                <span>Chiedi alla mia AI personale</span>
-              </button>
+              {showAIButton && (
+                <button 
+                  onClick={() => setIsAIChatOpen(true)}
+                  className="group px-6 md:px-10 py-3 md:py-5 bg-slate-900 text-white rounded-full font-bold hover:bg-black transition-all flex items-center space-x-3 text-sm md:text-base shadow-xl hover:shadow-primary/20"
+                >
+                  <Sparkles size={18} className="text-secondary animate-pulse" />
+                  <span>Chiedi alla mia AI personale</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

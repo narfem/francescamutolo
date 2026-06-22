@@ -127,15 +127,7 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/sistema-contatti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/sistema-contatti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Globe size={18} /> Sistema Contatti
         </Link>
-        <a 
-          href="/#/valutazione-servizio" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-emerald-450 font-bold border border-emerald-500/10"
-        >
-          <Star size={18} className="text-emerald-400" /> Modulo Valutazione
-        </a>
-        
+
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
             onClick={handleSignOut} 
@@ -250,18 +242,6 @@ const DashboardHome = () => (
         <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
       </Link>
-      <a 
-        href="/#/valutazione-servizio" 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-teal-500/15 hover:border-teal-500/25 hover:shadow-md transition-all group"
-      >
-        <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-teal-600">
-          <Star size={24} className="text-teal-500 fill-teal-500" />
-        </div>
-        <p className="text-teal-600 text-sm font-bold">Modulo Pubblico</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Valutazione Servizio ↗</p>
-      </a>
     </div>
   </div>
 );
@@ -271,16 +251,25 @@ const ManageCV = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [showCVButton, setShowCVButton] = useState(true);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
-    fetchCV();
+    fetchData();
   }, []);
 
-  const fetchCV = async () => {
+  const fetchData = async () => {
     try {
+      // Fetch CV URL
       const { data, error } = await supabase.from('settings').select('cv_url').eq('id', 'global').maybeSingle();
       if (!error && data) {
         setCvUrl(data.cv_url || '');
+      }
+
+      // Fetch CV Button visibility
+      const { data: buttonData, error: buttonError } = await supabase.from('settings').select('cv_url').eq('id', 'cv_button_visibility').maybeSingle();
+      if (!buttonError && buttonData) {
+        setShowCVButton(buttonData.cv_url !== 'false');
       }
     } catch (e) {
       console.error("Fetch settings error:", e);
@@ -319,6 +308,32 @@ const ManageCV = () => {
       setStatus({ type: 'error', message: 'Errore critico: ' + err.message });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleCVButton = async () => {
+    setToggling(true);
+    setStatus(null);
+    const newValue = !showCVButton;
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          id: 'cv_button_visibility',
+          cv_url: newValue ? 'true' : 'false',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+      if (error) {
+        setStatus({ type: 'error', message: 'Errore durante la modifica della visibilità del pulsante: ' + error.message });
+      } else {
+        setShowCVButton(newValue);
+        setStatus({ type: 'success', message: `Visibilità del pulsante "Il mio CV" aggiornata! Ora è ${newValue ? 'visibile' : 'nascosto'}.` });
+      }
+    } catch (err: any) {
+      setStatus({ type: 'error', message: 'Errore critico durante il toggle: ' + err.message });
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -374,6 +389,42 @@ const ManageCV = () => {
           </button>
         </form>
       </div>
+
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-primary/10 text-primary rounded-2xl">
+              <FileText size={32} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Pulsante CV nella Home</h2>
+              <p className="text-gray-500 text-sm">Seleziona se mostrare o nascondere il pulsante "Il mio CV" nella sezione principale.</p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={handleToggleCVButton}
+              disabled={toggling}
+              type="button"
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showCVButton ? 'bg-[#F39637]' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  showCVButton ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between text-xs">
+          <span className="text-gray-400 font-bold uppercase tracking-wider">Stato attuale:</span>
+          <span className={`font-black p-2 rounded-lg ${showCVButton ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+            {showCVButton ? "VISIBILE" : "NASCOSTO"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -383,19 +434,28 @@ const ManageMutey = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [showAIButton, setShowAIButton] = useState(true);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
-    fetchRules();
+    fetchData();
   }, []);
 
-  const fetchRules = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase.from('settings').select('mutey_rules').eq('id', 'global').maybeSingle();
-      if (!error && data) {
-        setRules(data.mutey_rules || '');
+      // Fetch Rules
+      const { data: rulesData, error: rulesError } = await supabase.from('settings').select('mutey_rules').eq('id', 'global').maybeSingle();
+      if (!rulesError && rulesData) {
+        setRules(rulesData.mutey_rules || '');
+      }
+
+      // Fetch Button visibility
+      const { data: buttonData, error: buttonError } = await supabase.from('settings').select('cv_url').eq('id', 'ai_button_visibility').maybeSingle();
+      if (!buttonError && buttonData) {
+        setShowAIButton(buttonData.cv_url !== 'false');
       }
     } catch (e) {
-      console.error("Fetch rules error:", e);
+      console.error("Fetch data error:", e);
     }
     setLoading(false);
   };
@@ -423,6 +483,32 @@ const ManageMutey = () => {
       setStatus({ type: 'error', message: 'Errore critico: ' + err.message });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleAIButton = async () => {
+    setToggling(true);
+    setStatus(null);
+    const newValue = !showAIButton;
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          id: 'ai_button_visibility',
+          cv_url: newValue ? 'true' : 'false',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+      if (error) {
+        setStatus({ type: 'error', message: 'Errore durante la modifica della visibilità del pulsante: ' + error.message });
+      } else {
+        setShowAIButton(newValue);
+        setStatus({ type: 'success', message: `Visibilità del pulsante AI aggiornata! Ora è ${newValue ? 'visibile' : 'nascosto'}.` });
+      }
+    } catch (err: any) {
+      setStatus({ type: 'error', message: 'Errore critico durante il toggle: ' + err.message });
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -479,6 +565,42 @@ const ManageMutey = () => {
             {saving ? 'Salvataggio in corso...' : 'Aggiorna Regole Mutey'}
           </button>
         </form>
+      </div>
+
+      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 mt-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-primary/10 text-primary rounded-2xl">
+              <Sparkles size={32} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Pulsante AI nella Home</h2>
+              <p className="text-gray-500 text-sm">Seleziona se mostrare o nascondere il pulsante "Chiedi alla mia AI personale" nella sezione principale.</p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={handleToggleAIButton}
+              disabled={toggling}
+              type="button"
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                showAIButton ? 'bg-[#F39637]' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  showAIButton ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between text-xs">
+          <span className="text-gray-400 font-bold uppercase tracking-wider">Stato attuale:</span>
+          <span className={`font-black p-2 rounded-lg ${showAIButton ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+            {showAIButton ? "VISIBILE" : "NASCOSTO"}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -1183,6 +1305,89 @@ const ManageLeads = () => {
   );
 };
 
+const DEFAULT_QUESTIONS = {
+  step1: {
+    title: "1. Il tuo Brand / Attività",
+    company_name_label: "Come si chiama l'azienda o il brand?",
+    company_name_placeholder: "Nome ufficiale del brand",
+    name_meaning_label: "Qual è il significato del nome?",
+    name_meaning_placeholder: "Raccontami l'origine, l'ispirazione o la storia del nome...",
+    business_description_label: "Di cosa si occupa esattamente?",
+    business_description_placeholder: "Descrivi la missione del brand e il suo posizionamento generale...",
+    products_services_label: "Quali prodotti o servizi offre?",
+    products_services_placeholder: "Elenchi o descrizioni dei principali prodotti/servizi offerti...",
+    strength_point_label: "Qual è il suo principale punto di forza rispetto ai concorrenti?",
+    strength_point_placeholder: "Cosa vi rende unici o speciali?",
+    slogan_label: "Esiste uno slogan o payoff?",
+    slogan_placeholder: "Es: Just do it, Think different..."
+  },
+  step2: {
+    title: "2. Target Clienti",
+    target_customers_label: "Chi sono i clienti ideali?",
+    target_customers_placeholder: "Descrivi i tuoi clienti ideali (interessi, stile di vita, desideri)...",
+    age_range_label: "Fascia d'età prevalente?",
+    age_range_placeholder: "Es: 18-35 anni, adulti, famiglie, ragazzi...",
+    customer_type_label: "La clientela è principalmente composta da:",
+    customer_type_options: ["Privati", "Aziende", "Entrambi"],
+    market_scope_label: "Ambito del mercato di riferimento:",
+    market_scope_options: ["Locale", "Nazionale", "Internazionale"],
+    brand_perception_target_label: "Che percezione vuoi trasmettere ai tuoi clienti?",
+    brand_perception_target_placeholder: "Es: Fiducia, lusso, freschezza, innovazione, sicurezza..."
+  },
+  step3: {
+    title: "3. Posizionamento & Personalità",
+    keywords_label: "Seleziona le parole chiave che definiscono il tuo Brand (Seleziona max 4):",
+    keywords_options: ["Professionale", "Elegante", "Moderno", "Premium", "Minimal", "Innovativo", "Tecnologico", "Affidabile", "Creativo", "Artigianale", "Giovane", "Esclusivo"],
+    brand_perception_label: "Come vuoi che il cliente percepisca il tuo brand?",
+    brand_perception_placeholder: "In che modo vuoi posizionarti nella mente della clientela?",
+    brand_personified_label: "Se il brand fosse una persona, come sarebbe? (Facoltativo)",
+    brand_personified_placeholder: "Età, carattere, come si veste, come parla (es. raffinata e sicura, oppure sportiva ed estroversa)..."
+  },
+  step4: {
+    title: "4. Preferenze Estetiche",
+    palette_favorite_label: "Hai colori preferiti?",
+    palette_favorite_placeholder: "Es: Rosso ciliegia, nero grafite, oro satinato...",
+    palette_avoid_label: "Ci sono colori che vorresti evitare? (Perché?)",
+    palette_avoid_placeholder: "Es: Evitare il verde perché associato a un competitor specifico...",
+    logo_style_label: "Stile del logo preferito:",
+    logo_style_options: ["Minimal", "Elaborato", "Indifferente"],
+    logo_composition_label: "Composizione del logo:",
+    logo_composition_options: ["Simbolo + Testo", "Solo Testo", "Entrambi / Dipende"],
+    logos_liked_label: "Hai esempi di loghi che ti piacciono?",
+    logos_liked_placeholder: "Descrivili o cita marchi noti che ammiri...",
+    logos_disliked_label: "Hai esempi di loghi che NON ti piacciono?",
+    logos_disliked_placeholder: "Marchi o soluzioni stilistiche che preferiresti evitare..."
+  },
+  step5: {
+    title: "5. Analisi della Concorrenza",
+    competitors_label: "Chi sono i tuoi principali concorrenti?",
+    competitors_placeholder: "Nomi, siti web o riferimenti dei competitor diretti o indiretti...",
+    admired_companies_label: "Ci sono aziende del tuo settore che apprezzi particolarmente?",
+    admired_companies_placeholder: "Anche marchi non concorrenti, ma che hanno una comunicazione che trovi vincente...",
+    differentiation_strategy_label: "Strategia di differenziazione desiderata:",
+    differentiation_strategy_options: ["Distinguerci nettamente dai concorrenti", "Rimanere allineati nel linguaggio visivo del settore"]
+  },
+  step6: {
+    title: "6. Applicazioni e Utilizzo",
+    logo_applications_label: "Dove verrà utilizzato principalmente il logo? (Seleziona uno o più):",
+    logo_applications_options: ["Online", "Social", "Sito web", "Biglietti da visita", "Insegne", "Veicoli", "Abbigliamento", "Packaging"]
+  },
+  step7: {
+    title: "7. Consegna & Brand Manual",
+    deadline_label: "Entro quando serve il progetto?",
+    deadline_placeholder: "Es: Entro 2 settimane, entro un mese, nessuna fretta...",
+    extra_deliverables_label: "Insieme al logo, hai bisogno di (Seleziona uno o più):",
+    extra_deliverables_options: ["palette colori", "versioni monocromatiche", "logo orizzontale", "logo verticale", "favicon", "biglietto da visita", "carta intestata", "landing page", "grafica insegna", "flyer, locandina, menu o simili"]
+  },
+  step8: {
+    title: "Ultima Domanda Importante",
+    five_years_vision_label: "Se tra 5 anni il tuo brand avrà successo, quale immagine vorresti che le persone avessero in mente quando vedono il logo?",
+    five_years_vision_placeholder: "Scrivi qui la tua visione a lungo termine...",
+    notes_label: "Note aggiuntive (facoltativo)",
+    notes_placeholder: "Aggiungi eventualmente qualche pensiero, direttiva, idea..."
+  }
+};
+
 const ManageQuestionnaires = () => {
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1198,7 +1403,166 @@ const ManageQuestionnaires = () => {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'edit_questions'>('active');
+  const [questionsSchema, setQuestionsSchema] = useState<any>(null);
+  const [editorStep, setEditorStep] = useState(1);
+  const [savingQuestions, setSavingQuestions] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const fetchQuestionsSchema = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('mutey_rules')
+        .eq('id', 'questionnaire_questions')
+        .maybeSingle();
+      if (!error && data && data.mutey_rules) {
+        setQuestionsSchema(JSON.parse(data.mutey_rules));
+      } else {
+        setQuestionsSchema(DEFAULT_QUESTIONS);
+      }
+    } catch (e) {
+      console.error("Errore fetch domande custom:", e);
+      setQuestionsSchema(DEFAULT_QUESTIONS);
+    }
+  };
+
+  const handleSaveQuestions = async () => {
+    setSavingQuestions(true);
+    setSaveStatus(null);
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          id: 'questionnaire_questions',
+          mutey_rules: JSON.stringify(questionsSchema),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      if (error) {
+        setSaveStatus({ type: 'error', message: 'Errore durante il salvataggio: ' + error.message });
+      } else {
+        setSaveStatus({ type: 'success', message: 'Domande del questionario salvate con successo!' });
+        setTimeout(() => setSaveStatus(null), 4000);
+      }
+    } catch (err: any) {
+      setSaveStatus({ type: 'error', message: 'Errore nel salvataggio: ' + err.message });
+    } finally {
+      setSavingQuestions(false);
+    }
+  };
+
+  const handleFieldChange = (stepNum: number, field: string, value: string) => {
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${stepNum}`;
+      return {
+        ...prev,
+        [stepKey]: {
+          ...prev[stepKey],
+          [field]: value
+        }
+      };
+    });
+  };
+
+  const handleArrayFieldChange = (stepNum: number, field: string, commaString: string) => {
+    const arr = commaString.split(',').map(s => s.trim()).filter(Boolean);
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${stepNum}`;
+      return {
+        ...prev,
+        [stepKey]: {
+          ...prev[stepKey],
+          [field]: arr
+        }
+      };
+    });
+  };
+
+  const isFieldDeleted = (stepNum: number, field: string) => {
+    const stepKey = `step${stepNum}`;
+    const stepObj = questionsSchema?.[stepKey];
+    return stepObj?.deleted_fields?.includes(field) || false;
+  };
+
+  const toggleFieldDeletion = (stepNum: number, field: string) => {
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${stepNum}`;
+      const stepObj = prev[stepKey] || {};
+      const deletedList = stepObj.deleted_fields || [];
+      let nextDeleted;
+      if (deletedList.includes(field)) {
+        nextDeleted = deletedList.filter((f: string) => f !== field);
+      } else {
+        nextDeleted = [...deletedList, field];
+      }
+      return {
+        ...prev,
+        [stepKey]: {
+          ...stepObj,
+          deleted_fields: nextDeleted
+        }
+      };
+    });
+  };
+
+  const handleAddCustomQuestion = () => {
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${editorStep}`;
+      const stepObj = prev[stepKey] || {};
+      const customQs = stepObj.custom_questions || [];
+      const newId = `custom_${Date.now()}`;
+      const newQ = {
+        id: newId,
+        label: 'Nuova Domanda',
+        placeholder: 'Esempio di segnaposto...',
+        type: 'textarea'
+      };
+      return {
+        ...prev,
+        [stepKey]: {
+          ...stepObj,
+          custom_questions: [...customQs, newQ]
+        }
+      };
+    });
+  };
+
+  const handleCustomQuestionChange = (id: string, prop: 'label' | 'placeholder' | 'type', value: string) => {
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${editorStep}`;
+      const stepObj = prev[stepKey] || {};
+      const customQs = stepObj.custom_questions || [];
+      const updatedQs = customQs.map((cq: any) => {
+        if (cq.id === id) {
+          return { ...cq, [prop]: value };
+        }
+        return cq;
+      });
+      return {
+        ...prev,
+        [stepKey]: {
+          ...stepObj,
+          custom_questions: updatedQs
+        }
+      };
+    });
+  };
+
+  const handleDeleteCustomQuestion = (id: string) => {
+    setQuestionsSchema((prev: any) => {
+      const stepKey = `step${editorStep}`;
+      const stepObj = prev[stepKey] || {};
+      const customQs = stepObj.custom_questions || [];
+      const updatedQs = customQs.filter((cq: any) => cq.id !== id);
+      return {
+        ...prev,
+        [stepKey]: {
+          ...stepObj,
+          custom_questions: updatedQs
+        }
+      };
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem('archived_quest_ids', JSON.stringify(archivedQuestIds));
@@ -1955,7 +2319,10 @@ const ManageQuestionnaires = () => {
     setPdfActiveQuote(pricingQuote);
   };
 
-  useEffect(() => { fetchQuestionnaires(); }, []);
+  useEffect(() => { 
+    fetchQuestionnaires(); 
+    fetchQuestionsSchema();
+  }, []);
 
   const fetchQuestionnaires = async () => {
     try {
@@ -2146,18 +2513,22 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
       )}
 
       <div className="rounded-[2rem] md:rounded-[3rem] p-4 md:p-8 bg-white border border-gray-100 shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 pb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 pb-6 whitespace-nowrap">
           <div className="flex items-center gap-3">
             <ClipboardList size={28} className="text-primary animate-pulse" />
             <h2 className="text-xl md:text-2xl font-black text-gray-900">
-              {activeTab === 'active' ? 'Questionari Attivi' : 'Questionari Archiviati'}
+              {activeTab === 'active' 
+                ? 'Questionari Attivi' 
+                : activeTab === 'archived' 
+                  ? 'Questionari Archiviati' 
+                  : 'Personalizza Domande'}
             </h2>
           </div>
           
-          <div className="flex gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full md:w-auto">
+          <div className="flex flex-wrap gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100 w-full md:w-auto">
             <button 
               onClick={() => setActiveTab('active')}
-              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`flex-grow md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === 'active' 
                   ? 'bg-primary text-white shadow-md shadow-primary/20' 
                   : 'text-gray-500 hover:text-gray-800'
@@ -2167,7 +2538,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
             </button>
             <button 
               onClick={() => setActiveTab('archived')}
-              className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+              className={`flex-grow md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
                 activeTab === 'archived' 
                   ? 'bg-primary text-white shadow-md shadow-primary/20' 
                   : 'text-gray-500 hover:text-gray-800'
@@ -2175,122 +2546,539 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
             >
               Archiviati ({questionnaires.filter(q => archivedQuestIds.includes(q.id)).length})
             </button>
+            <button 
+              onClick={() => setActiveTab('edit_questions')}
+              className={`flex-grow md:flex-initial px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                activeTab === 'edit_questions' 
+                  ? 'bg-[#C13C8D] text-white shadow-md shadow-[#C13C8D]/20' 
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              <Sparkles size={13} fill="currentColor" />
+              Personalizza Domande
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => (
-            <div 
-              key={quest.id}
-              onClick={() => setSelectedQuest(quest)}
-              className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                      <ClipboardList size={22} />
+        {activeTab !== 'edit_questions' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => (
+              <div 
+                key={quest.id}
+                onClick={() => setSelectedQuest(quest)}
+                className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <ClipboardList size={22} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">{quest.company_name}</h3>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                          {new Date(quest.created_at).toLocaleDateString('it-IT')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">{quest.company_name}</h3>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                        {new Date(quest.created_at).toLocaleDateString('it-IT')}
-                      </p>
-                    </div>
+
+                    <button 
+                      onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
+                        quest.is_read 
+                          ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
+                          : 'bg-green-50 text-green-600 border-green-100/50'
+                      }`}
+                      title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
+                    >
+                      <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
+                      {quest.is_read ? 'Letto' : 'Nuovo'}
+                    </button>
                   </div>
 
-                  <button 
-                    onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
-                    className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
-                      quest.is_read 
-                        ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
-                        : 'bg-green-50 text-green-600 border-green-100/50'
-                    }`}
-                    title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
-                  >
-                    <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
-                    {quest.is_read ? 'Letto' : 'Nuovo'}
-                  </button>
+                  <div className="space-y-2 my-4">
+                    {quest.slogan && (
+                      <p className="text-xs italic text-gray-500 font-medium">"{quest.slogan}"</p>
+                    )}
+                    {quest.business_description && (
+                      <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium">
+                        {quest.business_description}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div className="space-y-2 my-4">
-                  {quest.slogan && (
-                    <p className="text-xs italic text-gray-500 font-medium">"{quest.slogan}"</p>
-                  )}
-                  {quest.business_description && (
-                    <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium">
-                      {quest.business_description}
-                    </p>
-                  )}
+                <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
+                  <div className="flex flex-wrap gap-1 max-w-[50%]">
+                    {quest.keywords?.slice(0, 3).map(k => (
+                      <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
+                    ))}
+                    {quest.keywords?.length > 3 && (
+                      <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleFormulaQuote(quest); }}
+                      className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
+                      title="Formula Preventivo"
+                    >
+                      <Sparkles size={11} />
+                      <span className="hidden xl:inline">preventivo</span>
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
+                      className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
+                      title="Scarica come TXT"
+                    >
+                      <Download size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDownloadQuestPdf(quest); }}
+                      className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                      title="Scarica come PDF"
+                      disabled={exportingPdf}
+                    >
+                      {exportingPdf && pdfActiveQuote?.questId === quest.id ? (
+                        <RefreshCw size={16} className="animate-spin text-primary" />
+                      ) : (
+                        <FileText size={16} />
+                      )}
+                    </button>
+                    <button 
+                      onClick={(e) => handleToggleArchiveQuest(e, quest.id)}
+                      className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                        archivedQuestIds.includes(quest.id)
+                          ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                          : 'text-gray-400 hover:text-primary'
+                      }`}
+                      title={archivedQuestIds.includes(quest.id) ? "Ripristina nei Questionari Attivi" : "Archivia Questionario"}
+                    >
+                      <Archive size={16} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setQuestToDelete(quest); }}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full hover:bg-red-50"
+                      title="Elimina Questionario"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
 
-              <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
-                <div className="flex flex-wrap gap-1 max-w-[50%]">
-                  {quest.keywords?.slice(0, 3).map(k => (
-                    <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
-                  ))}
-                  {quest.keywords?.length > 3 && (
-                    <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
-                  )}
+            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).length === 0 && !loading && (
+              <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
+                {activeTab === 'active' ? 'Nessun questionario di brand identity attivo' : 'Nessun questionario di brand identity archiviato'}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* QUESTION BUILDER EDITOR FORM (uguale al questionario stesso) */
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {/* Explanatory Banner */}
+            <div className="bg-gradient-to-r from-primary/5 to-[#F39637]/5 border border-primary/10 p-6 rounded-[2rem] mb-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <div className="p-3 bg-gradient-brand text-white rounded-2xl shrink-0">
+                  <Sparkles size={20} />
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleFormulaQuote(quest); }}
-                    className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
-                    title="Formula Preventivo"
+                <div>
+                  <h3 className="font-extrabold text-gray-900 text-base">Modifica Domande del Questionario</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">
+                    Gestisci le domande, segnaposto e opzioni del modulo di valutazione. Le modifiche appariranno immediatamente quando un cliente apre la pagina del questionario pubblico di Francesca Mutolo.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Step indicator */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mb-8">
+              {[
+                { num: 1, name: 'Attività', icon: Building },
+                { num: 2, name: 'Target', icon: Users },
+                { num: 3, name: 'Personalità', icon: Target },
+                { num: 4, name: 'Estetica', icon: Palette },
+                { num: 5, name: 'Concorrenza', icon: Shield },
+                { num: 6, name: 'Utilizzo', icon: Monitor },
+                { num: 7, name: 'Consegna', icon: FileText },
+                { num: 8, name: 'Visione', icon: Sparkles },
+              ].map((st) => {
+                const isActive = editorStep === st.num;
+                const StepIcon = st.icon;
+                return (
+                  <button
+                    key={st.num}
+                    type="button"
+                    onClick={() => setEditorStep(st.num)}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                      isActive
+                        ? 'bg-gradient-brand text-white border-transparent shadow-[0_4px_12px_rgba(193,60,141,0.15)]'
+                        : 'bg-white text-gray-500 border-gray-100 hover:text-gray-800 hover:border-gray-200'
+                    }`}
                   >
-                    <Sparkles size={11} />
-                    <span className="hidden xl:inline">preventivo</span>
+                    <StepIcon size={13} />
+                    <span className="hidden md:inline">{st.num}. {st.name}</span>
+                    <span className="md:hidden">{st.num}</span>
                   </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
-                    className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
-                    title="Scarica come TXT"
+                );
+              })}
+            </div>
+
+            {saveStatus && (
+              <div className={`p-4 rounded-xl text-xs font-bold border mb-6 animate-in fade-in duration-200 ${
+                saveStatus.type === 'success' 
+                  ? 'bg-green-50 text-green-600 border-green-100' 
+                  : 'bg-red-50 text-red-650 border-red-100'
+              }`}>
+                {saveStatus.message}
+              </div>
+            )}
+
+            {/* Editor card matching the look and feel of Questionnaire */}
+            <div className="bg-gray-50/50 rounded-2xl border border-gray-150 p-6 md:p-8 space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand"></div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-150 pb-4 gap-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Configurazione Campi dello Step {editorStep}</span>
+                  <h3 className="text-lg font-bold text-gray-900 mt-0.5">
+                    {questionsSchema ? questionsSchema[`step${editorStep}`]?.title : 'Caricamento...'}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm("Sei sicuro di voler ripristinare le domande al loro valore originale?")) {
+                        setQuestionsSchema(DEFAULT_QUESTIONS);
+                        setSaveStatus({ type: 'success', message: 'Ripristinate domande predefinite! Premi "Salva" per confermare.' });
+                        setTimeout(() => setSaveStatus(null), 4000);
+                      }
+                    }}
+                    className="px-3 py-1.5 border border-gray-200 hover:bg-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all text-gray-500"
                   >
-                    <Download size={16} />
+                    Default
                   </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleDownloadQuestPdf(quest); }}
-                    className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100 flex items-center justify-center"
-                    title="Scarica come PDF"
-                    disabled={exportingPdf}
+                  <button
+                    type="button"
+                    onClick={handleSaveQuestions}
+                    disabled={savingQuestions}
+                    className="px-4 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
                   >
-                    {exportingPdf && pdfActiveQuote?.questId === quest.id ? (
-                      <RefreshCw size={16} className="animate-spin text-primary" />
+                    {savingQuestions ? (
+                      <>
+                        <RefreshCw size={11} className="animate-spin" />
+                        Salva...
+                      </>
                     ) : (
-                      <FileText size={16} />
+                      <>
+                        Salva Modifiche
+                      </>
                     )}
                   </button>
-                  <button 
-                    onClick={(e) => handleToggleArchiveQuest(e, quest.id)}
-                    className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
-                      archivedQuestIds.includes(quest.id)
-                        ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                        : 'text-gray-400 hover:text-primary'
-                    }`}
-                    title={archivedQuestIds.includes(quest.id) ? "Ripristina nei Questionari Attivi" : "Archivia Questionario"}
-                  >
-                    <Archive size={16} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setQuestToDelete(quest); }}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full hover:bg-red-50"
-                    title="Elimina Questionario"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
 
-          {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).length === 0 && !loading && (
-            <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
-              {activeTab === 'active' ? 'Nessun questionario di brand identity attivo' : 'Nessun questionario di brand identity archiviato'}
+              {/* Dynamic Edit inputs */}
+              <div className="space-y-5">
+                {questionsSchema && [
+                  { step: 1, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'company_name_label', label: 'Domanda: Nome Azienda/Brand', type: 'text' },
+                    { field: 'company_name_placeholder', label: 'Segnaposto: Nome Azienda/Brand', type: 'text' },
+                    { field: 'name_meaning_label', label: 'Domanda: Significato del nome', type: 'text' },
+                    { field: 'name_meaning_placeholder', label: 'Segnaposto: Significato del nome', type: 'textarea' },
+                    { field: 'business_description_label', label: 'Domanda: Di cosa si occupa', type: 'text' },
+                    { field: 'business_description_placeholder', label: 'Segnaposto: Di cosa si occupa', type: 'textarea' },
+                    { field: 'products_services_label', label: 'Domanda: Prodotti o Servizi', type: 'text' },
+                    { field: 'products_services_placeholder', label: 'Segnaposto: Prodotti o Servizi', type: 'textarea' },
+                    { field: 'strength_point_label', label: 'Domanda: Punto di Forza principale', type: 'text' },
+                    { field: 'strength_point_placeholder', label: 'Segnaposto: Punto di Forza principale', type: 'textarea' },
+                    { field: 'slogan_label', label: 'Domanda: Slogan o payoff', type: 'text' },
+                    { field: 'slogan_placeholder', label: 'Segnaposto: Slogan o payoff', type: 'text' },
+                  ]},
+                  { step: 2, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'target_customers_label', label: 'Domanda: Clienti ideali', type: 'text' },
+                    { field: 'target_customers_placeholder', label: 'Segnaposto: Clienti ideali', type: 'textarea' },
+                    { field: 'age_range_label', label: 'Domanda: Fascia d\'età prevalente', type: 'text' },
+                    { field: 'age_range_placeholder', label: 'Segnaposto: Fascia d\'età prevalente', type: 'text' },
+                    { field: 'customer_type_label', label: 'Domanda: Composizione clientela', type: 'text' },
+                    { field: 'customer_type_options', label: 'Opzioni: Composizione clientela (separate da virgola)', type: 'array' },
+                    { field: 'market_scope_label', label: 'Domanda: Ambito del mercato di riferimento', type: 'text' },
+                    { field: 'market_scope_options', label: 'Opzioni: Ambito del mercato di riferimento (separate da virgola)', type: 'array' },
+                    { field: 'brand_perception_target_label', label: 'Domanda: Percezione desiderata', type: 'text' },
+                    { field: 'brand_perception_target_placeholder', label: 'Segnaposto: Percezione desiderata', type: 'textarea' },
+                  ]},
+                  { step: 3, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'keywords_label', label: 'Domanda: Selezione parole chiave', type: 'text' },
+                    { field: 'keywords_options', label: 'Opzioni: Selezione parole chiave (separate da virgola)', type: 'array' },
+                    { field: 'brand_perception_label', label: 'Domanda: Percezione brand desiderata', type: 'text' },
+                    { field: 'brand_perception_placeholder', label: 'Segnaposto: Percezione brand desiderata', type: 'textarea' },
+                    { field: 'brand_personified_label', label: 'Domanda: Se il brand fosse una persona', type: 'text' },
+                    { field: 'brand_personified_placeholder', label: 'Segnaposto: Se il brand fosse una persona', type: 'textarea' },
+                  ]},
+                  { step: 4, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'palette_favorite_label', label: 'Domanda: Colori preferiti', type: 'text' },
+                    { field: 'palette_favorite_placeholder', label: 'Segnaposto: Colori preferiti', type: 'text' },
+                    { field: 'palette_avoid_label', label: 'Domanda: Colori da evitare', type: 'text' },
+                    { field: 'palette_avoid_placeholder', label: 'Segnaposto: Colori da evitare', type: 'textarea' },
+                    { field: 'logo_style_label', label: 'Domanda: Stile del logo preferito', type: 'text' },
+                    { field: 'logo_style_options', label: 'Opzioni: Stile del logo preferito (separate da virgola)', type: 'array' },
+                    { field: 'logo_composition_label', label: 'Domanda: Composizione del logo', type: 'text' },
+                    { field: 'logo_composition_options', label: 'Opzioni: Composizione del logo (separate da virgola)', type: 'array' },
+                    { field: 'logos_liked_label', label: 'Domanda: Esempi di loghi graditi', type: 'text' },
+                    { field: 'logos_liked_placeholder', label: 'Segnaposto: Esempi di loghi graditi', type: 'textarea' },
+                    { field: 'logos_disliked_label', label: 'Domanda: Esempi di loghi sgraditi', type: 'text' },
+                    { field: 'logos_disliked_placeholder', label: 'Segnaposto: Esempi di loghi sgraditi', type: 'textarea' },
+                  ]},
+                  { step: 5, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'competitors_label', label: 'Domanda: Principali concorrenti', type: 'text' },
+                    { field: 'competitors_placeholder', label: 'Segnaposto: Principali concorrenti', type: 'textarea' },
+                    { field: 'admired_companies_label', label: 'Domanda: Aziende apprezzate', type: 'text' },
+                    { field: 'admired_companies_placeholder', label: 'Segnaposto: Aziende apprezzate', type: 'textarea' },
+                    { field: 'differentiation_strategy_label', label: 'Domanda: Strategia di differenziazione desiderata', type: 'text' },
+                    { field: 'differentiation_strategy_options', label: 'Opzioni: Strategia di differenziazione desiderata (separate da virgola)', type: 'array' },
+                  ]},
+                  { step: 6, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'logo_applications_label', label: 'Domanda: Utilizzo principale del logo', type: 'text' },
+                    { field: 'logo_applications_options', label: 'Opzioni: Utilizzo principale del logo (separate da virgola)', type: 'array' },
+                  ]},
+                  { step: 7, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'deadline_label', label: 'Domanda: Entro quando serve il progetto', type: 'text' },
+                    { field: 'deadline_placeholder', label: 'Segnaposto: Entro quando serve il progetto', type: 'text' },
+                    { field: 'extra_deliverables_label', label: 'Domanda: Elementi aggiuntivi richiesti', type: 'text' },
+                    { field: 'extra_deliverables_options', label: 'Opzioni: Elementi aggiuntivi richiesti (separate da virgola)', type: 'array' },
+                  ]},
+                  { step: 8, fields: [
+                    { field: 'title', label: 'Titolo dello step', type: 'text' },
+                    { field: 'five_years_vision_label', label: 'Domanda: Visione a 5 anni', type: 'text' },
+                    { field: 'five_years_vision_placeholder', label: 'Segnaposto: Visione a 5 anni', type: 'textarea' },
+                    { field: 'notes_label', label: 'Domanda: Note aggiuntive', type: 'text' },
+                    { field: 'notes_placeholder', label: 'Segnaposto: Note aggiuntive', type: 'textarea' },
+                  ]}
+                ].find(item => item.step === editorStep)?.fields.map((f) => {
+                  const stepKey = `step${editorStep}`;
+                  const val = questionsSchema[stepKey]?.[f.field];
+
+                  const fieldBaseName = f.field.replace('_label', '').replace('_placeholder', '').replace('_options', '');
+                  const deleted = isFieldDeleted(editorStep, fieldBaseName);
+                  const canDelete = f.field !== 'title' && !f.field.startsWith('company_name');
+
+                  return (
+                    <div 
+                      key={f.field} 
+                      className={`p-4 rounded-xl border transition-all ${
+                        deleted 
+                          ? 'bg-red-50/20 border-red-200 opacity-80' 
+                          : 'bg-white border-gray-150'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-2 gap-3">
+                        <div className="flex items-center gap-2">
+                          <label className={`block text-xs font-black uppercase tracking-wider ${
+                            f.type === 'array' ? 'text-[#C13C8D]' : 'text-gray-400'
+                          }`}>
+                            {f.label}
+                          </label>
+                          {deleted && (
+                            <span className="px-1.5 py-0.5 bg-red-100 text-red-750 text-[8px] font-black uppercase rounded">
+                              Nascosta nel Form
+                            </span>
+                          )}
+                        </div>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => toggleFieldDeletion(editorStep, fieldBaseName)}
+                            className={`text-[10px] font-bold px-2 py-1 rounded transition-all shrink-0 ${
+                              deleted 
+                                ? 'bg-green-50 hover:bg-green-100 text-green-755 border border-green-200' 
+                                : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-100'
+                            }`}
+                          >
+                            {deleted ? 'Mostra / Ripristina' : 'Nascondi / Elimina'}
+                          </button>
+                        )}
+                      </div>
+
+                      {f.type === 'array' ? (
+                        <>
+                          <input
+                            type="text"
+                            value={Array.isArray(val) ? val.join(', ') : ''}
+                            onChange={(e) => handleArrayFieldChange(editorStep, f.field, e.target.value)}
+                            disabled={deleted}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white transition-all text-xs font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-400"
+                          />
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {Array.isArray(val) && val.map((itemValue, i) => (
+                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-650 text-[9px] font-bold rounded-md">
+                                {itemValue}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      ) : f.type === 'textarea' ? (
+                        <textarea
+                          rows={2}
+                          value={val || ''}
+                          onChange={(e) => handleFieldChange(editorStep, f.field, e.target.value)}
+                          disabled={deleted}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white resize-none transition-all text-xs font-semibold text-gray-800 disabled:bg-gray-50/50 disabled:text-gray-400"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={val || ''}
+                          onChange={(e) => handleFieldChange(editorStep, f.field, e.target.value)}
+                          disabled={deleted}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white transition-all text-xs font-semibold text-gray-700 disabled:bg-gray-50/50 disabled:text-gray-400"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DOMANDE PERSONALIZZATE AGGIUNTIVE */}
+              {questionsSchema && (
+                <div className="mt-8 pt-6 border-t border-gray-250 space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-primary" /> Domande Personalizzate Aggiuntive
+                      </h4>
+                      <p className="text-[11px] text-gray-400 font-medium">Aggiungi nuove domande dinamiche per questo specifico step.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddCustomQuestion}
+                      className="px-3.5 py-1.5 bg-white hover:bg-gray-50 text-[#C13C8D] hover:text-[#a03075] text-[10px] font-black uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5 border border-gray-250 shadow-sm"
+                    >
+                      <Plus size={12} /> Aggiungi Domanda
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {(questionsSchema[`step${editorStep}`]?.custom_questions || []).length === 0 ? (
+                      <div className="text-center py-6 border border-dashed border-gray-250 rounded-xl bg-gray-50/30">
+                        <p className="text-[11px] text-gray-400 font-bold">Nessuna domanda personalizzata aggiuntiva per questo step.</p>
+                      </div>
+                    ) : (
+                      (questionsSchema[`step${editorStep}`]?.custom_questions || []).map((cq: any, idx: number) => (
+                        <div key={cq.id} className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm space-y-3">
+                          <div className="flex justify-between items-center pb-2 border-b border-gray-150">
+                            <span className="text-[10px] font-semibold text-primary/70 uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-md">Domanda Dinamica #{idx+1}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Sei sicuro di voler eliminare questa domanda personalizzata?")) {
+                                  handleDeleteCustomQuestion(cq.id);
+                                }
+                              }}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-all border border-transparent hover:border-red-100"
+                              title="Elimina questa domanda"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5 text-left">
+                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider">Testo della Domanda / Etichetta</label>
+                              <input
+                                type="text"
+                                value={cq.label || ''}
+                                onChange={(e) => handleCustomQuestionChange(cq.id, 'label', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white text-xs font-semibold text-gray-800"
+                              />
+                            </div>
+                            <div className="space-y-1.5 text-left">
+                              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider">Segnaposto (Placeholder)</label>
+                              <input
+                                type="text"
+                                value={cq.placeholder || ''}
+                                onChange={(e) => handleCustomQuestionChange(cq.id, 'placeholder', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white text-xs font-semibold text-gray-800"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 text-left w-full max-w-xs">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider">Tipo Risposta</label>
+                            <div className="flex gap-2">
+                              {[
+                                { label: 'Testo Breve', value: 'text' },
+                                { label: 'Testo Esteso (Multiriga)', value: 'textarea' }
+                              ].map((opt) => {
+                                const isSel = cq.type === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => handleCustomQuestionChange(cq.id, 'type', opt.value)}
+                                    className={`px-3 py-1.5 border text-xs font-bold rounded-lg transition-all ${
+                                      isSel 
+                                        ? 'border-primary bg-primary/5 text-primary' 
+                                        : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Controls inside editor */}
+              <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-150">
+                {editorStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setEditorStep(prev => prev - 1)}
+                    className="flex items-center justify-center bg-white h-10 px-5 text-xs font-black uppercase tracking-wider text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-all"
+                  >
+                    Indietro
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {editorStep < 8 ? (
+                  <button
+                    type="button"
+                    onClick={() => setEditorStep(prev => prev + 1)}
+                    className="flex items-center justify-center bg-gray-900 hover:bg-gray-850 text-white h-10 px-5 text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm"
+                  >
+                    Continua
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSaveQuestions}
+                    disabled={savingQuestions}
+                    className="flex items-center justify-center bg-gradient-brand text-white h-10 px-5 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-95 transition-all shadow-sm disabled:opacity-50"
+                  >
+                    {savingQuestions ? 'Salvataggio...' : 'Salva Domande'}
+                  </button>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {selectedQuest && (

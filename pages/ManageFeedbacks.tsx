@@ -171,43 +171,6 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
         </button>
       </div>
 
-      {/* Sezione di condivisione link feedback */}
-      <div className="bg-gradient-to-br from-brandDark to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex px-3 py-1 bg-white/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider">
-            Consigliato a Fine Lavoro
-          </div>
-          <h2 className="text-xl md:text-2xl font-black tracking-tight text-white">
-            Modulo Valutazione Servizio Cliente
-          </h2>
-          <p className="text-xs md:text-sm text-gray-300 leading-relaxed font-semibold">
-            Invia questo link riservato al cliente una volta completato il progetto. Compilando il modulo interattivo, il cliente potrà recensire la qualità del lavoro, la comunicazione e lasciare un testimonial che riceverai direttamente in questa dashboard.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 font-extrabold">
-          <button
-            onClick={handleCopyLink}
-            className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-300 ${
-              copied 
-                ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
-                : 'bg-primary text-white hover:opacity-95 shadow-lg shadow-primary/25'
-            }`}
-          >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copied ? 'Copiato!' : 'Copia Link Modulo'}</span>
-          </button>
-          <a
-            href="/#/valutazione-servizio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white border border-white/15 rounded-xl text-xs uppercase tracking-wider transition-all"
-          >
-            <ExternalLink size={14} />
-            <span>Anteprima</span>
-          </a>
-        </div>
-      </div>
-
       {errorInfo && (
         <div className="bg-orange-50 text-orange-800 border border-orange-100 p-6 rounded-2xl text-sm max-w-4xl">
           <div className="flex gap-3 mb-2">

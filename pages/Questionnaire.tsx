@@ -6,14 +6,168 @@ import {
   Building, Users, Target, Palette, Shield, Monitor, FileText 
 } from 'lucide-react';
 
+const DEFAULT_QUESTIONS = {
+  step1: {
+    title: "1. Il tuo Brand / Attività",
+    company_name_label: "Come si chiama l'azienda o il brand?",
+    company_name_placeholder: "Nome ufficiale del brand",
+    name_meaning_label: "Qual è il significato del nome?",
+    name_meaning_placeholder: "Raccontami l'origine, l'ispirazione o la storia del nome...",
+    business_description_label: "Di cosa si occupa esattamente?",
+    business_description_placeholder: "Descrivi la missione del brand e il suo posizionamento generale...",
+    products_services_label: "Quali prodotti o servizi offre?",
+    products_services_placeholder: "Elenchi o descrizioni dei principali prodotti/servizi offerti...",
+    strength_point_label: "Qual è il suo principale punto di forza rispetto ai concorrenti?",
+    strength_point_placeholder: "Cosa vi rende unici o speciali?",
+    slogan_label: "Esiste uno slogan o payoff?",
+    slogan_placeholder: "Es: Just do it, Think different..."
+  },
+  step2: {
+    title: "2. Target Clienti",
+    target_customers_label: "Chi sono i clienti ideali?",
+    target_customers_placeholder: "Descrivi i tuoi clienti ideali (interessi, stile di vita, desideri)...",
+    age_range_label: "Fascia d'età prevalente?",
+    age_range_placeholder: "Es: 18-35 anni, adulti, famiglie, ragazzi...",
+    customer_type_label: "La clientela è principalmente composta da:",
+    customer_type_options: ["Privati", "Aziende", "Entrambi"],
+    market_scope_label: "Ambito del mercato di riferimento:",
+    market_scope_options: ["Locale", "Nazionale", "Internazionale"],
+    brand_perception_target_label: "Che percezione vuoi trasmettere ai tuoi clienti?",
+    brand_perception_target_placeholder: "Es: Fiducia, lusso, freschezza, innovazione, sicurezza..."
+  },
+  step3: {
+    title: "3. Posizionamento & Personalità",
+    keywords_label: "Seleziona le parole chiave che definiscono il tuo Brand (Seleziona max 4):",
+    keywords_options: ["Professionale", "Elegante", "Moderno", "Premium", "Minimal", "Innovativo", "Tecnologico", "Affidabile", "Creativo", "Artigianale", "Giovane", "Esclusivo"],
+    brand_perception_label: "Come vuoi che il cliente percepisca il tuo brand?",
+    brand_perception_placeholder: "In che modo vuoi posizionarti nella mente della clientela?",
+    brand_personified_label: "Se il brand fosse una persona, come sarebbe? (Facoltativo)",
+    brand_personified_placeholder: "Età, carattere, come si veste, come parla (es. raffinata e sicura, oppure sportiva ed estroversa)..."
+  },
+  step4: {
+    title: "4. Preferenze Estetiche",
+    palette_favorite_label: "Hai colori preferiti?",
+    palette_favorite_placeholder: "Es: Rosso ciliegia, nero grafite, oro satinato...",
+    palette_avoid_label: "Ci sono colori che vorresti evitare? (Perché?)",
+    palette_avoid_placeholder: "Es: Evitare il verde perché associato a un competitor specifico...",
+    logo_style_label: "Stile del logo preferito:",
+    logo_style_options: ["Minimal", "Elaborato", "Indifferente"],
+    logo_composition_label: "Composizione del logo:",
+    logo_composition_options: ["Simbolo + Testo", "Solo Testo", "Entrambi / Dipende"],
+    logos_liked_label: "Hai esempi di loghi che ti piacciono?",
+    logos_liked_placeholder: "Descrivili o cita marchi noti che ammiri...",
+    logos_disliked_label: "Hai esempi di loghi che NON ti piacciono?",
+    logos_disliked_placeholder: "Marchi o soluzioni stilistiche che preferiresti evitare..."
+  },
+  step5: {
+    title: "5. Analisi della Concorrenza",
+    competitors_label: "Chi sono i tuoi principali concorrenti?",
+    competitors_placeholder: "Nomi, siti web o riferimenti dei competitor diretti o indiretti...",
+    admired_companies_label: "Ci sono aziende del tuo settore che apprezzi particolarmente?",
+    admired_companies_placeholder: "Anche marchi non concorrenti, ma che hanno una comunicazione che trovi vincente...",
+    differentiation_strategy_label: "Strategia di differenziazione desiderata:",
+    differentiation_strategy_options: ["Distinguerci nettamente dai concorrenti", "Rimanere allineati nel linguaggio visivo del settore"]
+  },
+  step6: {
+    title: "6. Applicazioni e Utilizzo",
+    logo_applications_label: "Dove verrà utilizzato principalmente il logo? (Seleziona uno o più):",
+    logo_applications_options: ["Online", "Social", "Sito web", "Biglietti da visita", "Insegne", "Veicoli", "Abbigliamento", "Packaging"]
+  },
+  step7: {
+    title: "7. Consegna & Brand Manual",
+    deadline_label: "Entro quando serve il progetto?",
+    deadline_placeholder: "Es: Entro 2 settimane, entro un mese, nessuna fretta...",
+    extra_deliverables_label: "Insieme al logo, hai bisogno di (Seleziona uno o più):",
+    extra_deliverables_options: ["palette colori", "versioni monocromatiche", "logo orizzontale", "logo verticale", "favicon", "biglietto da visita", "carta intestata", "landing page", "grafica insegna", "flyer, locandina, menu o simili"]
+  },
+  step8: {
+    title: "Ultima Domanda Importante",
+    five_years_vision_label: "Se tra 5 anni il tuo brand avrà successo, quale immagine vorresti che le persone avessero in mente quando vedono il logo?",
+    five_years_vision_placeholder: "Scrivi qui la tua visione a lungo termine...",
+    notes_label: "Note aggiuntive (facoltativo)",
+    notes_placeholder: "Aggiungi eventualmente qualche pensiero, direttiva, idea..."
+  }
+};
+
 const Questionnaire: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [questions, setQuestions] = useState<any>(null);
+
+  useEffect(() => {
+    const loadCustomQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('mutey_rules')
+          .eq('id', 'questionnaire_questions')
+          .maybeSingle();
+        if (data && data.mutey_rules) {
+          setQuestions(JSON.parse(data.mutey_rules));
+        } else {
+          setQuestions(DEFAULT_QUESTIONS);
+        }
+      } catch (e) {
+        console.error("Errore recupero domande custom, uso default:", e);
+        setQuestions(DEFAULT_QUESTIONS);
+      }
+    };
+    loadCustomQuestions();
+  }, []);
+
   const [hasOtherKeyword, setHasOtherKeyword] = useState(false);
   const [otherKeywordText, setOtherKeywordText] = useState('');
+
+  const [customAnswers, setCustomAnswers] = useState<Record<string, { label: string, value: string }>>({});
+
+  const handleCustomAnswerChange = (cqId: string, label: string, value: string) => {
+    setCustomAnswers(prev => ({
+      ...prev,
+      [cqId]: { label, value }
+    }));
+  };
+
+  const isFieldHidden = (stepNum: number, field: string) => {
+    return questions?.[`step${stepNum}`]?.deleted_fields?.includes(field) || false;
+  };
+
+  const renderCustomQuestionsForStep = (stepNum: number) => {
+    const customQs = questions?.[`step${stepNum}`]?.custom_questions || [];
+    if (customQs.length === 0) return null;
+
+    return (
+      <div className="mt-8 pt-6 border-t border-dashed border-gray-200 space-y-6">
+        {customQs.map((cq: any) => {
+          const valObj = customAnswers[cq.id] || { label: cq.label, value: '' };
+          return (
+            <div key={cq.id} className="space-y-2 text-left">
+              <label className="block text-sm font-bold text-gray-700">{cq.label}</label>
+              {cq.type === 'textarea' ? (
+                <textarea
+                  rows={4}
+                  value={valObj.value}
+                  onChange={e => handleCustomAnswerChange(cq.id, cq.label, e.target.value)}
+                  placeholder={cq.placeholder || ''}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={valObj.value}
+                  onChange={e => handleCustomAnswerChange(cq.id, cq.label, e.target.value)}
+                  placeholder={cq.placeholder || ''}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const [hasOtherLogoApp, setHasOtherLogoApp] = useState(false);
   const [otherLogoAppText, setOtherLogoAppText] = useState('');
@@ -65,30 +219,6 @@ const Questionnaire: React.FC = () => {
   });
 
   const totalSteps = 8;
-
-  const keywordOptions = [
-    'Professionale', 'Elegante', 'Moderno', 'Premium', 'Minimal', 
-    'Innovativo', 'Tecnologico', 'Affidabile', 'Creativo', 
-    'Artigianale', 'Giovane', 'Esclusivo'
-  ];
-
-  const logoApplicationsList = [
-    'Online', 'Social', 'Sito web', 'Biglietti da visita', 
-    'Insegne', 'Veicoli', 'Abbigliamento', 'Packaging'
-  ];
-
-  const extraDeliverablesList = [
-    'palette colori', 
-    'versioni monocromatiche', 
-    'logo orizzontale', 
-    'logo verticale', 
-    'favicon',
-    'biglietto da visita', 
-    'carta intestata', 
-    'landing page', 
-    'grafica insegna', 
-    'flyer, locandina, menu o simili'
-  ];
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -149,11 +279,20 @@ const Questionnaire: React.FC = () => {
       finalDeliverables.push(`Altro: ${otherDeliverableText.trim()}`);
     }
 
+    let finalNotes = formData.notes || '';
+    const customEntries = Object.values(customAnswers);
+    if (customEntries.length > 0) {
+      const customSection = "\n\n=== RISPOSTE PERSONALIZZATE AGGIUNTIVE ===\n" + 
+        customEntries.map((entry: any) => `${entry.label}: ${entry.value || '(Nessuna risposta)'}`).join('\n');
+      finalNotes += customSection;
+    }
+
     const payload = {
       ...formData,
       keywords: finalKeywords,
       logo_applications: finalLogoApps,
-      extra_deliverables: finalDeliverables
+      extra_deliverables: finalDeliverables,
+      notes: finalNotes
     };
 
     try {
@@ -258,6 +397,8 @@ const Questionnaire: React.FC = () => {
     );
   }
 
+  const q = questions || DEFAULT_QUESTIONS;
+
   return (
     <div className="min-h-screen bg-gray-50 py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -294,75 +435,87 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Building className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">1. Il tuo Brand / Attività</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step1.title}</h2>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Come si chiama l'azienda o il brand?</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.company_name_label}</label>
                   <input
                     required
                     type="text"
                     value={formData.company_name}
                     onChange={e => handleInputChange('company_name', e.target.value)}
-                    placeholder="Nome ufficiale del brand"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                    placeholder={q.step1.company_name_placeholder}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Qual è il significato del nome?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.name_meaning}
-                    onChange={e => handleInputChange('name_meaning', e.target.value)}
-                    placeholder="Raccontami l'origine, l'ispirazione o la storia del nome..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(1, 'name_meaning') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.name_meaning_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.name_meaning}
+                      onChange={e => handleInputChange('name_meaning', e.target.value)}
+                      placeholder={q.step1.name_meaning_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Di cosa si occupa esattamente?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.business_description}
-                    onChange={e => handleInputChange('business_description', e.target.value)}
-                    placeholder="Descrivi la missione del brand e il suo posizionamento generale..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(1, 'business_description') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.business_description_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.business_description}
+                      onChange={e => handleInputChange('business_description', e.target.value)}
+                      placeholder={q.step1.business_description_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Quali prodotti o servizi offre?</label>
-                  <textarea
-                    rows={3}
-                    value={formData.products_services}
-                    onChange={e => handleInputChange('products_services', e.target.value)}
-                    placeholder="Elenchi o descrizioni dei principali prodotti/servizi offerti..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(1, 'products_services') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.products_services_label}</label>
+                    <textarea
+                      rows={3}
+                      value={formData.products_services}
+                      onChange={e => handleInputChange('products_services', e.target.value)}
+                      placeholder={q.step1.products_services_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Qual è il suo principale punto di forza rispetto ai concorrenti?</label>
-                  <textarea
-                    rows={3}
-                    value={formData.strength_point}
-                    onChange={e => handleInputChange('strength_point', e.target.value)}
-                    placeholder="Cosa vi rende unici o speciali?"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(1, 'strength_point') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.strength_point_label}</label>
+                    <textarea
+                      rows={3}
+                      value={formData.strength_point}
+                      onChange={e => handleInputChange('strength_point', e.target.value)}
+                      placeholder={q.step1.strength_point_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Esiste uno slogan o payoff?</label>
-                  <input
-                    type="text"
-                    value={formData.slogan}
-                    onChange={e => handleInputChange('slogan', e.target.value)}
-                    placeholder="Es: Just do it, Think different..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(1, 'slogan') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.slogan_label}</label>
+                    <input
+                      type="text"
+                      value={formData.slogan}
+                      onChange={e => handleInputChange('slogan', e.target.value)}
+                      placeholder={q.step1.slogan_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(1)}
               </div>
             )}
 
@@ -371,81 +524,93 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Users className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">2. Target Clienti</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step2.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Chi sono i clienti ideali?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.target_customers}
-                    onChange={e => handleInputChange('target_customers', e.target.value)}
-                    placeholder="Descrivi i tuoi clienti ideali (interessi, stile di vita, desideri)..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Fascia d'età prevalente?</label>
-                  <input
-                    type="text"
-                    value={formData.age_range}
-                    onChange={e => handleInputChange('age_range', e.target.value)}
-                    placeholder="Es: 18-35 anni, adulti, famiglie, ragazzi..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">La clientela è principalmente composta da:</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {['Privati', 'Aziende', 'Entrambi'].map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => handleInputChange('customer_type', type)}
-                        className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
-                          formData.customer_type === type
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
+                {!isFieldHidden(2, 'target_customers') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.target_customers_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.target_customers}
+                      onChange={e => handleInputChange('target_customers', e.target.value)}
+                      placeholder={q.step2.target_customers_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Ambito del mercato di riferimento:</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {['Locale', 'Nazionale', 'Internazionale'].map((scope) => (
-                      <button
-                        key={scope}
-                        type="button"
-                        onClick={() => handleInputChange('market_scope', scope)}
-                        className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
-                          formData.market_scope === scope
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {scope}
-                      </button>
-                    ))}
+                {!isFieldHidden(2, 'age_range') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.age_range_label}</label>
+                    <input
+                      type="text"
+                      value={formData.age_range}
+                      onChange={e => handleInputChange('age_range', e.target.value)}
+                      placeholder={q.step2.age_range_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Che percezione vuoi trasmettere ai tuoi clienti?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.brand_perception_target}
-                    onChange={e => handleInputChange('brand_perception_target', e.target.value)}
-                    placeholder="Es: Fiducia, lusso, freschezza, innovazione, sicurezza..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(2, 'customer_type') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step2.customer_type_label}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {q.step2.customer_type_options.map((type: string) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => handleInputChange('customer_type', type)}
+                          className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
+                            formData.customer_type === type
+                              ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!isFieldHidden(2, 'market_scope') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step2.market_scope_label}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {q.step2.market_scope_options.map((scope: string) => (
+                        <button
+                          key={scope}
+                          type="button"
+                          onClick={() => handleInputChange('market_scope', scope)}
+                          className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
+                            formData.market_scope === scope
+                              ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {scope}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!isFieldHidden(2, 'brand_perception_target') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.brand_perception_target_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.brand_perception_target}
+                      onChange={e => handleInputChange('brand_perception_target', e.target.value)}
+                      placeholder={q.step2.brand_perception_target_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(2)}
               </div>
             )}
 
@@ -454,82 +619,90 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Target className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">3. Posizionamento & Personalità</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step3.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Seleziona le parole chiave che definiscono il tuo Brand (Seleziona max 4):</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {keywordOptions.map((keyword) => {
-                      const isSelected = formData.keywords.includes(keyword);
-                      const isLimitReached = !isSelected && formData.keywords.length + (hasOtherKeyword ? 1 : 0) >= 4;
-                      return (
-                        <button
-                          key={keyword}
-                          type="button"
-                          disabled={isLimitReached}
-                          onClick={() => toggleArrayItem('keywords', keyword)}
-                          className={`p-3 border rounded-xl text-xs font-bold transition-all text-center ${
-                            isSelected
-                              ? 'bg-gradient-brand text-white border-transparent shadow-md shadow-primary/10'
-                              : isLimitReached
-                                ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
-                                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {keyword}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={toggleOtherKeyword}
-                      className={`p-3 border rounded-xl text-xs font-bold transition-all text-center ${
-                        hasOtherKeyword
-                          ? 'bg-gradient-brand text-white border-transparent shadow-md shadow-primary/10'
-                          : (formData.keywords.length >= 4)
-                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                      disabled={!hasOtherKeyword && (formData.keywords.length >= 4)}
-                    >
-                      Altro
-                    </button>
-                  </div>
-                  {hasOtherKeyword && (
-                    <div className="mt-3 animate-in fade-in duration-200">
-                      <input
-                        type="text"
-                        value={otherKeywordText}
-                        onChange={e => setOtherKeywordText(e.target.value)}
-                        placeholder="Specifica altre parole chiave..."
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
-                      />
+                {!isFieldHidden(3, 'keywords') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step3.keywords_label}</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {q.step3.keywords_options.map((keyword: string) => {
+                        const isSelected = formData.keywords.includes(keyword);
+                        const isLimitReached = !isSelected && formData.keywords.length + (hasOtherKeyword ? 1 : 0) >= 4;
+                        return (
+                          <button
+                            key={keyword}
+                            type="button"
+                            disabled={isLimitReached}
+                            onClick={() => toggleArrayItem('keywords', keyword)}
+                            className={`p-3 border rounded-xl text-xs font-bold transition-all text-center ${
+                              isSelected
+                                ? 'bg-gradient-brand text-white border-transparent shadow-md shadow-primary/10'
+                                : isLimitReached
+                                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {keyword}
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={toggleOtherKeyword}
+                        className={`p-3 border rounded-xl text-xs font-bold transition-all text-center ${
+                          hasOtherKeyword
+                            ? 'bg-gradient-brand text-white border-transparent shadow-md shadow-primary/10'
+                            : (formData.keywords.length >= 4)
+                              ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                        disabled={!hasOtherKeyword && (formData.keywords.length >= 4)}
+                      >
+                        Altro
+                      </button>
                     </div>
-                  )}
-                </div>
+                    {hasOtherKeyword && (
+                      <div className="mt-3 animate-in fade-in duration-200">
+                        <input
+                          type="text"
+                          value={otherKeywordText}
+                          onChange={e => setOtherKeywordText(e.target.value)}
+                          placeholder="Specifica altre parole chiave..."
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Come vuoi che il cliente percepisca il tuo brand?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.brand_perception}
-                    onChange={e => handleInputChange('brand_perception', e.target.value)}
-                    placeholder="In che modo vuoi posizionarti nella mente della clientela?"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(3, 'brand_perception') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step3.brand_perception_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.brand_perception}
+                      onChange={e => handleInputChange('brand_perception', e.target.value)}
+                      placeholder={q.step3.brand_perception_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Se il brand fosse una persona, come sarebbe? (Facoltativo)</label>
-                  <textarea
-                    rows={4}
-                    value={formData.brand_personified}
-                    onChange={e => handleInputChange('brand_personified', e.target.value)}
-                    placeholder="Età, carattere, come si veste, come parla (es. raffinata e sicura, oppure sportiva ed estroversa)..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(3, 'brand_personified') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step3.brand_personified_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.brand_personified}
+                      onChange={e => handleInputChange('brand_personified', e.target.value)}
+                      placeholder={q.step3.brand_personified_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(3)}
               </div>
             )}
 
@@ -538,94 +711,110 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Palette className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">4. Preferenze Estetiche</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step4.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Hai colori preferiti?</label>
-                  <input
-                    type="text"
-                    value={formData.palette_favorite}
-                    onChange={e => handleInputChange('palette_favorite', e.target.value)}
-                    placeholder="Es: Rosso ciliegia, nero grafite, oro satinato..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Ci sono colori che vorresti evitare? (Perché?)</label>
-                  <textarea
-                    rows={3}
-                    value={formData.palette_avoid}
-                    onChange={e => handleInputChange('palette_avoid', e.target.value)}
-                    placeholder="Es: Evitare il verde perché associato a un competitor specifico..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {!isFieldHidden(4, 'palette_favorite') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">Stile del logo preferito:</label>
-                    <div className="flex flex-col gap-3">
-                      {['Minimal', 'Elaborato', 'Indifferente'].map((style) => (
-                        <button
-                          key={style}
-                          type="button"
-                          onClick={() => handleInputChange('logo_style', style)}
-                          className={`p-4 border rounded-xl font-semibold text-sm text-left transition-all ${
-                            formData.logo_style === style
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {style}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.palette_favorite_label}</label>
+                    <input
+                      type="text"
+                      value={formData.palette_favorite}
+                      onChange={e => handleInputChange('palette_favorite', e.target.value)}
+                      placeholder={q.step4.palette_favorite_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
+                )}
 
+                {!isFieldHidden(4, 'palette_avoid') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">Composizione del logo:</label>
-                    <div className="flex flex-col gap-3">
-                      {['Simbolo + Testo', 'Solo Testo', 'Entrambi / Dipende'].map((composition) => (
-                        <button
-                          key={composition}
-                          type="button"
-                          onClick={() => handleInputChange('logo_composition', composition)}
-                          className={`p-4 border rounded-xl font-semibold text-sm text-left transition-all ${
-                            formData.logo_composition === composition
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {composition}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.palette_avoid_label}</label>
+                    <textarea
+                      rows={3}
+                      value={formData.palette_avoid}
+                      onChange={e => handleInputChange('palette_avoid', e.target.value)}
+                      placeholder={q.step4.palette_avoid_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Hai esempi di loghi che ti piacciono?</label>
-                  <textarea
-                    rows={3}
-                    value={formData.logos_liked}
-                    onChange={e => handleInputChange('logos_liked', e.target.value)}
-                    placeholder="Descrivili o cita marchi noti che ammiri..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {(!isFieldHidden(4, 'logo_style') || !isFieldHidden(4, 'logo_composition')) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {!isFieldHidden(4, 'logo_style') && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-3">{q.step4.logo_style_label}</label>
+                        <div className="flex flex-col gap-3">
+                          {q.step4.logo_style_options.map((style: string) => (
+                            <button
+                              key={style}
+                              type="button"
+                              onClick={() => handleInputChange('logo_style', style)}
+                              className={`p-4 border rounded-xl font-semibold text-sm text-left transition-all ${
+                                formData.logo_style === style
+                                  ? 'border-primary bg-primary/5 text-primary'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              {style}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Hai esempi di loghi che NON ti piacciono?</label>
-                  <textarea
-                    rows={3}
-                    value={formData.logos_disliked}
-                    onChange={e => handleInputChange('logos_disliked', e.target.value)}
-                    placeholder="Marchi o soluzioni stilistiche che preferiresti evitare..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                    {!isFieldHidden(4, 'logo_composition') && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-3">{q.step4.logo_composition_label}</label>
+                        <div className="flex flex-col gap-3">
+                          {q.step4.logo_composition_options.map((composition: string) => (
+                            <button
+                              key={composition}
+                              type="button"
+                              onClick={() => handleInputChange('logo_composition', composition)}
+                              className={`p-4 border rounded-xl font-semibold text-sm text-left transition-all ${
+                                formData.logo_composition === composition
+                                  ? 'border-primary bg-primary/5 text-primary'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              {composition}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!isFieldHidden(4, 'logos_liked') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.logos_liked_label}</label>
+                    <textarea
+                      rows={3}
+                      value={formData.logos_liked}
+                      onChange={e => handleInputChange('logos_liked', e.target.value)}
+                      placeholder={q.step4.logos_liked_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {!isFieldHidden(4, 'logos_disliked') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.logos_disliked_label}</label>
+                    <textarea
+                      rows={3}
+                      value={formData.logos_disliked}
+                      onChange={e => handleInputChange('logos_disliked', e.target.value)}
+                      placeholder={q.step4.logos_disliked_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(4)}
               </div>
             )}
 
@@ -634,53 +823,58 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Shield className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">5. Analisi della Concorrenza</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step5.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Chi sono i tuoi principali concorrenti?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.competitors}
-                    onChange={e => handleInputChange('competitors', e.target.value)}
-                    placeholder="Nomi, siti web o riferimenti dei competitor diretti o indiretti..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Ci sono aziende del tuo settore che apprezzi particolarmente?</label>
-                  <textarea
-                    rows={4}
-                    value={formData.admired_companies}
-                    onChange={e => handleInputChange('admired_companies', e.target.value)}
-                    placeholder="Anche marchi non concorrenti, ma che hanno una comunicazione che trovi vincente..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Strategia di differenziazione desiderata:</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {[
-                      { id: 'distinguish', label: 'Distinguerci nettamente dai concorrenti' },
-                      { id: 'aligned', label: 'Rimanere allineati nel linguaggio visivo del settore' }
-                    ].map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => handleInputChange('differentiation_strategy', opt.label)}
-                        className={`p-5 border rounded-xl font-semibold text-sm text-left transition-all ${
-                          formData.differentiation_strategy === opt.label
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                {!isFieldHidden(5, 'competitors') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step5.competitors_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.competitors}
+                      onChange={e => handleInputChange('competitors', e.target.value)}
+                      placeholder={q.step5.competitors_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
-                </div>
+                )}
+
+                {!isFieldHidden(5, 'admired_companies') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step5.admired_companies_label}</label>
+                    <textarea
+                      rows={4}
+                      value={formData.admired_companies}
+                      onChange={e => handleInputChange('admired_companies', e.target.value)}
+                      placeholder={q.step5.admired_companies_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {!isFieldHidden(5, 'differentiation_strategy') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step5.differentiation_strategy_label}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {q.step5.differentiation_strategy_options.map((opt: string) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleInputChange('differentiation_strategy', opt)}
+                          className={`p-5 border rounded-xl font-semibold text-sm text-left transition-all ${
+                            formData.differentiation_strategy === opt
+                              ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                              : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(5)}
               </div>
             )}
 
@@ -689,61 +883,65 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Monitor className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">6. Applicazioni e Utilizzo</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step6.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Dove verrà utilizzato principalmente il logo? (Seleziona uno o più):</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {logoApplicationsList.map((app) => {
-                      const isSelected = formData.logo_applications.includes(app);
-                      return (
-                        <label 
-                          key={app} 
-                          className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                            isSelected 
-                              ? 'border-primary bg-primary/5 text-primary' 
-                              : 'border-gray-100 hover:bg-gray-50'
-                          }`}
-                        >
-                          <input 
-                            type="checkbox" 
-                            className="w-5 h-5 shrink-0 accent-primary"
-                            checked={isSelected}
-                            onChange={() => toggleArrayItem('logo_applications', app)}
-                          />
-                          <span className="text-sm font-medium">{app}</span>
-                        </label>
-                      );
-                    })}
-                    <label 
-                      className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                        hasOtherLogoApp 
-                          ? 'border-primary bg-primary/5 text-primary' 
-                          : 'border-gray-100 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input 
-                        type="checkbox" 
-                        className="w-5 h-5 shrink-0 accent-primary"
-                        checked={hasOtherLogoApp}
-                        onChange={() => setHasOtherLogoApp(!hasOtherLogoApp)}
-                      />
-                      <span className="text-sm font-medium">Altro</span>
-                    </label>
-                  </div>
-                  {hasOtherLogoApp && (
-                    <div className="mt-4 animate-in fade-in duration-200">
-                      <input
-                        type="text"
-                        value={otherLogoAppText}
-                        onChange={e => setOtherLogoAppText(e.target.value)}
-                        placeholder="Specifica altre applicazioni..."
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
-                      />
+                {!isFieldHidden(6, 'logo_applications') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step6.logo_applications_label}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {q.step6.logo_applications_options.map((app: string) => {
+                        const isSelected = formData.logo_applications.includes(app);
+                        return (
+                          <label 
+                            key={app} 
+                            className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-primary bg-primary/5 text-primary' 
+                                : 'border-gray-100 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox" 
+                              className="w-5 h-5 shrink-0 accent-primary"
+                              checked={isSelected}
+                              onChange={() => toggleArrayItem('logo_applications', app)}
+                            />
+                            <span className="text-sm font-medium">{app}</span>
+                          </label>
+                        );
+                      })}
+                      <label 
+                        className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                          hasOtherLogoApp 
+                            ? 'border-primary bg-primary/5 text-primary' 
+                            : 'border-gray-100 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 shrink-0 accent-primary"
+                          checked={hasOtherLogoApp}
+                          onChange={() => setHasOtherLogoApp(!hasOtherLogoApp)}
+                        />
+                        <span className="text-sm font-medium">Altro</span>
+                      </label>
                     </div>
-                  )}
-                </div>
+                    {hasOtherLogoApp && (
+                      <div className="mt-4 animate-in fade-in duration-200">
+                        <input
+                          type="text"
+                          value={otherLogoAppText}
+                          onChange={e => setOtherLogoAppText(e.target.value)}
+                          placeholder="Specifica altre applicazioni..."
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(6)}
               </div>
             )}
 
@@ -752,72 +950,76 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <FileText className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">7. Consegna & Brand Manual</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step7.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Entro quando serve il progetto?</label>
-                  <input
-                    type="text"
-                    value={formData.deadline}
-                    onChange={e => handleInputChange('deadline', e.target.value)}
-                    placeholder="Es: Entro 2 settimane, entro un mese, nessuna fretta..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Insieme al logo, hai bisogno di (Seleziona uno o più):</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {extraDeliverablesList.map((deliv) => {
-                      const isSelected = formData.extra_deliverables.includes(deliv);
-                      return (
-                        <label 
-                          key={deliv} 
-                          className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                            isSelected 
-                              ? 'border-primary bg-primary/5 text-primary' 
-                              : 'border-gray-100 hover:bg-gray-50'
-                          }`}
-                        >
-                          <input 
-                            type="checkbox" 
-                            className="w-5 h-5 shrink-0 accent-primary"
-                            checked={isSelected}
-                            onChange={() => toggleArrayItem('extra_deliverables', deliv)}
-                          />
-                          <span className="text-sm font-medium capitalize">{deliv}</span>
-                        </label>
-                      );
-                    })}
-                    <label 
-                      className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                        hasOtherDeliverable 
-                          ? 'border-primary bg-primary/5 text-primary' 
-                          : 'border-gray-100 hover:bg-gray-50'
-                      }`}
-                    >
-                      <input 
-                        type="checkbox" 
-                        className="w-5 h-5 shrink-0 accent-primary"
-                        checked={hasOtherDeliverable}
-                        onChange={() => setHasOtherDeliverable(!hasOtherDeliverable)}
-                      />
-                      <span className="text-sm font-medium">Altro</span>
-                    </label>
+                {!isFieldHidden(7, 'deadline') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step7.deadline_label}</label>
+                    <input
+                      type="text"
+                      value={formData.deadline}
+                      onChange={e => handleInputChange('deadline', e.target.value)}
+                      placeholder={q.step7.deadline_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
                   </div>
-                  {hasOtherDeliverable && (
-                    <div className="mt-4 animate-in fade-in duration-200">
-                      <input
-                        type="text"
-                        value={otherDeliverableText}
-                        onChange={e => setOtherDeliverableText(e.target.value)}
-                        placeholder="Specifica altri materiali o servizi..."
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-medium"
-                      />
+                )}
+
+                {!isFieldHidden(7, 'extra_deliverables') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step7.extra_deliverables_label}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {q.step7.extra_deliverables_options.map((deliv: string) => {
+                        const isSelected = formData.extra_deliverables.includes(deliv);
+                        return (
+                          <label 
+                            key={deliv} 
+                            className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-primary bg-primary/5 text-primary' 
+                                : 'border-gray-100 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input 
+                              type="checkbox" 
+                              className="w-5 h-5 shrink-0 accent-primary"
+                              checked={isSelected}
+                              onChange={() => toggleArrayItem('extra_deliverables', deliv)}
+                            />
+                            <span className="text-sm font-medium capitalize">{deliv}</span>
+                          </label>
+                        );
+                      })}
+                      <label 
+                        className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
+                          hasOtherDeliverable 
+                            ? 'border-primary bg-primary/5 text-primary' 
+                            : 'border-gray-100 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 shrink-0 accent-primary"
+                          checked={hasOtherDeliverable}
+                          onChange={() => setHasOtherDeliverable(!hasOtherDeliverable)}
+                        />
+                        <span className="text-sm font-medium">Altro</span>
+                      </label>
                     </div>
-                  )}
-                </div>
+                    {hasOtherDeliverable && (
+                      <div className="mt-4 animate-in fade-in duration-200">
+                        <input
+                          type="text"
+                          value={otherDeliverableText}
+                          onChange={e => setOtherDeliverableText(e.target.value)}
+                          placeholder="Specifica altri materiali o servizi..."
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-750 font-semibold"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
                   <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-widest">Compreso nella consegna standard:</h4>
@@ -830,6 +1032,8 @@ const Questionnaire: React.FC = () => {
                     <div className="flex items-center gap-2">✓ Link ai font raccomandati</div>
                   </div>
                 </div>
+
+                {renderCustomQuestionsForStep(7)}
               </div>
             )}
 
@@ -838,34 +1042,40 @@ const Questionnaire: React.FC = () => {
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                   <Sparkles className="text-primary w-6 h-6" />
-                  <h2 className="text-2xl font-bold text-gray-900">Ultima Domanda Importante</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{q.step8.title}</h2>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-4 leading-relaxed">
-                    Se tra 5 anni il tuo brand avrà successo, quale immagine vorresti che le persone avessero in mente quando vedono il logo?
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={formData.five_years_vision}
-                    onChange={e => handleInputChange('five_years_vision', e.target.value)}
-                    placeholder="Scrivi qui la tua visione a lungo termine..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(8, 'five_years_vision') && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-4 leading-relaxed">
+                      {q.step8.five_years_vision_label}
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={formData.five_years_vision}
+                      onChange={e => handleInputChange('five_years_vision', e.target.value)}
+                      placeholder={q.step8.five_years_vision_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
 
-                <div className="pt-4">
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Note aggiuntive (facoltativo)
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={formData.notes}
-                    onChange={e => handleInputChange('notes', e.target.value)}
-                    placeholder="Aggiungi eventualmente qualche pensiero, direttiva, idea..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700"
-                  />
-                </div>
+                {!isFieldHidden(8, 'notes') && (
+                  <div className="pt-4">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                      {q.step8.notes_label}
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={formData.notes}
+                      onChange={e => handleInputChange('notes', e.target.value)}
+                      placeholder={q.step8.notes_placeholder}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700 font-semibold"
+                    />
+                  </div>
+                )}
+
+                {renderCustomQuestionsForStep(8)}
               </div>
             )}
 
