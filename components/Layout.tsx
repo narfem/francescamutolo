@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
   }, []);
 
   const navLinks: { name: string; targetId?: string; path?: string }[] = [
-    { name: 'Portfolio', targetId: 'portfolio' },
+    { name: 'Portfolio TEST', targetId: 'portfolio' },
     { name: 'Contatti', targetId: 'contact' },
   ];
 
