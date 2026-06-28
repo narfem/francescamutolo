@@ -603,7 +603,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="flex flex-col justify-between">
                   <label className="block text-sm font-bold text-gray-700 mb-3">Il risultato ha migliorato concretamente la percezione della tua attività?</label>
                   <div className="grid grid-cols-3 gap-3">
                     {['Sì', 'No', 'In parte'].map((val) => (
@@ -623,7 +623,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                   </div>
                 </div>
 
-                <div>
+                <div className="flex flex-col justify-between">
                   <label className="block text-sm font-bold text-gray-700 mb-3">Il prezzo è stato percepito come:</label>
                   <div className="grid grid-cols-3 gap-3">
                     {['Basso', 'Adeguato', 'Alto'].map((val) => (
