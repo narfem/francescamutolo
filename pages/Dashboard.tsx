@@ -754,12 +754,12 @@ const ManagePortfolio = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Titolo</label>
-                  <input required className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white dark:bg-gray-800 dark:border-gray-700" 
+                  <input required className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all text-gray-900" 
                     value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Categoria</label>
-                  <select className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  <select className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-gray-900"
                     value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})}>
                     <option>Branding</option>
                     <option>Flyer & Poster</option>
@@ -783,7 +783,7 @@ const ManagePortfolio = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Link Google Drive</label>
-                  <input required placeholder="Incolla il link 'Condividi' di Drive" className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  <input required placeholder="Incolla il link 'Condividi' di Drive" className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm text-gray-900"
                     value={newItem.image_url} onChange={e => setNewItem({...newItem, image_url: e.target.value})} />
                 </div>
               </div>
@@ -799,7 +799,7 @@ const ManagePortfolio = () => {
                     </div>
                   )}
                 </div>
-                <textarea rows={3} placeholder="Descrizione..." className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none resize-none text-sm dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                <textarea rows={3} placeholder="Descrizione..." className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none resize-none text-sm text-gray-900"
                   value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} />
               </div>
             </div>

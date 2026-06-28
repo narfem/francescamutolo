@@ -157,7 +157,7 @@ const ContactSection: React.FC = () => {
                     required 
                     type="text" 
                     placeholder="Il tuo nome"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 bg-white"
                     value={simpleData.name}
                     onChange={e => setSimpleData({...simpleData, name: e.target.value})}
                   />
@@ -168,7 +168,7 @@ const ContactSection: React.FC = () => {
                     required 
                     type="email" 
                     placeholder="email@esempio.com"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-gray-900 bg-white"
                     value={simpleData.email}
                     onChange={e => setSimpleData({...simpleData, email: e.target.value})}
                   />
@@ -180,7 +180,7 @@ const ContactSection: React.FC = () => {
                   required 
                   rows={5} 
                   placeholder="Di cosa hai bisogno?"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none resize-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none resize-none text-gray-900 bg-white"
                   value={simpleData.message}
                   onChange={e => setSimpleData({...simpleData, message: e.target.value})}
                 ></textarea>
@@ -198,17 +198,17 @@ const ContactSection: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Nome *</label>
-                  <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  <input required type="text" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none text-gray-900 bg-white"
                     value={briefData.name} onChange={e => setBriefData({...briefData, name: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Email *</label>
-                  <input required type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  <input required type="email" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none text-gray-900 bg-white"
                     value={briefData.email} onChange={e => setBriefData({...briefData, email: e.target.value})} />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Telefono</label>
-                  <input type="tel" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  <input type="tel" className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none text-gray-900 bg-white"
                     value={briefData.phone} onChange={e => setBriefData({...briefData, phone: e.target.value})} />
                 </div>
               </div>
@@ -216,7 +216,7 @@ const ContactSection: React.FC = () => {
               <div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {servicesList.map(service => (
-                    <label key={service} className="flex items-center gap-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                    <label key={service} className="flex items-center gap-3 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors bg-white">
                       <input 
                         type="checkbox" 
                         className="w-5 h-5 accent-primary"
@@ -235,7 +235,7 @@ const ContactSection: React.FC = () => {
                   type="text" 
                   maxLength={200}
                   placeholder="Es: Blu navy e Oro, oppure toni pastello..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none text-gray-900 bg-white"
                   value={briefData.colors}
                   onChange={e => setBriefData({...briefData, colors: e.target.value})}
                 />
@@ -246,7 +246,7 @@ const ContactSection: React.FC = () => {
                 <textarea 
                   rows={4}
                   placeholder="Raccontami la tua idea o visione..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none resize-none dark:text-white dark:bg-gray-800 dark:border-gray-700"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary outline-none resize-none text-gray-900 bg-white"
                   value={briefData.notes}
                   onChange={e => setBriefData({...briefData, notes: e.target.value})}
                 ></textarea>
