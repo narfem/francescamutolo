@@ -127,21 +127,9 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/sistema-contatti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/sistema-contatti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Globe size={18} /> Sistema Contatti
         </Link>
-        <div className="pt-4 mt-4 border-t border-white/10 space-y-1">
-          <p className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">I Miei Strumenti</p>
-          <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
-            <ExternalLink size={16} /> Freelance Suite
-          </a>
-          <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
-            <ExternalLink size={16} /> Red Timer
-          </a>
-          <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
-            <ExternalLink size={16} /> Pro Track
-          </a>
-          <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
-            <ExternalLink size={16} /> Chromarium
-          </a>
-        </div>
+        <Link to="/dashboard/strumenti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/strumenti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <ExternalLink size={18} /> Strumenti
+        </Link>
 
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
@@ -196,6 +184,7 @@ const Dashboard: React.FC = () => {
               <Route path="cv" element={<ManageCV />} />
               <Route path="mutey" element={<ManageMutey />} />
               <Route path="sistema-contatti" element={<ManageContactsEngine />} />
+              <Route path="strumenti" element={<ManageTools />} />
             </Routes>
           </div>
         </main>
@@ -203,6 +192,42 @@ const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+const ManageTools = () => (
+  <div className="animate-in fade-in duration-500">
+    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">I Miei Strumenti</h1>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+          <ExternalLink size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
+      </a>
+      <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+          <ExternalLink size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Red Timer</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">Traccia il tempo di lavoro →</p>
+      </a>
+      <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+          <ExternalLink size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Pro Track</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">Gestione progetti →</p>
+      </a>
+      <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+          <ExternalLink size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Chromarium</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">Gestione colori e palette →</p>
+      </a>
+    </div>
+  </div>
+);
 
 const DashboardHome = () => (
   <div className="animate-in fade-in duration-500 space-y-12">
@@ -258,40 +283,13 @@ const DashboardHome = () => (
           <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
           <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
         </Link>
-      </div>
-    </div>
-
-    <div className="pt-6 border-t border-gray-200">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">I Miei Strumenti Esterni</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <Link to="/dashboard/strumenti" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
           <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
             <ExternalLink size={24} />
           </div>
-          <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
-          <p className="text-lg font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
-        </a>
-        <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-            <ExternalLink size={24} />
-          </div>
-          <p className="text-gray-500 text-sm font-medium">Red Timer</p>
-          <p className="text-lg font-bold text-gray-900 mt-1">Traccia il tempo di lavoro →</p>
-        </a>
-        <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-            <ExternalLink size={24} />
-          </div>
-          <p className="text-gray-500 text-sm font-medium">Pro Track</p>
-          <p className="text-lg font-bold text-gray-900 mt-1">Gestione progetti →</p>
-        </a>
-        <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-            <ExternalLink size={24} />
-          </div>
-          <p className="text-gray-500 text-sm font-medium">Chromarium</p>
-          <p className="text-lg font-bold text-gray-900 mt-1">Gestione colori e palette →</p>
-        </a>
+          <p className="text-gray-500 text-sm font-medium">Strumenti</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">I tuoi strumenti esterni</p>
+        </Link>
       </div>
     </div>
   </div>
