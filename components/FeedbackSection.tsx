@@ -6,8 +6,8 @@ const FeedbackSection: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4" id="feedback-section-container">
       <div className="text-center mb-8">
         <h2 className="text-4xl font-extrabold text-gray-950 mb-4 tracking-tight">Lasciami un Feedback</h2>
-        <p className="text-gray-600 max-w-xl mx-auto font-medium">
-          Hai collaborato con me? La tua opinione è preziosa! Raccontami la tua esperienza
+        <p className="text-gray-650 max-w-xl mx-auto font-medium">
+          Hai collaborato con me? La tua opinione è preziosa!<br />Raccontami la tua esperienza
         </p>
       </div>
 
