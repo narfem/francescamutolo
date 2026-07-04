@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
-  Archive, GripVertical
+  Archive, GripVertical, ExternalLink
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -127,6 +127,9 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/sistema-contatti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/sistema-contatti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Globe size={18} /> Sistema Contatti
         </Link>
+        <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95">
+          <ExternalLink size={18} /> Freelance Suite
+        </a>
 
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
@@ -242,6 +245,13 @@ const DashboardHome = () => (
         <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
         <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
       </Link>
+      <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+          <ExternalLink size={24} />
+        </div>
+        <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
+        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
+      </a>
     </div>
   </div>
 );
