@@ -19,21 +19,18 @@ const ClientFeedback: React.FC = () => {
 
   // Section 2: Informazioni Progetto
   const [projectType, setProjectType] = useState(''); // SELECT: "Logo" | "Brand identity" | "Materiali social" | "Locandina" | "Altro"
-  const [sourceChannel, setSourceChannel] = useState(''); // SELECT: "Google" | "Instagram" | "Passaparola" | "Altro"
+  const [sourceChannel, setSourceChannel] = useState(''); // SELECT: "Google" | "Instagram" | "Passaparola"
   const [projectTypeOther, setProjectTypeOther] = useState('');
-  const [sourceChannelOther, setSourceChannelOther] = useState('');
 
   // Section 3: Valutazione 1-5 (Scaled ratings)
   const [ratingSatisfaction, setRatingSatisfaction] = useState<number | null>(null);
   const [ratingExpectations, setRatingExpectations] = useState<number | null>(null);
   const [ratingDeliveryTimes, setRatingDeliveryTimes] = useState<number | null>(null);
-  const [ratingProcessSimplicity, setRatingProcessSimplicity] = useState<number | null>(null);
 
-  // Section 4: Valore Percepito
-  const [improvedBusiness, setImprovedBusiness] = useState(''); // Buttons: "Sì" | "No" | "In parte"
+  // Section 4: Valore
   const [pricePerception, setPricePerception] = useState(''); // Buttons: "Basso" | "Adeguato" | "Alto"
 
-  // Section 5: Feedback Aperto
+  // Section 5: Feedback
   const [openFeedback, setOpenFeedback] = useState('');
 
   // Section 6: Testimonianza Pubblicabile
@@ -72,10 +69,6 @@ const ClientFeedback: React.FC = () => {
       alert("La selezione di come hai trovato il servizio è richiesta.");
       return;
     }
-    if (sourceChannel === 'Altro' && !sourceChannelOther.trim()) {
-      alert("Specifica come hai trovato il servizio.");
-      return;
-    }
 
     if (ratingSatisfaction === null) {
       alert("La valutazione sulla soddisfazione generale è richiesta.");
@@ -89,16 +82,6 @@ const ClientFeedback: React.FC = () => {
 
     if (ratingDeliveryTimes === null) {
       alert("La valutazione sul rispetto dei tempi di consegna è richiesta.");
-      return;
-    }
-
-    if (ratingProcessSimplicity === null) {
-      alert("La valutazione sulla semplicità del processo è richiesta.");
-      return;
-    }
-
-    if (!improvedBusiness) {
-      alert("La risposta alla domanda sul miglioramento della percezione dell'attività è richiesta.");
       return;
     }
 
@@ -125,9 +108,9 @@ const ClientFeedback: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
 
-    // Compute average rating (excluding ratingCommunication, divided by 4) to save as the primary numeric "rating" in Supabase feedbacks table
+    // Compute average rating (divided by 3) to save as the primary numeric "rating" in Supabase feedbacks table
     const computedAverage = Math.round(
-      (ratingSatisfaction! + ratingExpectations! + ratingDeliveryTimes! + ratingProcessSimplicity!) / 4
+      (ratingSatisfaction! + ratingExpectations! + ratingDeliveryTimes!) / 3
     );
 
     // Format all detailed answers into a beautiful structured message text reports
@@ -139,19 +122,17 @@ const ClientFeedback: React.FC = () => {
 
 📁 PROGETTO:
 - Tipo di progetto: ${projectType === 'Altro' ? `Altro: ${projectTypeOther.trim()}` : (projectType || 'Non specificato')}
-- Canale di acquisizione (Come ci ha trovati): ${sourceChannel === 'Altro' ? `Altro: ${sourceChannelOther.trim()}` : (sourceChannel || 'Non specificato')}
+- Canale di acquisizione (Come ci ha trovati): ${sourceChannel || 'Non specificato'}
 
 ⭐ PUNTEGGI DI VALUTAZIONE (1-5):
 - Soddisfazione generale del risultato: ${ratingSatisfaction}/5
 - Rispetto delle aspettative iniziali: ${ratingExpectations}/5
 - Rispetto dei tempi di consegna: ${ratingDeliveryTimes}/5
-- Semplicità del processo di lavoro (brief, revisioni, consegna): ${ratingProcessSimplicity}/5
 
-💎 VALORE PERCEPITO:
-- Il risultato ha migliorato concretamente la percezione della tua attività? ${improvedBusiness || 'Non espresso'}
+💎 VALORE:
 - Percezione del prezzo: ${pricePerception || 'Non espressa'}
 
-💭 FEEDBACK APERTO:
+💭 FEEDBACK:
 - Raccontami la tua esperienza (cosa hai apprezzato, cosa vorresti diverso, suggerimenti):
   ↳ "${openFeedback.trim() || 'Nessun commento.'}"
 
@@ -242,7 +223,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
             Valutazione Servizio
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-            Ora che il tuo progetto è stato completato e consegnato, dedica qualche istante alla compilazione di questo modulo strategico per condividere la tua opinione.
+            Dedica qualche istante per condividere la tua opinione.
           </p>
         </div>
 
@@ -334,39 +315,23 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                   <select
                     required
                     value={sourceChannel}
-                    onChange={e => {
-                      setSourceChannel(e.target.value);
-                      if (e.target.value !== 'Altro') {
-                        setSourceChannelOther('');
-                      }
-                    }}
+                    onChange={e => setSourceChannel(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold cursor-pointer"
                   >
                     <option value="">Seleziona canale...</option>
                     <option value="Google">Google</option>
-                    <option value="Instagram">Instagram</option>
+                    <option value="Social">Social</option>
                     <option value="Passaparola">Passaparola</option>
-                    <option value="Altro">Altro</option>
                   </select>
-                  {sourceChannel === 'Altro' && (
-                    <input
-                      type="text"
-                      placeholder="Specifica come..."
-                      value={sourceChannelOther}
-                      onChange={e => setSourceChannelOther(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold"
-                      required
-                    />
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* SEZIONE 3: Valutazione delle performance */}
+            {/* SEZIONE 3: Valutazione */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
                 <ThumbsUp className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Valutazione delle performance</h2>
+                <h2 className="text-xl font-bold text-gray-950">Valutazione</h2>
               </div>
 
               <div className="grid grid-cols-1 gap-6">
@@ -374,8 +339,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
                   <div className="flex justify-between items-start gap-4">
                     <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">Soddisfazione generale del risultato</h3>
-                      <p className="text-xs text-gray-400 mt-1">Come valuti l'esito complessivo del progetto consegnato?</p>
+                      <h3 className="text-sm font-extrabold text-gray-905">Come valuti l'esito complessivo del progetto?</h3>
                     </div>
                     <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
                       {ratingSatisfaction !== null ? `${ratingSatisfaction}/5` : '-/5'}
@@ -403,8 +367,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
                   <div className="flex justify-between items-start gap-4">
                     <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">Rispetto delle aspettative iniziali</h3>
-                      <p className="text-xs text-gray-400 mt-1">Il risultato finale rispetta i tuoi obiettivi iniziali?</p>
+                      <h3 className="text-sm font-extrabold text-gray-905">Il risultato finale rispetta i tuoi obiettivi iniziali?</h3>
                     </div>
                     <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
                       {ratingExpectations !== null ? `${ratingExpectations}/5` : '-/5'}
@@ -432,8 +395,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
                   <div className="flex justify-between items-start gap-4">
                     <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">Rispetto dei tempi di consegna</h3>
-                      <p className="text-xs text-gray-400 mt-1">Puntualità nelle tappe e nella consegna finale.</p>
+                      <h3 className="text-sm font-extrabold text-gray-905">I tempi di consegna sono stati rispettati?</h3>
                     </div>
                     <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
                       {ratingDeliveryTimes !== null ? `${ratingDeliveryTimes}/5` : '-/5'}
@@ -456,68 +418,19 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                     ))}
                   </div>
                 </div>
-
-                {/* 5. Semplicità del processo */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">Semplicità del processo di lavoro (brief, revisioni, consegna)</h3>
-                      <p className="text-xs text-gray-400 mt-1">Naturalezza nello svolgimento, condivisione idee e passaggi.</p>
-                    </div>
-                    <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
-                      {ratingProcessSimplicity !== null ? `${ratingProcessSimplicity}/5` : '-/5'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 max-w-xs pt-1">
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setRatingProcessSimplicity(num)}
-                        className={`py-2 rounded-xl border font-bold text-sm text-center transition-all ${
-                          ratingProcessSimplicity === num
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* SEZIONE 4: Valore percepito */}
+            {/* SEZIONE 4: Valore */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
                 <Award className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Valore percepito</h2>
+                <h2 className="text-xl font-bold text-gray-950">Valore</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="max-w-md">
                 <div className="flex flex-col justify-between">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Il risultato ha migliorato concretamente la percezione della tua attività?</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {['Sì', 'No', 'In parte'].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setImprovedBusiness(val)}
-                        className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
-                          improvedBusiness === val
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-between">
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Il prezzo è stato percepito come:</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-3">Ritieni che il prezzo sia stato:</label>
                   <div className="grid grid-cols-3 gap-3">
                     {['Basso', 'Adeguato', 'Alto'].map((val) => (
                       <button
@@ -538,17 +451,17 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
               </div>
             </div>
 
-            {/* SEZIONE 5: Feedback aperto (textarea) */}
+            {/* SEZIONE 5: Feedback (textarea) */}
             <div className="space-y-6">
               <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
                 <MessageSquare className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Feedback aperto</h2>
+                <h2 className="text-xl font-bold text-gray-950">Feedback</h2>
               </div>
 
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Raccontami la tua esperienza: cosa ti è piaciuto di più, cosa vorresti fosse diverso o eventuali consigli per migliorare? <span className="text-xs text-gray-400 font-normal">(facoltativo)</span>
+                    Raccontami la tua esperienza
                   </label>
                   <textarea
                     rows={6}
@@ -608,27 +521,19 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
               </div>
             </div>
 
-            {/* SEZIONE 7: Consenso utilizzo contenuti */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <Shield className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Consenso utilizzo contenuti</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-start gap-4">
-                  <input
-                    required
-                    type="checkbox"
-                    id="authorizeCaseStudy"
-                    className="mt-1 h-5 w-5 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2 transition-all cursor-pointer"
-                    checked={authorizeCaseStudy}
-                    onChange={e => setAuthorizeCaseStudy(e.target.checked)}
-                  />
-                  <label htmlFor="authorizeCaseStudy" className="text-xs text-gray-650 leading-relaxed font-semibold cursor-pointer select-none">
-                    Autorizzo l’utilizzo del feedback e del progetto come case study su questo sito e sui miei canali professionali.
-                  </label>
-                </div>
+            <div className="space-y-4">
+              <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-start gap-4">
+                <input
+                  required
+                  type="checkbox"
+                  id="authorizeCaseStudy"
+                  className="mt-1 h-5 w-5 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2 transition-all cursor-pointer"
+                  checked={authorizeCaseStudy}
+                  onChange={e => setAuthorizeCaseStudy(e.target.checked)}
+                />
+                <label htmlFor="authorizeCaseStudy" className="text-xs text-gray-650 leading-relaxed font-semibold cursor-pointer select-none">
+                  Autorizzo l’utilizzo del feedback e del progetto come case study su questo sito e sui miei canali professionali.
+                </label>
               </div>
             </div>
 
