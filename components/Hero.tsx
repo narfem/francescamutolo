@@ -120,17 +120,15 @@ const Hero: React.FC = () => {
 
           <div className="text-slate-600 space-y-3 md:space-y-8">
             <p className="text-sm sm:text-lg md:text-xl lg:text-3xl font-medium leading-normal sm:leading-tight text-slate-800">
-              Mi chiamo Francesca, classe 1986. <br className="hidden sm:inline" />{" "}
-              Sono sarda, per nascita e per scelta. <br className="hidden sm:inline" />{" "}
-              Unisco la solida base della comunicazione visiva alle infinite potenzialità dell'<strong>Intelligenza Artificiale</strong>.
+              Sono Francesca, faccio grafica e brand identity da sempre.
             </p>
             
             <p className="text-xs sm:text-base md:text-lg lg:text-xl leading-relaxed">
-              Il mio percorso è iniziato con la curiosità di chi vuole capire come le immagini influenzano le emozioni, evolvendo poi in una ricerca costante tra estetica classica e tecnologia d'avanguardia. Credo fermamente che il design non debba solo essere "bello", ma debba assolvere a una funzione precisa.
+              Unisco una solida base nella comunicazione visiva alla velocità dell’intelligenza artificiale.
             </p>
 
             <div className="font-medium text-xs sm:text-base md:text-lg lg:text-2xl text-slate-900 border-l-2 sm:border-l-4 border-[#F39637] pl-3 md:pl-8 py-1 md:py-2 italic bg-slate-50/30 rounded-r-xl">
-              Aiuto professionisti e aziende a raccontarsi con autenticità, eleganza e quel pizzico di innovazione che fa la differenza.
+              Aiuto professionisti e aziende a raccontarsi con autenticità e quel pizzico di innovazione che fa la differenza.
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pt-6 md:pt-10">

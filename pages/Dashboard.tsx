@@ -127,9 +127,21 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/sistema-contatti" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/sistema-contatti') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Globe size={18} /> Sistema Contatti
         </Link>
-        <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95">
-          <ExternalLink size={18} /> Freelance Suite
-        </a>
+        <div className="pt-4 mt-4 border-t border-white/10 space-y-1">
+          <p className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">I Miei Strumenti</p>
+          <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
+            <ExternalLink size={16} /> Freelance Suite
+          </a>
+          <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
+            <ExternalLink size={16} /> Red Timer
+          </a>
+          <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
+            <ExternalLink size={16} /> Pro Track
+          </a>
+          <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-white/10 text-white/95 text-sm">
+            <ExternalLink size={16} /> Chromarium
+          </a>
+        </div>
 
         <div className="pt-4 mt-4 border-t border-white/10">
           <button 
@@ -193,65 +205,94 @@ const Dashboard: React.FC = () => {
 };
 
 const DashboardHome = () => (
-  <div className="animate-in fade-in duration-500">
-    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">Bentornata, Francesca</h1>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <Link to="/dashboard/portfolio" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-          <ImageIcon size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Portfolio</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Aggiorna i tuoi lavori</p>
-      </Link>
-      <Link to="/dashboard/leads" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <MessageSquare size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Lead</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Contatti ricevuti</p>
-      </Link>
-      <Link to="/dashboard/questionari" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary text-gradient-brand">
-          <ClipboardList size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Questionari</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
-      </Link>
-      <Link to="/dashboard/feedback" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <Star size={24} className="text-[#F39637] fill-[#F39637]" />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Feedback</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci le recensioni</p>
-      </Link>
-      <Link to="/dashboard/cv" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-          <FileText size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">CV</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestione link CV</p>
-      </Link>
-      <Link to="/dashboard/mutey" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <Sparkles size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Mutey AI</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Istruzioni assistente</p>
-      </Link>
-      <Link to="/dashboard/sistema-contatti" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-          <Globe size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
-      </Link>
-      <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <ExternalLink size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
-        <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
-      </a>
+  <div className="animate-in fade-in duration-500 space-y-12">
+    <div>
+      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">Bentornata, Francesca</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Link to="/dashboard/portfolio" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <ImageIcon size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Portfolio</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Aggiorna i tuoi lavori</p>
+        </Link>
+        <Link to="/dashboard/leads" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+            <MessageSquare size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Lead</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Contatti ricevuti</p>
+        </Link>
+        <Link to="/dashboard/questionari" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary text-gradient-brand">
+            <ClipboardList size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Questionari</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
+        </Link>
+        <Link to="/dashboard/feedback" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+            <Star size={24} className="text-[#F39637] fill-[#F39637]" />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Feedback</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci le recensioni</p>
+        </Link>
+        <Link to="/dashboard/cv" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <FileText size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">CV</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestione link CV</p>
+        </Link>
+        <Link to="/dashboard/mutey" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+            <Sparkles size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Mutey AI</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Istruzioni assistente</p>
+        </Link>
+        <Link to="/dashboard/sistema-contatti" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <Globe size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Contatti Universali</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Configura Gateway</p>
+        </Link>
+      </div>
+    </div>
+
+    <div className="pt-6 border-t border-gray-200">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">I Miei Strumenti Esterni</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+            <ExternalLink size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
+        </a>
+        <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <ExternalLink size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Red Timer</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">Traccia il tempo di lavoro →</p>
+        </a>
+        <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
+            <ExternalLink size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Pro Track</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">Gestione progetti →</p>
+        </a>
+        <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <ExternalLink size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Chromarium</p>
+          <p className="text-lg font-bold text-gray-900 mt-1">Gestione colori e palette →</p>
+        </a>
+      </div>
     </div>
   </div>
 );
