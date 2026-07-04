@@ -5,6 +5,7 @@ export interface PortfolioItem {
   category: string;
   image_url: string;
   is_featured: boolean;
+  site_url?: string;
   created_at?: string;
 }
 

@@ -610,7 +610,7 @@ const ManagePortfolio = () => {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
-  const [newItem, setNewItem] = useState({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false });
+  const [newItem, setNewItem] = useState({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false, site_url: '' });
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -656,14 +656,30 @@ const ManagePortfolio = () => {
     return url;
   }
 
+  const getSiteUrlFromDescription = (desc: string) => {
+    if (!desc) return '';
+    const match = desc.match(/\[SITE_URL:(.*?)\]/);
+    return match ? match[1] : '';
+  };
+
+  const getCleanDescription = (desc: string) => {
+    if (!desc) return '';
+    return desc.replace(/\[SITE_URL:.*?\]/, '').trim();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     const finalUrl = convertDriveUrl(newItem.image_url);
     
+    let finalDescription = newItem.description;
+    if (newItem.category === 'Web' && newItem.site_url) {
+      finalDescription = `${newItem.description} [SITE_URL:${newItem.site_url}]`;
+    }
+    
     const itemData = { 
       title: newItem.title,
-      description: newItem.description,
+      description: finalDescription,
       category: newItem.category,
       image_url: finalUrl,
       is_featured: newItem.is_featured 
@@ -682,7 +698,7 @@ const ManagePortfolio = () => {
     } else {
       setIsAdding(false);
       setEditingItem(null);
-      setNewItem({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false });
+      setNewItem({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false, site_url: '' });
       fetchItems();
     }
     setLoading(false);
@@ -690,12 +706,16 @@ const ManagePortfolio = () => {
 
   const handleEdit = (item: PortfolioItem) => {
     setEditingItem(item);
+    const siteUrl = item.site_url || getSiteUrlFromDescription(item.description || '');
+    const cleanDesc = getCleanDescription(item.description || '');
+    
     setNewItem({
       title: item.title,
-      description: item.description,
+      description: cleanDesc,
       category: item.category,
       image_url: item.image_url,
-      is_featured: item.is_featured || false
+      is_featured: item.is_featured || false,
+      site_url: siteUrl
     });
     setIsAdding(true);
   };
@@ -729,7 +749,7 @@ const ManagePortfolio = () => {
   const closeForm = () => {
     setIsAdding(false);
     setEditingItem(null);
-    setNewItem({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false });
+    setNewItem({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false, site_url: '' });
   };
 
   return (
@@ -765,8 +785,21 @@ const ManagePortfolio = () => {
                     <option>Flyer & Poster</option>
                     <option>Social Media</option>
                     <option>Print</option>
+                    <option>Web</option>
                   </select>
                 </div>
+                {newItem.category === 'Web' && (
+                  <div className="animate-in fade-in duration-200">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Link del sito Web</label>
+                    <input 
+                      type="url" 
+                      placeholder="https://esempio.com" 
+                      className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm text-gray-900 font-semibold"
+                      value={newItem.site_url || ''} 
+                      onChange={e => setNewItem({...newItem, site_url: e.target.value})} 
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-xl border border-gray-100 cursor-pointer hover:bg-white transition-colors">
                     <input 
@@ -782,8 +815,10 @@ const ManagePortfolio = () => {
                   </label>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Link Google Drive</label>
-                  <input required placeholder="Incolla il link 'Condividi' di Drive" className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm text-gray-900"
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Link Google Drive {newItem.category === 'Web' && <span className="text-gray-400 font-normal"> (facoltativo)</span>}
+                  </label>
+                  <input required={newItem.category !== 'Web'} placeholder="Incolla il link 'Condividi' di Drive" className="w-full p-3 md:p-4 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary outline-none text-sm text-gray-900"
                     value={newItem.image_url} onChange={e => setNewItem({...newItem, image_url: e.target.value})} />
                 </div>
               </div>
@@ -791,7 +826,7 @@ const ManagePortfolio = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Anteprima Visiva</label>
                 <div className="aspect-video bg-gray-100 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 flex items-center justify-center relative group">
                   {newItem.image_url ? (
-                    <img src={convertDriveUrl(newItem.image_url)} alt="Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                    <img src={convertDriveUrl(newItem.image_url)} alt="Preview" referrerPolicy="no-referrer" className={`w-full h-full object-cover ${newItem.category === 'Web' ? 'object-top' : 'object-center'}`} />
                   ) : (
                     <div className="text-center p-6 text-gray-300">
                       <ImageIcon size={32} className="mx-auto mb-2" />
@@ -824,7 +859,7 @@ const ManagePortfolio = () => {
               />
             </button>
             <div className="aspect-video relative overflow-hidden bg-gray-100">
-              <img src={item.image_url} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
+              <img src={item.image_url} alt="" referrerPolicy="no-referrer" className={`w-full h-full object-cover ${item.category === 'Web' ? 'object-top' : 'object-center'}`} onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
               <div className="absolute inset-0 bg-black/60 lg:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                 <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="bg-white text-primary p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Pencil size={20} className="pointer-events-none" /></button>
                 <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="bg-white text-red-500 p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Trash2 size={20} className="pointer-events-none" /></button>

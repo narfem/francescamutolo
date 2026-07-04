@@ -78,7 +78,7 @@ const DEFAULT_QUESTIONS = {
     deadline_label: "Entro quando serve il progetto?",
     deadline_placeholder: "Es: Entro 2 settimane, entro un mese, nessuna fretta...",
     extra_deliverables_label: "Insieme al logo, hai bisogno di (Seleziona uno o più):",
-    extra_deliverables_options: ["palette colori", "versioni monocromatiche", "logo orizzontale", "logo verticale", "favicon", "biglietto da visita", "carta intestata", "landing page", "grafica insegna", "flyer, locandina, menu o simili"]
+    extra_deliverables_options: ["palette colori", "versioni monocromatiche", "logo orizzontale", "logo verticale", "favicon", "biglietto da visita", "carta intestata", "pagina web", "grafica insegna", "flyer, locandina, menu o simili"]
   },
   step8: {
     title: "Ultima Domanda Importante",
@@ -94,6 +94,7 @@ const Questionnaire: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [authorized, setAuthorized] = useState(false);
 
   const [questions, setQuestions] = useState<any>(null);
 
@@ -123,6 +124,22 @@ const Questionnaire: React.FC = () => {
 
   const [customAnswers, setCustomAnswers] = useState<Record<string, { label: string, value: string }>>({});
 
+  const isLabelOptional = (label: string) => {
+    if (!label) return false;
+    const l = label.toLowerCase();
+    return l.includes('(facoltativo)') || l.includes('(facoltativa)') || l.includes('facoltativo') || l.includes('facoltativa');
+  };
+
+  const renderFieldLabel = (label: string) => {
+    const isOptional = isLabelOptional(label);
+    return (
+      <span className="inline-flex items-center gap-1">
+        <span>{label}</span>
+        {!isOptional && <span className="text-red-500 font-bold" title="Obbligatorio">*</span>}
+      </span>
+    );
+  };
+
   const handleCustomAnswerChange = (cqId: string, label: string, value: string) => {
     setCustomAnswers(prev => ({
       ...prev,
@@ -144,7 +161,7 @@ const Questionnaire: React.FC = () => {
           const valObj = customAnswers[cq.id] || { label: cq.label, value: '' };
           return (
             <div key={cq.id} className="space-y-2 text-left">
-              <label className="block text-sm font-bold text-gray-700">{cq.label}</label>
+              <label className="block text-sm font-bold text-gray-700">{renderFieldLabel(cq.label)}</label>
               {cq.type === 'textarea' ? (
                 <textarea
                   rows={4}
@@ -237,9 +254,176 @@ const Questionnaire: React.FC = () => {
     });
   };
 
+  const validateStep = (stepNum: number) => {
+    const qSource = questions || DEFAULT_QUESTIONS;
+    const stepKey = `step${stepNum}` as 'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6' | 'step7' | 'step8';
+    const stepConfig = qSource[stepKey];
+    if (!stepConfig) return true;
+
+    // Check custom questions first
+    const customQs = stepConfig.custom_questions || [];
+    for (const cq of customQs) {
+      if (!isLabelOptional(cq.label)) {
+        const valObj = customAnswers[cq.id];
+        if (!valObj || !valObj.value || !valObj.value.trim()) {
+          alert(`La risposta alla domanda "${cq.label}" è richiesta.`);
+          return false;
+        }
+      }
+    }
+
+    const isFieldActive = (field: string) => !isFieldHidden(stepNum, field);
+
+    if (stepNum === 1) {
+      if (isFieldActive('company_name') && !formData.company_name.trim()) {
+        alert(`Il campo "${stepConfig.company_name_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('name_meaning') && !formData.name_meaning.trim() && !isLabelOptional(stepConfig.name_meaning_label)) {
+        alert(`Il campo "${stepConfig.name_meaning_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('business_description') && !formData.business_description.trim() && !isLabelOptional(stepConfig.business_description_label)) {
+        alert(`Il campo "${stepConfig.business_description_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('products_services') && !formData.products_services.trim() && !isLabelOptional(stepConfig.products_services_label)) {
+        alert(`Il campo "${stepConfig.products_services_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('strength_point') && !formData.strength_point.trim() && !isLabelOptional(stepConfig.strength_point_label)) {
+        alert(`Il campo "${stepConfig.strength_point_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('slogan') && !formData.slogan.trim() && !isLabelOptional(stepConfig.slogan_label)) {
+        alert(`Il campo "${stepConfig.slogan_label}" è richiesto.`);
+        return false;
+      }
+    }
+
+    if (stepNum === 2) {
+      if (isFieldActive('target_customers') && !formData.target_customers.trim() && !isLabelOptional(stepConfig.target_customers_label)) {
+        alert(`Il campo "${stepConfig.target_customers_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('age_range') && !formData.age_range.trim() && !isLabelOptional(stepConfig.age_range_label)) {
+        alert(`Il campo "${stepConfig.age_range_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('customer_type') && !formData.customer_type && !isLabelOptional(stepConfig.customer_type_label)) {
+        alert(`La selezione per "${stepConfig.customer_type_label}" è richiesta.`);
+        return false;
+      }
+      if (isFieldActive('market_scope') && !formData.market_scope && !isLabelOptional(stepConfig.market_scope_label)) {
+        alert(`La selezione per "${stepConfig.market_scope_label}" è richiesta.`);
+        return false;
+      }
+      if (isFieldActive('brand_perception_target') && !formData.brand_perception_target.trim() && !isLabelOptional(stepConfig.brand_perception_target_label)) {
+        alert(`Il campo "${stepConfig.brand_perception_target_label}" è richiesto.`);
+        return false;
+      }
+    }
+
+    if (stepNum === 3) {
+      if (isFieldActive('keywords') && !isLabelOptional(stepConfig.keywords_label)) {
+        const totalKeywords = formData.keywords.length + (hasOtherKeyword && otherKeywordText.trim() ? 1 : 0);
+        if (totalKeywords === 0) {
+          alert(`È necessario selezionare almeno una parola chiave.`);
+          return false;
+        }
+      }
+      if (isFieldActive('brand_perception') && !formData.brand_perception.trim() && !isLabelOptional(stepConfig.brand_perception_label)) {
+        alert(`Il campo "${stepConfig.brand_perception_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('brand_personified') && !isLabelOptional(stepConfig.brand_personified_label) && !formData.brand_personified.trim()) {
+        alert(`Il campo "${stepConfig.brand_personified_label}" è richiesto.`);
+        return false;
+      }
+    }
+
+    if (stepNum === 4) {
+      if (isFieldActive('palette_favorite') && !formData.palette_favorite.trim() && !isLabelOptional(stepConfig.palette_favorite_label)) {
+        alert(`Il campo "${stepConfig.palette_favorite_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('palette_avoid') && !formData.palette_avoid.trim() && !isLabelOptional(stepConfig.palette_avoid_label)) {
+        alert(`Il campo "${stepConfig.palette_avoid_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('logo_style') && !formData.logo_style && !isLabelOptional(stepConfig.logo_style_label)) {
+        alert(`La selezione per "${stepConfig.logo_style_label}" è richiesta.`);
+        return false;
+      }
+      if (isFieldActive('logo_composition') && !formData.logo_composition && !isLabelOptional(stepConfig.logo_composition_label)) {
+        alert(`La selezione per "${stepConfig.logo_composition_label}" è richiesta.`);
+        return false;
+      }
+      if (isFieldActive('logos_liked') && !formData.logos_liked.trim() && !isLabelOptional(stepConfig.logos_liked_label)) {
+        alert(`Il campo "${stepConfig.logos_liked_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('logos_disliked') && !formData.logos_disliked.trim() && !isLabelOptional(stepConfig.logos_disliked_label)) {
+        alert(`Il campo "${stepConfig.logos_disliked_label}" è richiesto.`);
+        return false;
+      }
+    }
+
+    if (stepNum === 5) {
+      if (isFieldActive('competitors') && !formData.competitors.trim() && !isLabelOptional(stepConfig.competitors_label)) {
+        alert(`Il campo "${stepConfig.competitors_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('admired_companies') && !formData.admired_companies.trim() && !isLabelOptional(stepConfig.admired_companies_label)) {
+        alert(`Il campo "${stepConfig.admired_companies_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('differentiation_strategy') && !formData.differentiation_strategy && !isLabelOptional(stepConfig.differentiation_strategy_label)) {
+        alert(`La selezione per "${stepConfig.differentiation_strategy_label}" è richiesta.`);
+        return false;
+      }
+    }
+
+    if (stepNum === 6) {
+      if (isFieldActive('logo_applications') && !isLabelOptional(stepConfig.logo_applications_label)) {
+        const totalApps = formData.logo_applications.length + (hasOtherLogoApp && otherLogoAppText.trim() ? 1 : 0);
+        if (totalApps === 0) {
+          alert(`È necessario selezionare almeno un'applicazione d'uso per il logo.`);
+          return false;
+        }
+      }
+    }
+
+    if (stepNum === 7) {
+      if (isFieldActive('deadline') && !formData.deadline.trim() && !isLabelOptional(stepConfig.deadline_label)) {
+        alert(`Il campo "${stepConfig.deadline_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('extra_deliverables') && !isLabelOptional(stepConfig.extra_deliverables_label)) {
+        const totalDelivs = formData.extra_deliverables.length + (hasOtherDeliverable && otherDeliverableText.trim() ? 1 : 0);
+        if (totalDelivs === 0) {
+          alert(`È necessario selezionare almeno una delle voci richieste.`);
+          return false;
+        }
+      }
+    }
+
+    if (stepNum === 8) {
+      if (isFieldActive('five_years_vision') && !formData.five_years_vision.trim() && !isLabelOptional(stepConfig.five_years_vision_label)) {
+        alert(`Il campo "${stepConfig.five_years_vision_label}" è richiesto.`);
+        return false;
+      }
+      if (isFieldActive('notes') && !isLabelOptional(stepConfig.notes_label) && !formData.notes.trim()) {
+        alert(`Il campo "${stepConfig.notes_label}" è richiesto.`);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const nextStep = () => {
-    if (currentStep === 1 && !formData.company_name.trim()) {
-      alert("Il nome dell'azienda o del brand è richiesto per continuare.");
+    if (!validateStep(currentStep)) {
       return;
     }
     if (currentStep < totalSteps) {
@@ -256,8 +440,12 @@ const Questionnaire: React.FC = () => {
   };
 
   const submitQuestionnaire = async () => {
-    if (!formData.company_name.trim()) {
-      alert("Il nome dell'azienda o del brand è richiesto.");
+    if (!validateStep(currentStep)) {
+      return;
+    }
+
+    if (!authorized) {
+      alert("È necessario autorizzare l'utilizzo delle informazioni e dei dati inseriti per poter inviare il questionario.");
       return;
     }
 
@@ -439,7 +627,7 @@ const Questionnaire: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.company_name_label}</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.company_name_label)}</label>
                   <input
                     required
                     type="text"
@@ -452,7 +640,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(1, 'name_meaning') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.name_meaning_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.name_meaning_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.name_meaning}
@@ -465,7 +653,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(1, 'business_description') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.business_description_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.business_description_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.business_description}
@@ -478,7 +666,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(1, 'products_services') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.products_services_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.products_services_label)}</label>
                     <textarea
                       rows={3}
                       value={formData.products_services}
@@ -491,7 +679,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(1, 'strength_point') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.strength_point_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.strength_point_label)}</label>
                     <textarea
                       rows={3}
                       value={formData.strength_point}
@@ -504,7 +692,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(1, 'slogan') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step1.slogan_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step1.slogan_label)}</label>
                     <input
                       type="text"
                       value={formData.slogan}
@@ -529,7 +717,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(2, 'target_customers') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.target_customers_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step2.target_customers_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.target_customers}
@@ -542,7 +730,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(2, 'age_range') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.age_range_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step2.age_range_label)}</label>
                     <input
                       type="text"
                       value={formData.age_range}
@@ -555,7 +743,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(2, 'customer_type') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step2.customer_type_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step2.customer_type_label)}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {q.step2.customer_type_options.map((type: string) => (
                         <button
@@ -577,7 +765,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(2, 'market_scope') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step2.market_scope_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step2.market_scope_label)}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {q.step2.market_scope_options.map((scope: string) => (
                         <button
@@ -599,7 +787,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(2, 'brand_perception_target') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step2.brand_perception_target_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step2.brand_perception_target_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.brand_perception_target}
@@ -624,7 +812,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(3, 'keywords') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step3.keywords_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step3.keywords_label)}</label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {q.step3.keywords_options.map((keyword: string) => {
                         const isSelected = formData.keywords.includes(keyword);
@@ -678,7 +866,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(3, 'brand_perception') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step3.brand_perception_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step3.brand_perception_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.brand_perception}
@@ -691,7 +879,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(3, 'brand_personified') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step3.brand_personified_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step3.brand_personified_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.brand_personified}
@@ -716,7 +904,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(4, 'palette_favorite') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.palette_favorite_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step4.palette_favorite_label)}</label>
                     <input
                       type="text"
                       value={formData.palette_favorite}
@@ -729,7 +917,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(4, 'palette_avoid') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.palette_avoid_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step4.palette_avoid_label)}</label>
                     <textarea
                       rows={3}
                       value={formData.palette_avoid}
@@ -744,7 +932,7 @@ const Questionnaire: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {!isFieldHidden(4, 'logo_style') && (
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-3">{q.step4.logo_style_label}</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step4.logo_style_label)}</label>
                         <div className="flex flex-col gap-3">
                           {q.step4.logo_style_options.map((style: string) => (
                             <button
@@ -766,7 +954,7 @@ const Questionnaire: React.FC = () => {
 
                     {!isFieldHidden(4, 'logo_composition') && (
                       <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-3">{q.step4.logo_composition_label}</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step4.logo_composition_label)}</label>
                         <div className="flex flex-col gap-3">
                           {q.step4.logo_composition_options.map((composition: string) => (
                             <button
@@ -790,7 +978,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(4, 'logos_liked') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.logos_liked_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step4.logos_liked_label)}</label>
                     <textarea
                       rows={3}
                       value={formData.logos_liked}
@@ -803,7 +991,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(4, 'logos_disliked') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step4.logos_disliked_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step4.logos_disliked_label)}</label>
                     <textarea
                       rows={3}
                       value={formData.logos_disliked}
@@ -828,7 +1016,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(5, 'competitors') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step5.competitors_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step5.competitors_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.competitors}
@@ -841,7 +1029,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(5, 'admired_companies') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step5.admired_companies_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step5.admired_companies_label)}</label>
                     <textarea
                       rows={4}
                       value={formData.admired_companies}
@@ -854,7 +1042,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(5, 'differentiation_strategy') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step5.differentiation_strategy_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step5.differentiation_strategy_label)}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {q.step5.differentiation_strategy_options.map((opt: string) => (
                         <button
@@ -888,7 +1076,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(6, 'logo_applications') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step6.logo_applications_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step6.logo_applications_label)}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {q.step6.logo_applications_options.map((app: string) => {
                         const isSelected = formData.logo_applications.includes(app);
@@ -955,7 +1143,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(7, 'deadline') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">{q.step7.deadline_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">{renderFieldLabel(q.step7.deadline_label)}</label>
                     <input
                       type="text"
                       value={formData.deadline}
@@ -968,7 +1156,7 @@ const Questionnaire: React.FC = () => {
 
                 {!isFieldHidden(7, 'extra_deliverables') && (
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-3">{q.step7.extra_deliverables_label}</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-3">{renderFieldLabel(q.step7.extra_deliverables_label)}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {q.step7.extra_deliverables_options.map((deliv: string) => {
                         const isSelected = formData.extra_deliverables.includes(deliv);
@@ -1021,17 +1209,6 @@ const Questionnaire: React.FC = () => {
                   </div>
                 )}
                 
-                <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
-                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-widest">Compreso nella consegna standard:</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 font-medium">
-                    <div className="flex items-center gap-2">✓ Manuale del Brand (PDF)</div>
-                    <div className="flex items-center gap-2">✓ Formato vettoriale SVG</div>
-                    <div className="flex items-center gap-2">✓ Formato pronto stampa EPS/PDF</div>
-                    <div className="flex items-center gap-2">✓ Immagini PNG (sfondo trasparente)</div>
-                    <div className="flex items-center gap-2">✓ Immagini ad alta risoluzione JPG</div>
-                    <div className="flex items-center gap-2">✓ Link ai font raccomandati</div>
-                  </div>
-                </div>
 
                 {renderCustomQuestionsForStep(7)}
               </div>
@@ -1048,7 +1225,7 @@ const Questionnaire: React.FC = () => {
                 {!isFieldHidden(8, 'five_years_vision') && (
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-4 leading-relaxed">
-                      {q.step8.five_years_vision_label}
+                      {renderFieldLabel(q.step8.five_years_vision_label)}
                     </label>
                     <textarea
                       rows={6}
@@ -1063,7 +1240,7 @@ const Questionnaire: React.FC = () => {
                 {!isFieldHidden(8, 'notes') && (
                   <div className="pt-4">
                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                      {q.step8.notes_label}
+                      {renderFieldLabel(q.step8.notes_label)}
                     </label>
                     <textarea
                       rows={4}
@@ -1076,6 +1253,21 @@ const Questionnaire: React.FC = () => {
                 )}
 
                 {renderCustomQuestionsForStep(8)}
+
+                <div className="pt-6 mt-6 border-t border-gray-100">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      required
+                      className="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary accent-primary shrink-0 cursor-pointer"
+                      checked={authorized}
+                      onChange={e => setAuthorized(e.target.checked)}
+                    />
+                    <span className="text-sm text-gray-600 leading-relaxed font-semibold select-none">
+                      Autorizzo Francesca Mutolo all'utilizzo e al trattamento delle informazioni e dei dati personali inseriti in questo questionario, ai sensi del GDPR, al fine esclusivo di poter procedere alla lavorazione e allo sviluppo del mio progetto.
+                    </span>
+                  </label>
+                </div>
               </div>
             )}
 

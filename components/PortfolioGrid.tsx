@@ -10,7 +10,7 @@ const PortfolioGrid: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const categories = ['Tutti', 'Branding', 'Flyer & Poster', 'Social Media'];
+  const categories = ['Tutti', 'Branding', 'Flyer & Poster', 'Social Media', 'Web'];
 
   useEffect(() => {
     fetchPortfolio();
@@ -40,6 +40,26 @@ const PortfolioGrid: React.FC = () => {
     }
   };
 
+  const getSiteUrlFromDescription = (desc: string) => {
+    if (!desc) return '';
+    const match = desc.match(/\[SITE_URL:(.*?)\]/);
+    return match ? match[1] : '';
+  };
+
+  const getCleanDescription = (desc: string) => {
+    if (!desc) return '';
+    return desc.replace(/\[SITE_URL:.*?\]/, '').trim();
+  };
+
+  const handleCardClick = (item: PortfolioItem) => {
+    const siteUrl = item.site_url || getSiteUrlFromDescription(item.description || '');
+    if (item.category === 'Web' && siteUrl) {
+      window.open(siteUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setSelectedItem(item);
+    }
+  };
+
   const categoryItems = activeCategory === 'Tutti' 
     ? items 
     : items.filter(item => {
@@ -47,7 +67,7 @@ const PortfolioGrid: React.FC = () => {
             return item.category === 'Flyer & Poster' || item.category === 'Flayer & Poster';
         }
         return item.category === activeCategory;
-    });
+      });
 
   const filteredItems = (showAll || activeCategory !== 'Tutti' || !categoryItems.some(item => item.is_featured))
     ? categoryItems 
@@ -90,7 +110,7 @@ const PortfolioGrid: React.FC = () => {
           <div 
             key={item.id} 
             className="group flex flex-col w-full sm:w-[calc(50%-1.25rem)] lg:w-[calc(33.333%-1.7rem)] max-w-sm cursor-pointer relative"
-            onClick={() => setSelectedItem(item)}
+            onClick={() => handleCardClick(item)}
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-sm group-hover:shadow-2xl transition-all duration-500 bg-gray-100">
               {item.image_url ? (
@@ -98,7 +118,7 @@ const PortfolioGrid: React.FC = () => {
                   src={item.image_url} 
                   alt={item.title} 
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${item.category === 'Web' ? 'object-top' : 'object-center'}`}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://placehold.co/800x600?text=Immagine+Non+Disponibile';
@@ -122,7 +142,7 @@ const PortfolioGrid: React.FC = () => {
                 </h3>
                 {item.is_featured && <Star size={14} className="fill-primary text-primary" />}
               </div>
-              <p className="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-2 italic">{item.description}</p>
+              <p className="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-2 italic">{getCleanDescription(item.description)}</p>
             </div>
           </div>
         ))}
@@ -193,7 +213,7 @@ const PortfolioGrid: React.FC = () => {
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
                 {selectedItem.description && (
                   <p className="mt-2 md:mt-4 text-gray-600 leading-relaxed italic text-sm md:text-base line-clamp-2 md:line-clamp-none">
-                    {selectedItem.description}
+                    {getCleanDescription(selectedItem.description)}
                   </p>
                 )}
               </div>
