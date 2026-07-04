@@ -120,7 +120,7 @@ const ContactSection: React.FC = () => {
         
         <div className="mt-4 flex flex-col items-center gap-3 justify-center">
           <p className="text-sm text-slate-500 font-medium">
-            Vuoi un'analisi strategica completa? Compila il
+            Vuoi un'analisi strategica completa?
           </p>
           <Link 
             to="/questionario" 

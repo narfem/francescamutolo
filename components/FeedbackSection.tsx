@@ -7,7 +7,7 @@ const FeedbackSection: React.FC = () => {
       <div className="text-center mb-8">
         <h2 className="text-4xl font-extrabold text-gray-950 mb-4 tracking-tight">Lasciami un Feedback</h2>
         <p className="text-gray-600 max-w-xl mx-auto font-medium">
-          Hai collaborato con me o provato i miei servizi? La tua opinione è preziosa! Raccontami la tua esperienza compilando il nostro modulo ufficiale di valutazione del servizio.
+          Hai collaborato con me? La tua opinione è preziosa! Raccontami la tua esperienza
         </p>
       </div>
 
