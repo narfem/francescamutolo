@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
-  Archive
+  Archive, GripVertical
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -612,6 +612,7 @@ const ManagePortfolio = () => {
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [newItem, setNewItem] = useState({ title: '', description: '', category: 'Branding', image_url: '', is_featured: false, site_url: '' });
   const [loading, setLoading] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchItems(); }, []);
@@ -621,6 +622,55 @@ const ManagePortfolio = () => {
       formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [isAdding]);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newItems = [...items];
+    const draggedItem = newItems[draggedIndex];
+    newItems.splice(draggedIndex, 1);
+    newItems.splice(index, 0, draggedItem);
+    
+    setDraggedIndex(index);
+    setItems(newItems);
+  };
+
+  const handleDragEnd = async () => {
+    if (draggedIndex === null) return;
+    setDraggedIndex(null);
+
+    const now = new Date();
+    const updatedItems = items.map((item, index) => {
+      const itemDate = new Date(now.getTime() - index * 1000);
+      return {
+        ...item,
+        created_at: itemDate.toISOString()
+      };
+    });
+
+    setLoading(true);
+    try {
+      const promises = updatedItems.map((item) => {
+        return supabase
+          .from('portfolio')
+          .update({ created_at: item.created_at })
+          .eq('id', item.id);
+      });
+      await Promise.all(promises);
+      setItems(updatedItems);
+    } catch (err) {
+      console.error("Errore salvataggio ordinamento drag-and-drop:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -845,34 +895,63 @@ const ManagePortfolio = () => {
         </div>
       )}
 
+      <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 mb-6 flex items-center gap-3">
+        <GripVertical className="text-primary animate-pulse shrink-0" size={20} />
+        <p className="text-sm font-semibold text-primary">
+          Trascina e rilascia le schede per riordinare i progetti nel portfolio. L'ordinamento viene salvato automaticamente.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map(item => (
-          <div key={item.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl transition-all relative">
-            <button 
-              onClick={(e) => { e.stopPropagation(); toggleFeatured(item); }}
-              className="absolute top-4 left-4 z-10 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:scale-125 active:scale-95 transition-all border border-gray-100 group/star"
-              title={item.is_featured ? "Rimuovi dai lavori visibili" : "Mostra tra i miei lavori"}
+        {items.map((item, index) => {
+          const isDraggingThis = draggedIndex === index;
+          return (
+            <div 
+              key={item.id} 
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`bg-white rounded-3xl shadow-sm overflow-hidden group hover:shadow-xl transition-all relative cursor-grab active:cursor-grabbing select-none border ${
+                isDraggingThis 
+                  ? 'opacity-40 border-2 border-dashed border-primary/50 scale-95 shadow-lg' 
+                  : 'border-gray-100 hover:border-gray-200'
+              }`}
             >
-              <Star 
-                size={22} 
-                className={`${item.is_featured ? "fill-primary text-primary" : "text-gray-300 group-hover/star:text-primary"} transition-colors`} 
-              />
-            </button>
-            <div className="aspect-video relative overflow-hidden bg-gray-100">
-              <img src={item.image_url} alt="" referrerPolicy="no-referrer" className={`w-full h-full object-cover ${item.category === 'Web' ? 'object-top' : 'object-center'}`} onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
-              <div className="absolute inset-0 bg-black/60 lg:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="bg-white text-primary p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Pencil size={20} className="pointer-events-none" /></button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="bg-white text-red-500 p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Trash2 size={20} className="pointer-events-none" /></button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); toggleFeatured(item); }}
+                className="absolute top-4 left-4 z-10 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:scale-125 active:scale-95 transition-all border border-gray-100 group/star"
+                title={item.is_featured ? "Rimuovi dai lavori visibili" : "Mostra tra i miei lavori"}
+              >
+                <Star 
+                  size={22} 
+                  className={`${item.is_featured ? "fill-primary text-primary" : "text-gray-300 group-hover/star:text-primary"} transition-colors`} 
+                />
+              </button>
+              
+              <div 
+                className="absolute top-4 right-4 z-10 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-gray-100 text-gray-400 group-hover:text-primary transition-colors cursor-grab"
+                title="Trascina per riordinare"
+              >
+                <GripVertical size={18} />
+              </div>
+
+              <div className="aspect-video relative overflow-hidden bg-gray-100 pointer-events-none">
+                <img src={item.image_url} alt="" referrerPolicy="no-referrer" className={`w-full h-full object-cover ${item.category === 'Web' ? 'object-top' : 'object-center'}`} onError={(e) => { (e.target as any).src = 'https://placehold.co/600x400?text=Link+Non+Valido' }} />
+                <div className="absolute inset-0 bg-black/60 lg:opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 pointer-events-auto">
+                  <button onClick={(e) => { e.stopPropagation(); handleEdit(item); }} className="bg-white text-primary p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Pencil size={20} className="pointer-events-none" /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }} className="bg-white text-red-500 p-3 md:p-4 rounded-full hover:scale-110 transition-transform shadow-lg"><Trash2 size={20} className="pointer-events-none" /></button>
+                </div>
+              </div>
+              <div className="p-5">
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                  {item.category?.replace(/flayer/i, 'Flyer')}
+                </span>
+                <h3 className="font-bold text-gray-900 mt-1 truncate">{item.title}</h3>
               </div>
             </div>
-            <div className="p-5">
-              <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-                {item.category?.replace(/flayer/i, 'Flyer')}
-              </span>
-              <h3 className="font-bold text-gray-900 mt-1 truncate">{item.title}</h3>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
