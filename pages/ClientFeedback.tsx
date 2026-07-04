@@ -16,15 +16,11 @@ const ClientFeedback: React.FC = () => {
   // Section 1: Dati cliente & Progetto
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
-  const [age, setAge] = useState(''); // Empty string or positive number
-  const [gender, setGender] = useState(''); // SELECT: "Maschio" | "Femmina" | "Preferisco non rispondere"
 
   // Section 2: Informazioni Progetto
   const [projectType, setProjectType] = useState(''); // SELECT: "Logo" | "Brand identity" | "Materiali social" | "Locandina" | "Altro"
-  const [clientType, setClientType] = useState(''); // SELECT: "Libero professionista" | "Piccola attività" | "Azienda strutturata"
   const [sourceChannel, setSourceChannel] = useState(''); // SELECT: "Google" | "Instagram" | "Passaparola" | "Altro"
   const [projectTypeOther, setProjectTypeOther] = useState('');
-  const [clientTypeOther, setClientTypeOther] = useState('');
   const [sourceChannelOther, setSourceChannelOther] = useState('');
 
   // Section 3: Valutazione 1-5 (Scaled ratings)
@@ -38,9 +34,7 @@ const ClientFeedback: React.FC = () => {
   const [pricePerception, setPricePerception] = useState(''); // Buttons: "Basso" | "Adeguato" | "Alto"
 
   // Section 5: Feedback Aperto
-  const [whatAppreciated, setWhatAppreciated] = useState('');
-  const [whatDifferent, setWhatDifferent] = useState('');
-  const [suggestions, setSuggestions] = useState('');
+  const [openFeedback, setOpenFeedback] = useState('');
 
   // Section 6: Testimonianza Pubblicabile
   const [wantLeaveReview, setWantLeaveReview] = useState(''); // Buttons: "Sì" | "No"
@@ -65,31 +59,12 @@ const ClientFeedback: React.FC = () => {
       return;
     }
 
-    if (!age) {
-      alert("L'età è richiesta.");
-      return;
-    }
-
-    if (!gender) {
-      alert("La selezione del sesso è richiesta.");
-      return;
-    }
-
     if (!projectType) {
       alert("La selezione del tipo di progetto è richiesta.");
       return;
     }
     if (projectType === 'Altro' && !projectTypeOther.trim()) {
       alert("Specifica il tipo di progetto.");
-      return;
-    }
-
-    if (!clientType) {
-      alert("La selezione del tipo di attività è richiesta.");
-      return;
-    }
-    if (clientType === 'Altro' && !clientTypeOther.trim()) {
-      alert("Specifica il tipo di attività.");
       return;
     }
 
@@ -132,21 +107,6 @@ const ClientFeedback: React.FC = () => {
       return;
     }
 
-    if (!whatAppreciated.trim()) {
-      alert("Il campo 'Cosa hai apprezzato di più?' è richiesto.");
-      return;
-    }
-
-    if (!whatDifferent.trim()) {
-      alert("Il campo 'Cosa avresti voluto fosse diverso?' è richiesto.");
-      return;
-    }
-
-    if (!suggestions.trim()) {
-      alert("Il campo 'Suggerimenti' è richiesto.");
-      return;
-    }
-
     if (!wantLeaveReview) {
       alert("La risposta sulla volontà di lasciare una recensione è richiesta.");
       return;
@@ -176,12 +136,9 @@ const ClientFeedback: React.FC = () => {
 👤 DATI CLIENTE:
 - Nome del Cliente: ${name.trim()}
 - Azienda o Progetto: ${company.trim() || 'Non specificata'}
-- Età: ${age ? `${age} anni` : 'Non specificata'}
-- Sesso: ${gender || 'Non specificato'}
 
 📁 PROGETTO:
 - Tipo di progetto: ${projectType === 'Altro' ? `Altro: ${projectTypeOther.trim()}` : (projectType || 'Non specificato')}
-- Tipo di attività cliente: ${clientType === 'Altro' ? `Altro: ${clientTypeOther.trim()}` : (clientType || 'Non specificato')}
 - Canale di acquisizione (Come ci ha trovati): ${sourceChannel === 'Altro' ? `Altro: ${sourceChannelOther.trim()}` : (sourceChannel || 'Non specificato')}
 
 ⭐ PUNTEGGI DI VALUTAZIONE (1-5):
@@ -195,12 +152,8 @@ const ClientFeedback: React.FC = () => {
 - Percezione del prezzo: ${pricePerception || 'Non espressa'}
 
 💭 FEEDBACK APERTO:
-- Cosa hai apprezzato di più?:
-  ↳ "${whatAppreciated.trim() || 'Nessun commento.'}"
-- Cosa avresti voluto fosse diverso?:
-  ↳ "${whatDifferent.trim() || 'Nessun commento.'}"
-- Suggerimenti per migliorare il servizio:
-  ↳ "${suggestions.trim() || 'Nessun commento.'}"
+- Raccontami la tua esperienza (cosa hai apprezzato, cosa vorresti diverso, suggerimenti):
+  ↳ "${openFeedback.trim() || 'Nessun commento.'}"
 
 🗣️ RECENSIONE UTILIZZABILE SUL SITO:
 - Acconsente a lasciare una testimonianza?: ${wantLeaveReview || 'No'}
@@ -317,7 +270,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="Es: Marco Rossi"
+                    placeholder="Es: Mario"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white placeholder-gray-400 text-sm font-semibold"
                   />
                 </div>
@@ -333,35 +286,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white placeholder-gray-400 text-sm font-semibold"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Età</label>
-                  <input
-                    required
-                    type="number"
-                    min="18"
-                    max="99"
-                    value={age}
-                    onChange={e => setAge(e.target.value)}
-                    placeholder="Es: 35"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white placeholder-gray-400 text-sm font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Sesso</label>
-                  <select
-                    required
-                    value={gender}
-                    onChange={e => setGender(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold cursor-pointer"
-                  >
-                    <option value="">Seleziona sesso...</option>
-                    <option value="Maschio">Maschio</option>
-                    <option value="Femmina">Femmina</option>
-                    <option value="Preferisco non rispondere">Preferisco non rispondere</option>
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -372,7 +296,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                 <h2 className="text-xl font-bold text-gray-950">Progetto</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Tipo di progetto</label>
                   <select
@@ -399,37 +323,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                       placeholder="Specifica tipo di progetto..."
                       value={projectTypeOther}
                       onChange={e => setProjectTypeOther(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold"
-                      required
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Tipo di attività cliente</label>
-                  <select
-                    required
-                    value={clientType}
-                    onChange={e => {
-                      setClientType(e.target.value);
-                      if (e.target.value !== 'Altro') {
-                        setClientTypeOther('');
-                      }
-                    }}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold cursor-pointer"
-                  >
-                    <option value="">Seleziona attività...</option>
-                    <option value="Libero professionista">Libero professionista</option>
-                    <option value="Piccola attività">Piccola attività</option>
-                    <option value="Azienda strutturata">Azienda strutturata</option>
-                    <option value="Altro">Altro</option>
-                  </select>
-                  {clientType === 'Altro' && (
-                    <input
-                      type="text"
-                      placeholder="Specifica attività..."
-                      value={clientTypeOther}
-                      onChange={e => setClientTypeOther(e.target.value)}
                       className="mt-2 w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold"
                       required
                     />
@@ -654,37 +547,14 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Cosa hai apprezzato di più?</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Raccontami la tua esperienza: cosa ti è piaciuto di più, cosa vorresti fosse diverso o eventuali consigli per migliorare? <span className="text-xs text-gray-400 font-normal">(facoltativo)</span>
+                  </label>
                   <textarea
-                    required
-                    rows={4}
-                    value={whatAppreciated}
-                    onChange={e => setWhatAppreciated(e.target.value)}
-                    placeholder="Raccontami l'eccellenza che ti ha colpito maggiormente nel mio metodo..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 text-sm font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Cosa avresti voluto fosse diverso?</label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={whatDifferent}
-                    onChange={e => setWhatDifferent(e.target.value)}
-                    placeholder="Le tue idee costruttive mi aiuteranno a migliorare per il futuro..."
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 text-sm font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Suggerimenti per migliorare il servizio</label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={suggestions}
-                    onChange={e => setSuggestions(e.target.value)}
-                    placeholder="Consigli specifici sui flussi di lavoro, contatto o organizzazione..."
+                    rows={6}
+                    value={openFeedback}
+                    onChange={e => setOpenFeedback(e.target.value)}
+                    placeholder="Condividi liberamente le tue impressioni positive, eventuali aspetti da migliorare o consigli pratici..."
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 text-sm font-medium"
                   />
                 </div>
@@ -700,7 +570,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Vuoi lasciare una recensione utilizzabile sul sito?</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-3">Vuoi che la tua recensione sia utilizzabile sul mio sito?</label>
                   <div className="grid grid-cols-2 gap-3 max-w-xs mb-4">
                     {['Sì', 'No'].map((val) => (
                       <button
