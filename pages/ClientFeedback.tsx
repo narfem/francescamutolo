@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
-  ArrowLeft, CheckCircle, Send, Award, FileText, 
-  User, Target, ThumbsUp, MessageSquare, Shield, Smile 
+  ArrowLeft, CheckCircle, Send, Award, Smile 
 } from 'lucide-react';
 
 const ClientFeedback: React.FC = () => {
@@ -18,24 +17,16 @@ const ClientFeedback: React.FC = () => {
   const [company, setCompany] = useState('');
 
   // Section 2: Informazioni Progetto
-  const [projectType, setProjectType] = useState(''); // SELECT: "Logo" | "Brand identity" | "Materiali social" | "Locandina" | "Altro"
   const [sourceChannel, setSourceChannel] = useState(''); // SELECT: "Google" | "Instagram" | "Passaparola"
-  const [projectTypeOther, setProjectTypeOther] = useState('');
 
   // Section 3: Valutazione 1-5 (Scaled ratings)
   const [ratingSatisfaction, setRatingSatisfaction] = useState<number | null>(null);
-  const [ratingExpectations, setRatingExpectations] = useState<number | null>(null);
-  const [ratingDeliveryTimes, setRatingDeliveryTimes] = useState<number | null>(null);
 
   // Section 4: Valore
   const [pricePerception, setPricePerception] = useState(''); // Buttons: "Basso" | "Adeguato" | "Alto"
 
   // Section 5: Feedback
   const [openFeedback, setOpenFeedback] = useState('');
-
-  // Section 6: Testimonianza Pubblicabile
-  const [wantLeaveReview, setWantLeaveReview] = useState(''); // Buttons: "Sì" | "No"
-  const [reviewText, setReviewText] = useState(''); // Textarea shown only if wantLeaveReview === 'Sì'
 
   // Section 7: Consenso utilizzo contenuti
   const [authorizeCaseStudy, setAuthorizeCaseStudy] = useState(false);
@@ -56,15 +47,6 @@ const ClientFeedback: React.FC = () => {
       return;
     }
 
-    if (!projectType) {
-      alert("La selezione del tipo di progetto è richiesta.");
-      return;
-    }
-    if (projectType === 'Altro' && !projectTypeOther.trim()) {
-      alert("Specifica il tipo di progetto.");
-      return;
-    }
-
     if (!sourceChannel) {
       alert("La selezione di come hai trovato il servizio è richiesta.");
       return;
@@ -75,28 +57,8 @@ const ClientFeedback: React.FC = () => {
       return;
     }
 
-    if (ratingExpectations === null) {
-      alert("La valutazione sul rispetto delle aspettative è richiesta.");
-      return;
-    }
-
-    if (ratingDeliveryTimes === null) {
-      alert("La valutazione sul rispetto dei tempi di consegna è richiesta.");
-      return;
-    }
-
     if (!pricePerception) {
       alert("La risposta alla domanda sulla percezione del prezzo è richiesta.");
-      return;
-    }
-
-    if (!wantLeaveReview) {
-      alert("La risposta sulla volontà di lasciare una recensione è richiesta.");
-      return;
-    }
-
-    if (wantLeaveReview === 'Sì' && !reviewText.trim()) {
-      alert("Per favore, compila il testo della recensione prima di inviare.");
       return;
     }
 
@@ -108,10 +70,8 @@ const ClientFeedback: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
 
-    // Compute average rating (divided by 3) to save as the primary numeric "rating" in Supabase feedbacks table
-    const computedAverage = Math.round(
-      (ratingSatisfaction! + ratingExpectations! + ratingDeliveryTimes!) / 3
-    );
+    // Save satisfaction rating directly as the primary numeric "rating" in Supabase feedbacks table
+    const computedAverage = ratingSatisfaction!;
 
     // Format all detailed answers into a beautiful structured message text reports
     const structuredReport = `📝 VALUTAZIONE COMPLETA DEL CLIENTE:
@@ -121,24 +81,17 @@ const ClientFeedback: React.FC = () => {
 - Azienda o Progetto: ${company.trim() || 'Non specificata'}
 
 📁 PROGETTO:
-- Tipo di progetto: ${projectType === 'Altro' ? `Altro: ${projectTypeOther.trim()}` : (projectType || 'Non specificato')}
 - Canale di acquisizione (Come ci ha trovati): ${sourceChannel || 'Non specificato'}
 
 ⭐ PUNTEGGI DI VALUTAZIONE (1-5):
 - Soddisfazione generale del risultato: ${ratingSatisfaction}/5
-- Rispetto delle aspettative iniziali: ${ratingExpectations}/5
-- Rispetto dei tempi di consegna: ${ratingDeliveryTimes}/5
 
 💎 VALORE:
 - Percezione del prezzo: ${pricePerception || 'Non espressa'}
 
 💭 FEEDBACK:
-- Raccontami la tua esperienza (cosa hai apprezzato, cosa vorresti diverso, suggerimenti):
+- Raccontami la tua esperienza:
   ↳ "${openFeedback.trim() || 'Nessun commento.'}"
-
-🗣️ RECENSIONE UTILIZZABILE SUL SITO:
-- Acconsente a lasciare una testimonianza?: ${wantLeaveReview || 'No'}
-${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
 🔒 CONSENSO UTILIZZO CONTENUTI:
 - Autorizzazione Case Study: ${authorizeCaseStudy ? 'SÌ, CONSENTITO' : 'NO, NON AUTORIZZATO'}`;
@@ -238,11 +191,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
             
             {/* SEZIONE 1: Dati cliente */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <User className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Dati cliente</h2>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Il tuo nome</label>
@@ -272,44 +220,7 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
             {/* SEZIONE 2: Progetto */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <Target className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Progetto</h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Tipo di progetto</label>
-                  <select
-                    required
-                    value={projectType}
-                    onChange={e => {
-                      setProjectType(e.target.value);
-                      if (e.target.value !== 'Altro') {
-                        setProjectTypeOther('');
-                      }
-                    }}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold cursor-pointer"
-                  >
-                    <option value="">Seleziona tipo...</option>
-                    <option value="Logo">Logo</option>
-                    <option value="Brand identity">Brand identity</option>
-                    <option value="Materiali social">Materiali social</option>
-                    <option value="Locandina">Locandina</option>
-                    <option value="Altro">Altro</option>
-                  </select>
-                  {projectType === 'Altro' && (
-                    <input
-                      type="text"
-                      placeholder="Specifica tipo di progetto..."
-                      value={projectTypeOther}
-                      onChange={e => setProjectTypeOther(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 bg-white text-sm font-semibold"
-                      required
-                    />
-                  )}
-                </div>
-
+              <div className="max-w-md">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Come hai trovato il servizio?</label>
                   <select
@@ -329,11 +240,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
             {/* SEZIONE 3: Valutazione */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <ThumbsUp className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Valutazione</h2>
-              </div>
-
               <div className="grid grid-cols-1 gap-6">
                 {/* 1. Soddisfazione generale */}
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
@@ -362,72 +268,11 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                     ))}
                   </div>
                 </div>
-
-                {/* 2. Rispetto aspettative */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">Il risultato finale rispetta i tuoi obiettivi iniziali?</h3>
-                    </div>
-                    <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
-                      {ratingExpectations !== null ? `${ratingExpectations}/5` : '-/5'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 max-w-xs pt-1">
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setRatingExpectations(num)}
-                        className={`py-2 rounded-xl border font-bold text-sm text-center transition-all ${
-                          ratingExpectations === num
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 4. Rispetto dei tempi */}
-                <div className="bg-white p-5 rounded-2xl border border-gray-100 space-y-3">
-                  <div className="flex justify-between items-start gap-4">
-                    <div>
-                      <h3 className="text-sm font-extrabold text-gray-905">I tempi di consegna sono stati rispettati?</h3>
-                    </div>
-                    <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-1 rounded-md shrink-0">
-                      {ratingDeliveryTimes !== null ? `${ratingDeliveryTimes}/5` : '-/5'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-5 gap-2 max-w-xs pt-1">
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setRatingDeliveryTimes(num)}
-                        className={`py-2 rounded-xl border font-bold text-sm text-center transition-all ${
-                          ratingDeliveryTimes === num
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
             {/* SEZIONE 4: Valore */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <Award className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Valore</h2>
-              </div>
-
               <div className="max-w-md">
                 <div className="flex flex-col justify-between">
                   <label className="block text-sm font-bold text-gray-700 mb-3">Ritieni che il prezzo sia stato:</label>
@@ -453,11 +298,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
 
             {/* SEZIONE 5: Feedback (textarea) */}
             <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <MessageSquare className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Feedback</h2>
-              </div>
-
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">
@@ -471,53 +311,6 @@ ${wantLeaveReview === 'Sì' ? `- Testo Recensione: "${reviewText.trim()}"` : ''}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 text-sm font-medium"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* SEZIONE 6: Testimonianza pubblicabile */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 border-b border-gray-150 pb-4 mb-2">
-                <Smile className="text-primary w-6 h-6 shrink-0" />
-                <h2 className="text-xl font-bold text-gray-950">Testimonianza pubblicabile</h2>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-3">Vuoi che la tua recensione sia utilizzabile sul mio sito?</label>
-                  <div className="grid grid-cols-2 gap-3 max-w-xs mb-4">
-                    {['Sì', 'No'].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => {
-                          setWantLeaveReview(val);
-                          if (val === 'No') setReviewText('');
-                        }}
-                        className={`p-4 border rounded-xl font-semibold text-sm text-center transition-all ${
-                          wantLeaveReview === val
-                            ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {wantLeaveReview === 'Sì' && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Scrivi una breve recensione</label>
-                    <textarea
-                      required
-                      rows={4}
-                      value={reviewText}
-                      onChange={e => setReviewText(e.target.value)}
-                      placeholder="Esempio: Lavorare con Francesca è stata un'esperienza fantastica. Ha capito sin da subito la direzione del brand..."
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all text-gray-900 placeholder-gray-400 text-sm font-medium"
-                    />
-                  </div>
-                )}
               </div>
             </div>
 
