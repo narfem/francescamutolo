@@ -4,6 +4,7 @@ import Hero from '../components/Hero';
 import PortfolioGrid from '../components/PortfolioGrid';
 import ContactSection from '../components/ContactSection';
 import FeedbackSection from '../components/FeedbackSection';
+import PublishedFeedbacks from '../components/PublishedFeedbacks';
 
 const Home: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const Home: React.FC = () => {
       <section id="contact" className="py-24 bg-gray-50 scroll-mt-20">
         <ContactSection />
       </section>
+      <PublishedFeedbacks />
       <section id="feedback" className="py-24 bg-white scroll-mt-20 border-t border-gray-100">
         <FeedbackSection />
       </section>

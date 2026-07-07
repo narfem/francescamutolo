@@ -154,6 +154,8 @@ DROP POLICY IF EXISTS "Admin Update Feedbacks" ON feedbacks;
 CREATE POLICY "Admin Update Feedbacks" ON feedbacks FOR UPDATE TO authenticated USING (true);
 DROP POLICY IF EXISTS "Admin Delete Feedbacks" ON feedbacks;
 CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Accesso pubblico in lettura feedback approvati" ON feedbacks;
+CREATE POLICY "Accesso pubblico in lettura feedback approvati" ON feedbacks FOR SELECT USING (is_approved = true AND is_deleted = false);
 
 -- 4. INIZIALIZZAZIONE DATI
 -- Creiamo la riga 'global' se non esiste già
