@@ -1,7 +1,59 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Feedback } from '../types';
-import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X, Archive, Copy, ExternalLink } from 'lucide-react';
+import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X, Archive, Copy, ExternalLink, Users, Globe, Shield } from 'lucide-react';
+
+const parseStructuredFeedback = (message: string) => {
+  if (!message || !message.includes('VALUTAZIONE COMPLETA DEL CLIENTE')) {
+    return null;
+  }
+  
+  const result: {
+    name?: string;
+    company?: string;
+    channel?: string;
+    rating?: string;
+    price?: string;
+    experience?: string;
+    consent?: string;
+  } = {};
+
+  const lines = message.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('- Nome del Cliente:')) {
+      result.name = line.replace('- Nome del Cliente:', '').trim();
+    } else if (line.startsWith('- Azienda o Progetto:')) {
+      result.company = line.replace('- Azienda o Progetto:', '').trim();
+    } else if (line.startsWith('- Canale di acquisizione')) {
+      result.channel = line.substring(line.indexOf(':') + 1).trim();
+    } else if (line.startsWith('- Soddisfazione generale del risultato:')) {
+      result.rating = line.replace('- Soddisfazione generale del risultato:', '').trim();
+    } else if (line.startsWith('- Percezione del prezzo:')) {
+      result.price = line.replace('- Percezione del prezzo:', '').trim();
+    } else if (line.startsWith('- Autorizzazione Case Study:')) {
+      result.consent = line.replace('- Autorizzazione Case Study:', '').trim();
+    } else if (line.startsWith('↳ "') || line.startsWith('↳  "')) {
+      let exp = line;
+      let j = i + 1;
+      while (j < lines.length && !lines[j].trim().startsWith('🔒') && !lines[j].trim().startsWith('- Autorizzazione')) {
+        exp += '\n' + lines[j];
+        j++;
+      }
+      let cleanExp = exp.trim();
+      if (cleanExp.startsWith('↳')) {
+        cleanExp = cleanExp.substring(1).trim();
+      }
+      if (cleanExp.startsWith('"') && cleanExp.endsWith('"')) {
+        cleanExp = cleanExp.substring(1, cleanExp.length - 1);
+      }
+      result.experience = cleanExp;
+    }
+  }
+
+  return result;
+};
 
 const ManageFeedbacks: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
@@ -194,7 +246,10 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
             </h2>
           </div>
           
-          <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
+          <div 
+            className="flex gap-2 w-full md:w-auto mt-2 md:mt-0 bg-gray-50 p-1.5 rounded-2xl border border-gray-100"
+            style={{ paddingLeft: '66px', paddingRight: '66px' }}
+          >
             <button 
               onClick={() => setActiveTab('active')}
               className={`flex-1 md:flex-initial px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
@@ -346,13 +401,7 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
                 <div>
                   <h3 className="text-xl md:text-2xl font-black text-gray-900 leading-tight">{selectedFeedback.name}</h3>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                    {selectedFeedback.company || 'Feedback Cliente'} • Inviato il {new Date(selectedFeedback.created_at).toLocaleDateString('it-IT', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {selectedFeedback.company || 'Feedback Cliente'}
                   </p>
                 </div>
               </div>
@@ -384,24 +433,115 @@ CREATE POLICY "Admin Delete Feedbacks" ON feedbacks FOR ALL TO authenticated USI
                 </div>
               </div>
 
-              <div>
-                <span className="text-[10px] font-black tracking-wider uppercase text-gray-400 ml-1 block mb-2">Messaggio completo</span>
-                <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 text-sm md:text-base text-gray-700 font-medium italic leading-relaxed whitespace-pre-wrap">
-                  "{selectedFeedback.message}"
-                </div>
-              </div>
+              {(() => {
+                const parsed = parseStructuredFeedback(selectedFeedback.message);
+                if (parsed) {
+                  return (
+                    <div className="space-y-6">
+                      {/* Grid with Client info and project stats */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Client card */}
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4">
+                          <div className="text-secondary bg-secondary/10 p-3 h-12 w-12 rounded-xl flex items-center justify-center shrink-0">
+                            <Users size={20} />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-black uppercase text-slate-450 tracking-wider">Dati Cliente</h4>
+                            <p className="text-sm font-bold text-slate-900">{parsed.name || selectedFeedback.name}</p>
+                            <p className="text-xs text-slate-600 font-medium">{parsed.company || selectedFeedback.company || 'Nessuna azienda'}</p>
+                          </div>
+                        </div>
+
+                        {/* Origin channel & pricing perception */}
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex gap-4">
+                          <div className="text-primary bg-primary/10 p-3 h-12 w-12 rounded-xl flex items-center justify-center shrink-0">
+                            <Globe size={20} />
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="text-xs font-black uppercase text-slate-450 tracking-wider">Dettagli Progetto</h4>
+                            <p className="text-sm font-bold text-slate-900">
+                              Canale: <span className="text-primary font-extrabold">{parsed.channel || 'N/D'}</span>
+                            </p>
+                            <p className="text-xs text-slate-600 font-medium">
+                              Prezzo: <span className="font-extrabold text-slate-800">{parsed.price || 'N/D'}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Testimonial Message (The actual feedback) */}
+                      <div>
+                        <span className="text-[10px] font-black tracking-wider uppercase text-slate-400 ml-1 block mb-2">Esperienza del Cliente</span>
+                        <div className="bg-primary text-white p-6 md:p-8 rounded-3xl border border-primary/10 relative shadow-inner overflow-hidden">
+                          {/* Decorative quote icon */}
+                          <div className="absolute right-4 top-2 text-white/20 font-serif text-8xl leading-none select-none pointer-events-none">
+                            ”
+                          </div>
+                          <p className="text-sm md:text-base text-white font-medium italic leading-relaxed relative z-10 whitespace-pre-wrap">
+                            "{parsed.experience || selectedFeedback.message}"
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Consent badge */}
+                      {parsed.consent && (
+                        <div className={`p-4 rounded-xl border flex items-center gap-3 ${
+                          parsed.consent.toUpperCase().includes('SÌ') || parsed.consent.toUpperCase().includes('SI')
+                            ? 'bg-green-50/55 border-green-100 text-green-800'
+                            : 'bg-orange-50/55 border-orange-100 text-orange-800'
+                        }`}>
+                          <Shield size={16} className="shrink-0" />
+                          <p className="text-xs font-semibold">
+                            <span className="font-extrabold uppercase mr-1">Consenso Case Study:</span>
+                            {parsed.consent}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <span className="text-[10px] font-black tracking-wider uppercase text-gray-400 ml-1 block mb-2">Messaggio completo</span>
+                    <div className="bg-primary text-white p-6 md:p-8 rounded-3xl border border-primary/10 relative shadow-inner overflow-hidden">
+                      <div className="absolute right-4 top-2 text-white/20 font-serif text-8xl leading-none select-none pointer-events-none">
+                        ”
+                      </div>
+                      <p className="text-sm md:text-base text-white font-medium italic leading-relaxed relative z-10 whitespace-pre-wrap">
+                        "{selectedFeedback.message}"
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-t border-gray-100/60 pt-6">
-                <div>
-                  <span className="text-[10px] font-black tracking-wider uppercase text-gray-400 block mb-1">Stato Pubblicazione</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                      selectedFeedback.is_approved 
-                        ? 'bg-green-50 text-green-700 border border-green-100/50' 
-                        : 'bg-yellow-50 text-yellow-700 border border-yellow-100/50'
-                    }`}>
-                      <span className={`w-2 h-2 rounded-full ${selectedFeedback.is_approved ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                      {selectedFeedback.is_approved ? 'Approvato e Pubblicato' : 'In attesa di approvazione'}
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black tracking-wider uppercase text-gray-400 block mb-1">Stato Pubblicazione</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                        selectedFeedback.is_approved 
+                          ? 'bg-green-50 text-green-700 border border-green-100/50' 
+                          : 'bg-yellow-50 text-yellow-700 border border-yellow-100/50'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${selectedFeedback.is_approved ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                        {selectedFeedback.is_approved ? 'Approvato e Pubblicato' : 'In attesa di approvazione'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-black tracking-wider uppercase text-gray-400 block mb-1">Data e Ora Invio</span>
+                    <span className="text-xs font-bold text-gray-650 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 inline-block">
+                      {new Date(selectedFeedback.created_at).toLocaleDateString('it-IT', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </span>
                   </div>
                 </div>
