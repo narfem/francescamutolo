@@ -104,7 +104,7 @@ const PublishedFeedbacks: React.FC = () => {
     <section className="py-16 bg-gray-50/50 border-t border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Cosa Dicono i Clienti</h3>
+          <h3 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Cosa Dicono di Me</h3>
           <div className="w-12 h-1 bg-gradient-brand mx-auto rounded-full mt-3"></div>
         </div>
 
