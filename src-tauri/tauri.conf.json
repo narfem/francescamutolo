@@ -1,0 +1,32 @@
+{
+  "productName": "Francesca Mutolo Portfolio",
+  "version": "1.0.0",
+  "identifier": "com.francescamutolo.portfolio",
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ]
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Francesca Mutolo - Brand Identity Portfolio",
+        "width": 1280,
+        "height": 832,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../dist"
+  }
+}
