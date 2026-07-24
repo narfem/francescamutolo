@@ -196,34 +196,13 @@ const Dashboard: React.FC = () => {
 const ManageTools = () => (
   <div className="animate-in fade-in duration-500">
     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">I Miei Strumenti</h1>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <a href="https://freelancesuite.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <ExternalLink size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Freelance Suite</p>
-        <p className="text-lg font-bold text-gray-900 mt-1">Gestisci la tua attività →</p>
-      </a>
-      <a href="https://redtimer.lovable.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <a href="https://freelanceworkspace.vercel.app" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group max-w-md">
         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
           <ExternalLink size={24} />
         </div>
-        <p className="text-gray-500 text-sm font-medium">Red Timer</p>
-        <p className="text-lg font-bold text-gray-900 mt-1">Traccia il tempo di lavoro →</p>
-      </a>
-      <a href="https://pro-track-wine.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
-          <ExternalLink size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Pro Track</p>
-        <p className="text-lg font-bold text-gray-900 mt-1">Gestione progetti →</p>
-      </a>
-      <a href="https://chromarium.vercel.app/" target="_blank" rel="noopener noreferrer" className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
-        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-          <ExternalLink size={24} />
-        </div>
-        <p className="text-gray-500 text-sm font-medium">Chromarium</p>
-        <p className="text-lg font-bold text-gray-900 mt-1">Gestione colori e palette →</p>
+        <p className="text-gray-500 text-sm font-medium">Freelance Workspace</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">Accedi al tuo workspace →</p>
       </a>
     </div>
   </div>
@@ -2112,9 +2091,9 @@ const ManageQuestionnaires = () => {
             <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">
               <span className="font-black uppercase tracking-wider block text-gray-650">Contatti</span>
               <div className="flex flex-col items-end space-y-1">
-                <a href="https://francescamutolo.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <a href="https://www.francescamutolo.it" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
                   <Globe size={9} className="text-[#C13C8D] shrink-0" />
-                  <span>francescamutolo.vercel.app</span>
+                  <span>francescamutolo.it</span>
                 </a>
                 <a href="https://instagram.com/francescamutolographicdesigner" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
                   <Instagram size={9} className="text-[#C13C8D] shrink-0" />
@@ -2394,9 +2373,9 @@ const ManageQuestionnaires = () => {
           <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">
             <span className="font-black uppercase tracking-wider block text-gray-650">Contatti</span>
             <div className="flex flex-col items-end space-y-1">
-              <a href="https://francescamutolo.vercel.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a href="https://www.francescamutolo.it" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
                 <Globe size={9} className="text-[#C13C8D] shrink-0" />
-                <span>francescamutolo.vercel.app</span>
+                <span>francescamutolo.it</span>
               </a>
               <a href="https://instagram.com/francescamutolographicdesigner" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors">
                 <Instagram size={9} className="text-[#C13C8D] shrink-0" />
