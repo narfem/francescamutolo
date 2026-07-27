@@ -3141,10 +3141,14 @@ Inviato il: ${formattedDate}
 );
 
 ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Inserimento pubblico questionari" ON questionnaires;
 CREATE POLICY "Inserimento pubblico questionari" ON questionnaires FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin Select Questionnaires" ON questionnaires FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admin Update Questionnaires" ON questionnaires FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authenticated USING (true);
+DROP POLICY IF EXISTS "Lettura pubblica questionari" ON questionnaires;
+CREATE POLICY "Lettura pubblica questionari" ON questionnaires FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Modifica pubblica questionari" ON questionnaires;
+CREATE POLICY "Modifica pubblica questionari" ON questionnaires FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Eliminazione pubblica questionari" ON questionnaires;
+CREATE POLICY "Eliminazione pubblica questionari" ON questionnaires FOR ALL USING (true);
 
 -- TABELLA PER QUESTIONARI IDENTITÀ ARTISTICA:
 CREATE TABLE IF NOT EXISTS artist_questionnaires (
@@ -3159,10 +3163,14 @@ CREATE TABLE IF NOT EXISTS artist_questionnaires (
 );
 
 ALTER TABLE artist_questionnaires ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Inserimento pubblico artist_questionnaires" ON artist_questionnaires;
 CREATE POLICY "Inserimento pubblico artist_questionnaires" ON artist_questionnaires FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin Select artist_questionnaires" ON artist_questionnaires FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admin Update artist_questionnaires" ON artist_questionnaires FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin Delete artist_questionnaires" ON artist_questionnaires FOR ALL TO authenticated USING (true);`}
+DROP POLICY IF EXISTS "Lettura pubblica artist_questionnaires" ON artist_questionnaires;
+CREATE POLICY "Lettura pubblica artist_questionnaires" ON artist_questionnaires FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Modifica pubblica artist_questionnaires" ON artist_questionnaires;
+CREATE POLICY "Modifica pubblica artist_questionnaires" ON artist_questionnaires FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Eliminazione pubblica artist_questionnaires" ON artist_questionnaires;
+CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionnaires FOR ALL USING (true);`}
           </div>
           <p className="mt-4 text-xs">Esegui questa query nel SQL Editor di Supabase per sincronizzare.</p>
         </div>
