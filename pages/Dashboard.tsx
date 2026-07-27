@@ -2118,7 +2118,217 @@ const ManageQuestionnaires = () => {
     );
   };
 
+  const ARTIST_DEFAULT_SECTIONS = [
+    {
+      section_id: 1,
+      section_title: "1. Chi sei oggi?",
+      questions: [
+        { id: "q1", number: 1, question: "Raccontami chi sei in poche righe. Non come artista, ma come persona." },
+        { id: "q2", number: 2, question: "Quali sono tre parole che i tuoi amici userebbero per descriverti?" },
+        { id: "q3", number: 3, question: "C'è qualcosa del tuo carattere che ritieni ti distingua davvero dagli altri?" }
+      ]
+    },
+    {
+      section_id: 2,
+      section_title: "2. Perché fai musica?",
+      questions: [
+        { id: "q4", number: 4, question: "Quando hai capito che volevi fare musica? Raccontami quel momento." },
+        { id: "q5", number: 5, question: "Se domani non potessi guadagnare un euro con la musica, continueresti comunque a farla? Perché?" },
+        { id: "q6", number: 6, question: "Cosa provi quando scrivi o registri un brano?" }
+      ]
+    },
+    {
+      section_id: 3,
+      section_title: "3. Dove vuoi arrivare?",
+      questions: [
+        { id: "q7", number: 7, question: "Immagina di essere tra cinque anni sul palco davanti a migliaia di persone. Qual è la prima cosa che vorresti che il pubblico pensasse vedendoti entrare?" },
+        { id: "q8", number: 8, question: "Quale frase ti piacerebbe leggere nei commenti sotto una tua canzone?" },
+        { id: "q9", number: 9, question: "Quando qualcuno sentirà il tuo nome, cosa vorresti che gli venisse subito in mente?" }
+      ]
+    },
+    {
+      section_id: 4,
+      section_title: "4. La tua identità",
+      questions: [
+        { id: "q10", number: 10, question: "Se la tua musica fosse una persona, come sarebbe?", subtext: "Non descrivere l'aspetto fisico. Descrivi il carattere." },
+        { id: "q11", number: 11, question: "Se dovessi scegliere una sola emozione da lasciare a chi ascolta le tue canzoni, quale sarebbe? Perché?" },
+        { id: "q12", number: 12, question: "C'è un messaggio che vorresti trasmettere con la tua musica? Anche se ancora non riesci a esprimerlo perfettamente." }
+      ]
+    },
+    {
+      section_id: 5,
+      section_title: "5. I tuoi riferimenti",
+      questions: [
+        { id: "q13", number: 13, question: "Quali artisti ti ispirano davvero? Per ognuno spiegami cosa ammiri.", subtext: "Non limitarti solo al genere musicale." },
+        { id: "q14", number: 14, question: "C'è un artista a cui non vorresti mai essere associato? Perché?" }
+      ]
+    },
+    {
+      section_id: 6,
+      section_title: "6. La tua unicità",
+      questions: [
+        { id: "q15", number: 15, question: "Se eliminassimo il tuo nome dalla copertina di un tuo brano, come potrebbe una persona capire che quella canzone è tua?", subtext: "Non esiste una risposta giusta. Mi interessa capire cosa rende il tuo modo di fare musica riconoscibile." },
+        { id: "q16", number: 16, question: "Cosa pensi che nessun altro artista faccia come lo fai tu?" },
+        { id: "q17", number: 17, question: "Cosa vuoi che il pubblico ricordi di te anche dopo tanti anni?" }
+      ]
+    },
+    {
+      section_id: 7,
+      section_title: "7. Il tuo futuro",
+      questions: [
+        { id: "q18", number: 18, question: "Quando la tua carriera sarà avviata, quale sarà il motivo più importante per cui dirai: \"Ce l'ho fatta\"?" },
+        { id: "q19", number: 19, question: "C'è qualcosa su cui non scenderesti mai a compromessi, anche se ti aiutasse ad avere più successo?" },
+        { id: "q20", number: 20, question: "Se dovessi riassumere l'artista che vuoi diventare in una sola frase, quale sarebbe?" }
+      ]
+    }
+  ];
+
+  const isArtistQuestionnaire = (quest: Questionnaire | null | undefined): boolean => {
+    if (!quest) return false;
+    return (
+      quest.company_name.startsWith('[ARTISTA]') ||
+      Boolean(quest.notes && quest.notes.includes('artist_questionnaire')) ||
+      Boolean(quest.notes && quest.notes.includes('IDENTITÀ ARTISTICA')) ||
+      Boolean(quest.business_description && quest.business_description.includes('Identità Artistica'))
+    );
+  };
+
+  const getArtistData = (quest: Questionnaire) => {
+    let artistName = quest.company_name.replace(/^\[ARTISTA\]\s*/, '').trim();
+    let email = '';
+    let structuredData: any[] = [];
+    let answers: Record<string, string> = {};
+
+    if (quest.business_description && quest.business_description.includes('Email:')) {
+      const parts = quest.business_description.split('Email:');
+      if (parts[1]) email = parts[1].trim();
+    }
+
+    try {
+      if (quest.notes && quest.notes.startsWith('{')) {
+        const parsed = JSON.parse(quest.notes);
+        if (parsed.artist_name) artistName = parsed.artist_name;
+        if (parsed.email) email = parsed.email;
+        if (parsed.structured_data && Array.isArray(parsed.structured_data)) {
+          structuredData = parsed.structured_data;
+        }
+        if (parsed.answers) {
+          answers = parsed.answers;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    if ((!structuredData || structuredData.length === 0) && quest.notes) {
+      if (quest.notes.includes('[Domanda')) {
+        const text = quest.notes;
+        const parsedAnswers: Record<string, string> = { ...answers };
+        
+        ARTIST_DEFAULT_SECTIONS.forEach(sec => {
+          sec.questions.forEach(q => {
+            const match = text.match(new RegExp(`\\[Domanda ${q.number}\\]:[^\\n]*\\n\\[Risposta\\]:\\s*([\\s\\S]*?)(?=\\n\\[Domanda|\\n---|$)`));
+            if (match && match[1]) {
+              parsedAnswers[q.id] = match[1].trim();
+            }
+          });
+        });
+        answers = parsedAnswers;
+      }
+    }
+
+    if (!structuredData || structuredData.length === 0) {
+      structuredData = ARTIST_DEFAULT_SECTIONS.map(sec => ({
+        section_id: sec.section_id,
+        section_title: sec.section_title,
+        questions: sec.questions.map(q => ({
+          id: q.id,
+          number: q.number,
+          question: q.question,
+          subtext: q.subtext || null,
+          answer: answers[q.id] || ''
+        }))
+      }));
+    }
+
+    return { artistName, email, structuredData, answers };
+  };
+
   const renderQuestionnaireTemplate = (quest: Questionnaire) => {
+    if (isArtistQuestionnaire(quest)) {
+      const { artistName, email, structuredData } = getArtistData(quest);
+      return (
+        <div 
+          className="bg-white p-10 md:p-12 flex flex-col justify-between font-sans text-gray-900 select-none relative"
+          style={{ width: '595px', minHeight: '842px', boxSizing: 'border-box' }}
+        >
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-brand animate-none"></div>
+
+          <div>
+            <div className="flex justify-between items-start gap-4 border-b border-gray-150 pb-5 mt-4 text-left">
+              <div className="flex items-center space-x-3 text-left">
+                <div className="relative shrink-0">
+                  <img 
+                    src={logoBase64 || "https://drive.google.com/thumbnail?id=14Ps4nKRx1wOah9gZHFo4O3Ynq4qpWpKU&sz=w500"} 
+                    alt="Francesca Mutolo Logo" 
+                    referrerPolicy="no-referrer"
+                    className="h-9 w-9 object-cover rounded-full border-2 border-[#C13C8D] shadow-sm"
+                  />
+                  <div className="absolute -inset-1 bg-gradient-brand rounded-full -z-10 opacity-20 blur-sm"></div>
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-base font-bold leading-none tracking-tight text-[#C13C8D] font-sans">
+                    Francesca Mutolo
+                  </span>
+                  <span className="text-[9px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
+                    Graphic & AI Product Designer
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right flex flex-col justify-start shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#C13C8D] font-sans">Identità Artistica</span>
+                <span className="text-[9px] text-gray-500 font-semibold mt-1 block font-sans">
+                  Inviato il: {new Date(quest.created_at).toLocaleDateString('it-IT')}
+                </span>
+              </div>
+            </div>
+
+            <div className="py-4 border-b border-gray-150 text-left">
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1 font-sans">Artista</span>
+              <p className="text-sm font-black text-gray-900 leading-tight font-sans">{artistName}</p>
+              {email && (
+                <p className="text-[10px] font-semibold text-gray-600 mt-1 font-sans">Email: {email}</p>
+              )}
+            </div>
+
+            <div className="py-5 space-y-4 text-left text-[11px] leading-relaxed">
+              {structuredData.map((sec: any) => (
+                <div key={sec.section_id} className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
+                  <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1">
+                    <Sparkles size={11} /> {sec.section_title}
+                  </h4>
+                  <div className="space-y-2">
+                    {sec.questions.map((q: any) => (
+                      <div key={q.id || q.number}>
+                        <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Domanda {q.number}: {q.question}</span>
+                        <p className="font-semibold text-gray-750 bg-gray-50/70 p-2 rounded-lg text-[10px] mt-0.5 whitespace-pre-wrap">{q.answer || '(Nessuna risposta)'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-gray-150 flex justify-between items-center text-[9px] text-gray-400 font-sans">
+            <span>Francesca Mutolo — Freelance Workspace</span>
+            <span>Questionario Identità Artistica</span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div 
         className="bg-white p-10 md:p-12 flex flex-col justify-between font-sans text-gray-900 select-none relative"
@@ -2488,7 +2698,66 @@ const ManageQuestionnaires = () => {
         throw error;
       }
 
-      setQuestionnaires(data || []);
+      let allQuests = [...(data || [])];
+
+      try {
+        const { data: artistRows } = await supabase
+          .from('artist_questionnaires')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (artistRows && artistRows.length > 0) {
+          const existingIds = new Set(allQuests.map(q => q.id));
+          const converted: Questionnaire[] = artistRows
+            .filter((aq: any) => !existingIds.has(aq.id))
+            .map((aq: any) => ({
+              id: aq.id,
+              company_name: `[ARTISTA] ${aq.artist_name || 'Artista Anonimo'}`,
+              name_meaning: '',
+              business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${aq.email || 'Non indicata'}`,
+              products_services: '',
+              strength_point: '',
+              slogan: aq.answers?.q20 || '',
+              target_customers: '',
+              age_range: '',
+              customer_type: '',
+              market_scope: '',
+              brand_perception_target: '',
+              keywords: ['Identità Artistica', 'Musica'],
+              brand_perception: aq.answers?.q11 || '',
+              brand_personified: aq.answers?.q10 || '',
+              palette_favorite: '',
+              palette_avoid: '',
+              logo_style: '',
+              logo_composition: '',
+              logos_liked: '',
+              logos_disliked: '',
+              competitors: '',
+              admired_companies: '',
+              differentiation_strategy: '',
+              logo_applications: [],
+              deadline: '',
+              extra_deliverables: [],
+              five_years_vision: aq.answers?.q7 || '',
+              notes: JSON.stringify({
+                type: 'artist_questionnaire',
+                artist_name: aq.artist_name || 'Artista Anonimo',
+                email: aq.email || '',
+                structured_data: aq.structured_data,
+                answers: aq.answers
+              }),
+              is_deleted: aq.is_deleted || false,
+              is_read: aq.is_read || false,
+              created_at: aq.created_at || new Date().toISOString()
+            }));
+
+          allQuests = [...allQuests, ...converted].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+      } catch (e) {
+        // silent fallback if artist_questionnaires table doesn't exist
+      }
+
+      setQuestionnaires(allQuests);
       setErrorInfo(null);
     } catch (err: any) {
       console.error("Fetch questionnaires error:", err);
@@ -2520,6 +2789,34 @@ const ManageQuestionnaires = () => {
   };
 
   const downloadQuestTxt = (quest: Questionnaire) => {
+    if (isArtistQuestionnaire(quest)) {
+      const { artistName, email, structuredData } = getArtistData(quest);
+      const formattedDate = new Date(quest.created_at).toLocaleString('it-IT');
+      let content = `==================================================\n` +
+        `QUESTIONARIO IDENTITÀ ARTISTICA - ${artistName}\n` +
+        `Email Contatto: ${email || 'Non indicata'}\n` +
+        `Inviato il: ${formattedDate}\n` +
+        `==================================================\n\n`;
+
+      structuredData.forEach((sec: any) => {
+        content += `${sec.section_title}\n`;
+        content += `--------------------------------------------------\n`;
+        sec.questions.forEach((q: any) => {
+          content += `[Domanda ${q.number}]: ${q.question}\n`;
+          content += `[Risposta]: ${q.answer || '(Nessuna risposta)'}\n\n`;
+        });
+        content += `\n`;
+      });
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `questionario_artista_${artistName.toLowerCase().replace(/\s+/g, '_')}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
     const formattedDate = new Date(quest.created_at).toLocaleString('it-IT');
     const content = `==================================================
 QUESTIONARIO BRAND IDENTITY - ${quest.company_name}
@@ -2749,39 +3046,52 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
 
         {activeTab !== 'edit_questions' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => (
-              <div 
-                key={quest.id}
-                onClick={() => setSelectedQuest(quest)}
-                className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <ClipboardList size={22} />
-                      </div>
-                      <div>
-                        <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">{quest.company_name}</h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                          {new Date(quest.created_at).toLocaleDateString('it-IT')}
-                        </p>
-                      </div>
-                    </div>
+            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => {
+              const isArtist = isArtistQuestionnaire(quest);
+              const { artistName } = isArtist ? getArtistData(quest) : { artistName: '' };
 
-                    <button 
-                      onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
-                        quest.is_read 
-                          ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
-                          : 'bg-green-50 text-green-600 border-green-100/50'
-                      }`}
-                      title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
-                    >
-                      <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
-                      {quest.is_read ? 'Letto' : 'Nuovo'}
-                    </button>
-                  </div>
+              return (
+                <div 
+                  key={quest.id}
+                  onClick={() => setSelectedQuest(quest)}
+                  className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform ${isArtist ? 'bg-purple-50 text-purple-600' : 'bg-primary/10 text-primary'}`}>
+                          {isArtist ? <Sparkles size={22} /> : <ClipboardList size={22} />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">
+                              {isArtist ? artistName : quest.company_name}
+                            </h3>
+                            {isArtist && (
+                              <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-purple-50 text-purple-600 border border-purple-150/60">
+                                Identità Artistica
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                            {new Date(quest.created_at).toLocaleDateString('it-IT')}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
+                          quest.is_read 
+                            ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
+                            : 'bg-green-50 text-green-600 border-green-100/50'
+                        }`}
+                        title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
+                      >
+                        <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
+                        {quest.is_read ? 'Letto' : 'Nuovo'}
+                      </button>
+                    </div>
 
                   <div className="space-y-2 my-4">
                     {quest.slogan && (
@@ -2853,7 +3163,8 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
 
             {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).length === 0 && !loading && (
               <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
@@ -3268,69 +3579,110 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
         )}
       </div>
 
-      {selectedQuest && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brandDark/80 backdrop-blur-md animate-in fade-in"
-          onClick={() => setSelectedQuest(null)}
-        >
-          <div 
-            className="bg-white w-full max-w-4xl max-h-[92vh] rounded-[2rem] md:rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-brand text-white flex items-center justify-center shadow-lg shadow-primary/10">
-                  <ClipboardList size={26} />
-                </div>
-                <div>
-                  <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">{selectedQuest.company_name}</h3>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                    Questionario Brand Identity • Ricevuto il {new Date(selectedQuest.created_at).toLocaleString('it-IT')}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => handleUpdate(selectedQuest, { is_read: !selectedQuest.is_read })}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
-                    selectedQuest.is_read 
-                      ? 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200' 
-                      : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                  }`}
-                >
-                  <Flag size={12} fill={selectedQuest.is_read ? "none" : "currentColor"} />
-                  {selectedQuest.is_read ? 'Segna come non letto' : 'Segna come letto'}
-                </button>
-                <button 
-                  onClick={(e) => handleToggleArchiveQuest(e, selectedQuest.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
-                    archivedQuestIds.includes(selectedQuest.id)
-                      ? 'bg-green-50 text-green-700 border-green-100 hover:bg-green-100'
-                      : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200 hover:text-primary'
-                  }`}
-                  title={archivedQuestIds.includes(selectedQuest.id) ? "Ripristina" : "Archivia"}
-                >
-                  <Archive size={12} />
-                  <span>{archivedQuestIds.includes(selectedQuest.id) ? 'Ripristina' : 'Archivia'}</span>
-                </button>
-                <button 
-                  onClick={() => { setQuestToDelete(selectedQuest); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-black uppercase tracking-wider border border-red-100 transition-all"
-                  title="Elimina Questionario"
-                >
-                  <Trash2 size={12} />
-                  <span>Elimina</span>
-                </button>
-                <button 
-                  onClick={() => setSelectedQuest(null)}
-                  className="p-3 bg-gray-100 text-gray-400 hover:text-gray-950 rounded-full transition-all hover:bg-gray-200"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
+      {selectedQuest && (() => {
+        const isArtist = isArtistQuestionnaire(selectedQuest);
+        const { artistName, email, structuredData } = isArtist ? getArtistData(selectedQuest) : { artistName: '', email: '', structuredData: [] };
 
-            <div className="flex-grow overflow-y-auto p-6 md:p-10 space-y-8 chat-scrollbar bg-slate-50/30 font-sans">
+        return (
+          <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brandDark/80 backdrop-blur-md animate-in fade-in"
+            onClick={() => setSelectedQuest(null)}
+          >
+            <div 
+              className="bg-white w-full max-w-4xl max-h-[92vh] rounded-[2rem] md:rounded-[3.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className={`w-14 h-14 rounded-2xl text-white flex items-center justify-center shadow-lg ${isArtist ? 'bg-gradient-to-br from-purple-500 to-primary shadow-purple-500/10' : 'bg-gradient-brand shadow-primary/10'}`}>
+                    {isArtist ? <Sparkles size={26} /> : <ClipboardList size={26} />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl md:text-3xl font-black text-gray-900 leading-tight">
+                        {isArtist ? artistName : selectedQuest.company_name}
+                      </h3>
+                      {isArtist && (
+                        <span className="px-2.5 py-1 text-xs font-black uppercase tracking-wider rounded-lg bg-purple-100 text-purple-700">
+                          Identità Artistica
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                      {isArtist ? 'Questionario Identità Artistica' : 'Questionario Brand Identity'} • Ricevuto il {new Date(selectedQuest.created_at).toLocaleString('it-IT')}
+                      {email && <span className="ml-2 font-bold text-gray-600">({email})</span>}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => handleUpdate(selectedQuest, { is_read: !selectedQuest.is_read })}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
+                      selectedQuest.is_read 
+                        ? 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200' 
+                        : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                    }`}
+                  >
+                    <Flag size={12} fill={selectedQuest.is_read ? "none" : "currentColor"} />
+                    {selectedQuest.is_read ? 'Segna come non letto' : 'Segna come letto'}
+                  </button>
+                  <button 
+                    onClick={(e) => handleToggleArchiveQuest(e, selectedQuest.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border transition-all ${
+                      archivedQuestIds.includes(selectedQuest.id)
+                        ? 'bg-green-50 text-green-700 border-green-100 hover:bg-green-100'
+                        : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200 hover:text-primary'
+                    }`}
+                    title={archivedQuestIds.includes(selectedQuest.id) ? "Ripristina" : "Archivia"}
+                  >
+                    <Archive size={12} />
+                    <span>{archivedQuestIds.includes(selectedQuest.id) ? 'Ripristina' : 'Archivia'}</span>
+                  </button>
+                  <button 
+                    onClick={() => { setQuestToDelete(selectedQuest); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-black uppercase tracking-wider border border-red-100 transition-all"
+                    title="Elimina Questionario"
+                  >
+                    <Trash2 size={12} />
+                    <span>Elimina</span>
+                  </button>
+                  <button 
+                    onClick={() => setSelectedQuest(null)}
+                    className="p-3 bg-gray-100 text-gray-400 hover:text-gray-950 rounded-full transition-all hover:bg-gray-200"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-6 md:p-10 space-y-8 chat-scrollbar bg-slate-50/30 font-sans">
+                {isArtist ? (
+                  <div className="space-y-6">
+                    {structuredData.map((sec: any, idx: number) => (
+                      <div key={sec.section_id || idx} className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
+                        <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
+                          <Sparkles size={16} className="text-purple-600" /> {sec.section_title}
+                        </h4>
+                        <div className="space-y-4">
+                          {sec.questions.map((q: any) => (
+                            <div key={q.id || q.number} className="border-b border-gray-50/80 pb-4 last:border-0 last:pb-0">
+                              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                                Domanda {q.number}: {q.question}
+                              </span>
+                              {q.subtext && (
+                                <span className="text-xs italic text-gray-400 block mt-0.5">{q.subtext}</span>
+                              )}
+                              <p className="text-gray-800 font-semibold whitespace-pre-wrap text-sm leading-relaxed mt-2 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+                                {q.answer || '(Nessuna risposta)'}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-8">
               
               <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
                 <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
@@ -3621,6 +3973,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     </div>
                   </div>
                 </div>
+              </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 col-span-full">
                   <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
@@ -3641,9 +3994,8 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     </div>
                   </div>
                 )}
-
               </div>
-
+            )}
             </div>
 
             <div className="p-6 md:p-8 bg-gray-50/50 border-t border-gray-100 flex-shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -3684,7 +4036,8 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Quote formula creator modal overlay */}
       {pricingQuote && (

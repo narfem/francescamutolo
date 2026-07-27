@@ -257,48 +257,67 @@ const ArtistQuestionnaire: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
+    const formattedNotes = `=== QUESTIONARIO IDENTITÀ ARTISTICA ===\n` +
+      `Nome Artista: ${artistName.trim() || 'Artista Anonimo'}\n` +
+      `Email: ${contactEmail.trim() || 'Non indicata'}\n\n` +
+      SECTIONS.map(sec => 
+        `--- ${sec.title} ---\n` + 
+        sec.questions.map(q => `[Domanda ${q.number}]: ${q.text}\n[Risposta]: ${answers[q.id] || '(Nessuna risposta)'}`).join('\n\n')
+      ).join('\n\n');
+
+    const jsonNotes = JSON.stringify({
+      type: 'artist_questionnaire',
+      artist_name: artistName.trim() || 'Artista Anonimo',
+      email: contactEmail.trim() || '',
+      structured_data: structuredAnswers,
+      answers: answers,
+      formatted_text: formattedNotes
+    });
+
+    const mainPayload = {
+      company_name: artistName.trim() ? `[ARTISTA] ${artistName.trim()}` : '[ARTISTA] Artista Anonimo',
+      business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${contactEmail.trim() || 'Non indicata'}`,
+      slogan: answers['q20'] || '',
+      brand_perception: answers['q11'] || '',
+      brand_personified: answers['q10'] || '',
+      keywords: ['Identità Artistica', 'Musica'],
+      five_years_vision: answers['q7'] || '',
+      notes: jsonNotes
+    };
+
     try {
-      // 1. Proviamo prima l'inserimento nella tabella dedicata 'artist_questionnaires'
-      const { error: artistErr } = await supabase
-        .from('artist_questionnaires')
-        .insert([{
-          artist_name: payload.artist_name,
-          email: payload.email,
-          answers: payload.answers,
-          structured_data: payload.structured_data
-        }]);
+      const { error: questErr } = await supabase
+        .from('questionnaires')
+        .insert([mainPayload]);
 
-      if (artistErr) {
-        console.warn("Tabella 'artist_questionnaires' non trovata o errore inserimento, uso fallback su 'questionnaires':", artistErr.message);
-        
-        // 2. Fallback su tabella 'questionnaires'
-        const formattedNotes = `=== QUESTIONARIO IDENTITÀ ARTISTICA ===\n` +
-          `Email: ${contactEmail || 'Non specificata'}\n\n` +
-          SECTIONS.map(sec => 
-            `--- ${sec.title} ---\n` + 
-            sec.questions.map(q => `[Domanda ${q.number}]: ${q.text}\n[Risposta]: ${answers[q.id] || '(Nessuna risposta)'}`).join('\n\n')
-          ).join('\n\n');
-
-        const fallbackPayload = {
-          company_name: `[ARTISTA] ${payload.artist_name}`,
-          business_description: `Sessione di Scoperta dell'Identità Artistica - Artista: ${payload.artist_name}`,
-          notes: formattedNotes
-        };
-
-        const { error: fallbackErr } = await supabase
+      if (questErr) {
+        console.warn("Errore inserimento in 'questionnaires', provo salvataggio con note testuali:", questErr.message);
+        await supabase
           .from('questionnaires')
-          .insert([fallbackPayload]);
+          .insert([{
+            company_name: mainPayload.company_name,
+            business_description: mainPayload.business_description,
+            notes: formattedNotes
+          }]);
+      }
 
-        if (fallbackErr) {
-          console.error("Errore anche nel fallback:", fallbackErr);
-        }
+      try {
+        await supabase
+          .from('artist_questionnaires')
+          .insert([{
+            artist_name: artistName.trim() || 'Artista Anonimo',
+            email: contactEmail.trim() || null,
+            answers: answers,
+            structured_data: structuredAnswers
+          }]);
+      } catch (e) {
+        // silent
       }
 
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (err: any) {
       console.error("Errore durante l'invio del questionario artista:", err);
-      // Mostriamo comunque la schermata di conferma elegante per non bloccare mai l'esperienza utente
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'instant' });
     } finally {
