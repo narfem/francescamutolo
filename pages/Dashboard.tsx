@@ -1028,16 +1028,20 @@ const ManageLeads = () => {
   useEffect(() => { fetchLeads(); }, []);
 
   const fetchLeads = async () => {
-    const { data: simple } = await supabase.from('contacts_simple').select('*').order('created_at', { ascending: false });
-    const { data: brief } = await supabase.from('contacts_brief').select('*').order('created_at', { ascending: false });
-    
-    const allSimple = simple || [];
-    const allBrief = brief || [];
+    try {
+      const { data: simple } = await supabase.from('contacts_simple').select('*').order('created_at', { ascending: false });
+      const { data: brief } = await supabase.from('contacts_brief').select('*').order('created_at', { ascending: false });
+      
+      const allSimple = simple || [];
+      const allBrief = brief || [];
 
-    setSimpleLeads(allSimple.filter(l => !l.is_deleted));
-    setBriefLeads(allBrief.filter(l => !l.is_deleted));
-    
-    setLoading(false);
+      setSimpleLeads(allSimple.filter(l => !l.is_deleted));
+      setBriefLeads(allBrief.filter(l => !l.is_deleted));
+    } catch (err) {
+      console.warn("Error fetching leads:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteLead = async (id: string, type: 'simple' | 'brief') => {
@@ -2623,7 +2627,7 @@ Inviato il: ${formattedDate}
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto shrink-0">
           <a
-            href="/questionario-artista"
+            href="/#/questionario-artista"
             target="_blank"
             rel="noopener noreferrer"
             className="px-5 py-3 rounded-xl bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 shadow-md"
@@ -2632,8 +2636,11 @@ Inviato il: ${formattedDate}
           </a>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/questionario-artista`);
-              alert('Link del questionario artista copiato negli appunti!');
+              const url = window.location.origin.includes('localhost') || window.location.origin.includes('run.app')
+                ? `${window.location.origin}/#/questionario-artista`
+                : 'https://www.francescamutolo.it/#/questionario-artista';
+              navigator.clipboard.writeText(url);
+              alert(`Link copiato negli appunti: ${url}`);
             }}
             className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-lg"
           >

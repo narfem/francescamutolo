@@ -11,6 +11,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const getSession = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  } catch (err) {
+    console.warn("Failed to fetch Supabase session:", err);
+    return null;
+  }
 };
