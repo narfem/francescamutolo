@@ -2285,7 +2285,7 @@ const ManageQuestionnaires = () => {
   };
 
   const getArtistData = (quest: Questionnaire) => {
-    let artistName = quest.company_name.replace(/^\[ARTISTA\]\s*/, '').trim();
+    let artistName = quest.company_name ? quest.company_name.replace(/^\[ARTISTA\]\s*/, '').trim() : 'Artista Anonimo';
     let email = '';
     let structuredData: any[] = [];
     let answers: Record<string, string> = {};
@@ -2295,42 +2295,98 @@ const ManageQuestionnaires = () => {
       if (parts[1]) email = parts[1].trim();
     }
 
-    const rawNote = quest.notes || (quest.five_years_vision?.includes('[NOTE JSON]:') ? quest.five_years_vision.split('[NOTE JSON]:')[1] : quest.five_years_vision) || '';
-
-    try {
-      const jsonCandidate = rawNote.trim();
-      if (jsonCandidate.startsWith('{')) {
-        const parsed = JSON.parse(jsonCandidate);
-        if (parsed.artist_name) artistName = parsed.artist_name;
-        if (parsed.email) email = parsed.email;
-        if (parsed.structured_data && Array.isArray(parsed.structured_data)) {
-          structuredData = parsed.structured_data;
-        }
-        if (parsed.answers) {
-          answers = parsed.answers;
-        }
-      }
-    } catch (e) {
-      // ignore
+    // 1. Direct properties on quest object (e.g. if loaded from artist_questionnaires or custom object)
+    if ((quest as any).answers && typeof (quest as any).answers === 'object') {
+      answers = { ...answers, ...(quest as any).answers };
+    }
+    if ((quest as any).structured_data && Array.isArray((quest as any).structured_data) && (quest as any).structured_data.length > 0) {
+      structuredData = (quest as any).structured_data;
+    }
+    if ((quest as any).artist_name) {
+      artistName = (quest as any).artist_name;
+    }
+    if ((quest as any).email) {
+      email = (quest as any).email;
     }
 
-    if ((!structuredData || structuredData.length === 0) && rawNote) {
-      if (rawNote.includes('[Domanda')) {
-        const text = rawNote;
-        const parsedAnswers: Record<string, string> = { ...answers };
-        
-        ARTIST_DEFAULT_SECTIONS.forEach(sec => {
-          sec.questions.forEach(q => {
-            const match = text.match(new RegExp(`\\[Domanda ${q.number}\\]:[^\\n]*\\n\\[Risposta\\]:\\s*([\\s\\S]*?)(?=\\n\\[Domanda|\\n---|$)`));
-            if (match && match[1]) {
-              parsedAnswers[q.id] = match[1].trim();
-            }
-          });
+    // 2. Helper to parse object or JSON string from notes/five_years_vision
+    const processParsedObj = (parsed: any) => {
+      if (!parsed) return;
+      if (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch (e) {
+          return;
+        }
+      }
+      if (typeof parsed !== 'object') return;
+
+      if (parsed.artist_name) artistName = parsed.artist_name;
+      if (parsed.email) email = parsed.email;
+      if (parsed.answers && typeof parsed.answers === 'object') {
+        answers = { ...answers, ...parsed.answers };
+      }
+      if (parsed.structured_data && Array.isArray(parsed.structured_data) && parsed.structured_data.length > 0) {
+        structuredData = parsed.structured_data;
+      }
+    };
+
+    // 3. Inspect quest.notes
+    if (quest.notes) {
+      if (typeof quest.notes === 'object') {
+        processParsedObj(quest.notes);
+      } else if (typeof quest.notes === 'string') {
+        const str = quest.notes.trim();
+        if (str.startsWith('{')) {
+          try { processParsedObj(JSON.parse(str)); } catch (e) {}
+        } else if (str.includes('[NOTE JSON]:')) {
+          try {
+            const jsonPart = str.split('[NOTE JSON]:')[1].trim();
+            processParsedObj(JSON.parse(jsonPart));
+          } catch (e) {}
+        }
+      }
+    }
+
+    // 4. Inspect quest.five_years_vision if structuredData or answers still need info
+    if (quest.five_years_vision) {
+      if (typeof quest.five_years_vision === 'object') {
+        processParsedObj(quest.five_years_vision);
+      } else if (typeof quest.five_years_vision === 'string') {
+        const str = quest.five_years_vision.trim();
+        if (str.startsWith('{')) {
+          try { processParsedObj(JSON.parse(str)); } catch (e) {}
+        } else if (str.includes('[NOTE JSON]:')) {
+          try {
+            const jsonPart = str.split('[NOTE JSON]:')[1].trim();
+            processParsedObj(JSON.parse(jsonPart));
+          } catch (e) {}
+        }
+      }
+    }
+
+    // 5. Extract answers from raw formatted text if present
+    const rawText = typeof quest.notes === 'string' ? quest.notes : (typeof quest.five_years_vision === 'string' ? quest.five_years_vision : '');
+    if (rawText && rawText.includes('[Domanda')) {
+      ARTIST_DEFAULT_SECTIONS.forEach(sec => {
+        sec.questions.forEach(q => {
+          const match = rawText.match(new RegExp(`\\[Domanda ${q.number}\\]:[^\\n]*\\n\\[Risposta\\]:\\s*([\\s\\S]*?)(?=\\n\\[Domanda|\\n---|$)`));
+          if (match && match[1] && match[1].trim() !== '(Nessuna risposta)') {
+            answers[q.id] = match[1].trim();
+          }
         });
-        answers = parsedAnswers;
-      }
+      });
     }
 
+    // 6. Map fallback answers from standard Questionnaire table columns if available
+    if (quest.five_years_vision && !answers['q7'] && typeof quest.five_years_vision === 'string' && !quest.five_years_vision.includes('[NOTE JSON]:') && !quest.five_years_vision.startsWith('{')) {
+      answers['q7'] = quest.five_years_vision;
+    }
+    if (quest.brand_personified && !answers['q10']) answers['q10'] = quest.brand_personified;
+    if (quest.brand_perception && !answers['q11']) answers['q11'] = quest.brand_perception;
+    if (quest.slogan && !answers['q20']) answers['q20'] = quest.slogan;
+
+    // 7. Reconstruct or fix structuredData so every single question has answer populated!
     if (!structuredData || structuredData.length === 0) {
       structuredData = ARTIST_DEFAULT_SECTIONS.map(sec => ({
         section_id: sec.section_id,
@@ -2340,8 +2396,24 @@ const ManageQuestionnaires = () => {
           number: q.number,
           question: q.question,
           subtext: q.subtext || null,
-          answer: answers[q.id] || ''
+          answer: answers[q.id] || answers[`q${q.number}`] || ''
         }))
+      }));
+    } else {
+      // If structuredData exists, ensure each question has answer populated from answers map if q.answer is empty/missing
+      structuredData = structuredData.map((sec: any) => ({
+        ...sec,
+        questions: (sec.questions || []).map((q: any) => {
+          const rawAns = q.answer || q.response || '';
+          const finalAns = (rawAns && rawAns.trim() !== '' && rawAns !== '(Nessuna risposta)') 
+            ? rawAns 
+            : (answers[q.id] || answers[`q${q.number}`] || '');
+          return {
+            ...q,
+            question: q.question || q.text || `Domanda ${q.number}`,
+            answer: finalAns
+          };
+        })
       }));
     }
 
