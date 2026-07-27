@@ -119,7 +119,7 @@ const SECTIONS: Section[] = [
         id: "q13",
         number: 13,
         text: "Quali artisti ti ispirano davvero? Per ognuno spiegami cosa ammiri.",
-        subtext: "Non limitarti al genere musicale."
+        subtext: "Non limitarti solo al genere musicale."
       },
       {
         id: "q14",
@@ -210,14 +210,22 @@ const ArtistQuestionnaire: React.FC = () => {
     }
   };
 
-  const handleNextSection = () => {
+  const handleNextSection = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentStep < SECTIONS.length) {
       setCurrentStep(prev => prev + 1);
       scrollToTopForm();
     }
   };
 
-  const handlePrevSection = () => {
+  const handlePrevSection = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
       scrollToTopForm();
@@ -346,21 +354,13 @@ const ArtistQuestionnaire: React.FC = () => {
       <div className="max-w-4xl mx-auto space-y-8">
 
         {/* Pulsante Torna Indietro */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-start items-center">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-primary transition-colors bg-white py-2.5 px-5 rounded-full border border-gray-200 shadow-sm"
           >
             <ArrowLeft size={14} /> Indietro
           </Link>
-
-          <button
-            onClick={copyShareableLink}
-            className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:bg-primary/5 transition-colors bg-white py-2.5 px-5 rounded-full border border-primary/20 shadow-sm"
-          >
-            {copiedLink ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-            <span>{copiedLink ? 'Link Copiato!' : 'Copia Link Questionario'}</span>
-          </button>
         </div>
 
         {/* HERO INITIAL */}
@@ -382,21 +382,16 @@ const ArtistQuestionnaire: React.FC = () => {
         {/* TESTO INTRODUTTIVO OBBLIGATORIO */}
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-100 shadow-sm space-y-3 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-2 h-full bg-gradient-brand"></div>
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 text-primary mt-1">
-              <Sparkles size={20} />
-            </div>
-            <div className="space-y-2 text-gray-700 text-sm md:text-base leading-relaxed">
-              <p className="font-semibold text-gray-900">
-                Prima di iniziare, prenditi un momento solo per te.
-              </p>
-              <p>
-                Rispondi alle domande con calma, in un ambiente in cui ti senti profondamente a tuo agio e senza fretta.
-              </p>
-              <p className="italic text-gray-600">
-                Le risposte più importanti nasceranno dalla sincerità: questa sessione serve a scoprire ciò che rende unica la tua identità artistica.
-              </p>
-            </div>
+          <div className="space-y-2 text-gray-700 text-sm md:text-base leading-relaxed">
+            <p className="font-semibold text-gray-900">
+              Prima di iniziare, prenditi un momento solo per te.
+            </p>
+            <p>
+              Rispondi alle domande con calma, in un ambiente in cui ti senti profondamente a tuo agio e senza fretta.
+            </p>
+            <p className="italic text-gray-600">
+              Le risposte più importanti nasceranno dalla sincerità: questa sessione serve a scoprire ciò che rende unica la tua identità artistica.
+            </p>
           </div>
         </div>
 
@@ -539,6 +534,7 @@ const ArtistQuestionnaire: React.FC = () => {
 
               {currentStep < SECTIONS.length ? (
                 <button
+                  key={`next-btn-step-${currentStep}`}
                   type="button"
                   onClick={handleNextSection}
                   className="w-full sm:w-auto bg-gradient-brand text-white px-8 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0"
@@ -548,6 +544,7 @@ const ArtistQuestionnaire: React.FC = () => {
                 </button>
               ) : (
                 <button
+                  key="submit-form-btn"
                   type="submit"
                   disabled={loading}
                   className="w-full sm:w-auto bg-gradient-brand text-white px-10 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
