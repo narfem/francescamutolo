@@ -341,31 +341,91 @@ const ArtistQuestionnaire: React.FC = () => {
 
     const mainPayload = {
       company_name: artistName.trim() ? `[ARTISTA] ${artistName.trim()}` : '[ARTISTA] Artista Anonimo',
+      name_meaning: '',
       business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${contactEmail.trim() || 'Non indicata'}`,
+      products_services: '',
+      strength_point: '',
       slogan: answers['q20'] || '',
+      target_customers: '',
+      age_range: '',
+      customer_type: '',
+      market_scope: '',
+      brand_perception_target: '',
+      keywords: ['Identità Artistica', 'Musica'],
       brand_perception: answers['q11'] || '',
       brand_personified: answers['q10'] || '',
-      keywords: ['Identità Artistica', 'Musica'],
+      palette_favorite: '',
+      palette_avoid: '',
+      logo_style: '',
+      logo_composition: '',
+      logos_liked: '',
+      logos_disliked: '',
+      competitors: '',
+      admired_companies: '',
+      differentiation_strategy: '',
+      logo_applications: [],
+      deadline: '',
+      extra_deliverables: [],
       five_years_vision: answers['q7'] || '',
       notes: jsonNotes
     };
 
+    // 0. Backup a copia locale immediata per prevenire perdita dati
+    const backupItem = {
+      ...mainPayload,
+      id: 'local-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+      is_deleted: false,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+
     try {
+      const existingRaw = localStorage.getItem('local_questionnaires_backup');
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      if (Array.isArray(existing)) {
+        existing.unshift(backupItem);
+        localStorage.setItem('local_questionnaires_backup', JSON.stringify(existing));
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('local_questionnaire_submitted'));
+      }
+    } catch (e) {
+      console.warn("Impossibile salvare il backup locale in localStorage:", e);
+    }
+
+    try {
+      // 1. Invio primario a 'questionnaires'
       const { error: questErr } = await supabase
         .from('questionnaires')
         .insert([mainPayload]);
 
       if (questErr) {
-        console.warn("Errore inserimento in 'questionnaires', provo salvataggio con note testuali:", questErr.message);
-        await supabase
+        console.warn("Errore inserimento principale in 'questionnaires', provo fallback senza colonna 'notes':", questErr.message);
+        
+        // Fallback 1: se la colonna 'notes' non esiste nel database Supabase, inseriamo il JSON nella visione a 5 anni
+        const fallbackData = { ...mainPayload } as any;
+        fallbackData.five_years_vision = `[NOTE JSON]: ${jsonNotes}\n\n${fallbackData.five_years_vision || ''}`;
+        delete fallbackData.notes;
+
+        const { error: fallbackErr } = await supabase
           .from('questionnaires')
-          .insert([{
-            company_name: mainPayload.company_name,
-            business_description: mainPayload.business_description,
-            notes: formattedNotes
-          }]);
+          .insert([fallbackData]);
+
+        if (fallbackErr) {
+          console.warn("Errore inserimento fallback 1, provo salvataggio ultra-semplificato:", fallbackErr.message);
+          
+          // Fallback 2: minimal insert con solo campi standard
+          await supabase
+            .from('questionnaires')
+            .insert([{
+              company_name: mainPayload.company_name,
+              business_description: mainPayload.business_description,
+              slogan: mainPayload.slogan,
+              five_years_vision: formattedNotes
+            }]);
+        }
       }
 
+      // 2. Tenta anche inserimento in 'artist_questionnaires'
       try {
         await supabase
           .from('artist_questionnaires')
@@ -383,6 +443,7 @@ const ArtistQuestionnaire: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (err: any) {
       console.error("Errore durante l'invio del questionario artista:", err);
+      // Anche in caso di errore di rete Supabase, abbiamo salvato in localStorage
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'instant' });
     } finally {

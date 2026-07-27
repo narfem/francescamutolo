@@ -232,14 +232,7 @@ const DashboardHome = () => (
             <ClipboardList size={24} />
           </div>
           <p className="text-gray-500 text-sm font-medium">Questionari</p>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
-        </Link>
-        <Link to="/questionario-artista" target="_blank" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative">
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
-            <Music size={24} />
-          </div>
-          <p className="text-gray-500 text-sm font-medium">Questionario Artista</p>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Identità Artistica →</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Gestisci questionari</p>
         </Link>
         <Link to="/dashboard/feedback" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
           <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
@@ -2302,9 +2295,12 @@ const ManageQuestionnaires = () => {
       if (parts[1]) email = parts[1].trim();
     }
 
+    const rawNote = quest.notes || (quest.five_years_vision?.includes('[NOTE JSON]:') ? quest.five_years_vision.split('[NOTE JSON]:')[1] : quest.five_years_vision) || '';
+
     try {
-      if (quest.notes && quest.notes.startsWith('{')) {
-        const parsed = JSON.parse(quest.notes);
+      const jsonCandidate = rawNote.trim();
+      if (jsonCandidate.startsWith('{')) {
+        const parsed = JSON.parse(jsonCandidate);
         if (parsed.artist_name) artistName = parsed.artist_name;
         if (parsed.email) email = parsed.email;
         if (parsed.structured_data && Array.isArray(parsed.structured_data)) {
@@ -2318,9 +2314,9 @@ const ManageQuestionnaires = () => {
       // ignore
     }
 
-    if ((!structuredData || structuredData.length === 0) && quest.notes) {
-      if (quest.notes.includes('[Domanda')) {
-        const text = quest.notes;
+    if ((!structuredData || structuredData.length === 0) && rawNote) {
+      if (rawNote.includes('[Domanda')) {
+        const text = rawNote;
         const parsedAnswers: Record<string, string> = { ...answers };
         
         ARTIST_DEFAULT_SECTIONS.forEach(sec => {
@@ -2783,9 +2779,26 @@ const ManageQuestionnaires = () => {
   useEffect(() => { 
     fetchQuestionnaires(); 
     fetchQuestionsSchema();
+
+    const handleUpdate = () => {
+      fetchQuestionnaires();
+    };
+
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('local_questionnaire_submitted', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('local_questionnaire_submitted', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+    };
   }, []);
 
   const fetchQuestionnaires = async () => {
+    let allQuests: Questionnaire[] = [];
+    let schemaError: string | null = null;
+
     try {
       const { data, error } = await supabase
         .from('questionnaires')
@@ -2793,103 +2806,123 @@ const ManageQuestionnaires = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        throw error;
+        console.warn("Questionnaires select error:", error.message);
+        if (error.message && error.message.includes("relation") && error.message.includes("does not exist")) {
+          schemaError = "La tabella 'questionnaires' non esiste nel tuo database Supabase. Assicurati di aver eseguito lo script SQL per creare la tabella e le politiche di sicurezza.";
+        }
+      } else if (data) {
+        allQuests = [...data];
       }
+    } catch (err: any) {
+      console.warn("Catch questionnaires error:", err);
+    }
 
-      let allQuests = [...(data || [])];
+    try {
+      const { data: artistRows } = await supabase
+        .from('artist_questionnaires')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      try {
-        const { data: artistRows } = await supabase
-          .from('artist_questionnaires')
-          .select('*')
-          .order('created_at', { ascending: false });
+      if (artistRows && artistRows.length > 0) {
+        const converted: Questionnaire[] = [];
+        for (const aq of artistRows) {
+          const isAlreadyPresent = allQuests.some(q => {
+            if (q.id === aq.id) return true;
+            if (isArtistQuestionnaire(q)) {
+              const { artistName, email } = getArtistData(q);
+              const normNameQ = (artistName || '').trim().toLowerCase();
+              const normNameAQ = (aq.artist_name || '').trim().toLowerCase();
+              const nameMatch = normNameQ && normNameAQ && normNameQ === normNameAQ;
 
-        if (artistRows && artistRows.length > 0) {
-          const converted: Questionnaire[] = [];
-          for (const aq of artistRows) {
-            const isAlreadyPresent = allQuests.some(q => {
-              if (q.id === aq.id) return true;
-              if (isArtistQuestionnaire(q)) {
-                const { artistName, email } = getArtistData(q);
-                const normNameQ = (artistName || '').trim().toLowerCase();
-                const normNameAQ = (aq.artist_name || '').trim().toLowerCase();
-                const nameMatch = normNameQ && normNameAQ && normNameQ === normNameAQ;
+              const normEmailQ = (email || '').trim().toLowerCase();
+              const normEmailAQ = (aq.email || '').trim().toLowerCase();
+              const emailMatch = normEmailQ && normEmailAQ && normEmailQ === normEmailAQ;
 
-                const normEmailQ = (email || '').trim().toLowerCase();
-                const normEmailAQ = (aq.email || '').trim().toLowerCase();
-                const emailMatch = normEmailQ && normEmailAQ && normEmailQ === normEmailAQ;
-
-                if (nameMatch || emailMatch) {
-                  const timeQ = new Date(q.created_at).getTime();
-                  const timeAQ = new Date(aq.created_at).getTime();
-                  if (Math.abs(timeQ - timeAQ) < 600000) return true;
-                }
+              if (nameMatch || emailMatch) {
+                const timeQ = new Date(q.created_at).getTime();
+                const timeAQ = new Date(aq.created_at).getTime();
+                if (Math.abs(timeQ - timeAQ) < 600000) return true;
               }
-              return false;
-            });
+            }
+            return false;
+          });
 
-            if (!isAlreadyPresent) {
-              converted.push({
-                id: aq.id,
-                company_name: `[ARTISTA] ${aq.artist_name || 'Artista Anonimo'}`,
-                name_meaning: '',
-                business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${aq.email || 'Non indicata'}`,
-                products_services: '',
-                strength_point: '',
-                slogan: aq.answers?.q20 || '',
-                target_customers: '',
-                age_range: '',
-                customer_type: '',
-                market_scope: '',
-                brand_perception_target: '',
-                keywords: ['Identità Artistica', 'Musica'],
-                brand_perception: aq.answers?.q11 || '',
-                brand_personified: aq.answers?.q10 || '',
-                palette_favorite: '',
-                palette_avoid: '',
-                logo_style: '',
-                logo_composition: '',
-                logos_liked: '',
-                logos_disliked: '',
-                competitors: '',
-                admired_companies: '',
-                differentiation_strategy: '',
-                logo_applications: [],
-                deadline: '',
-                extra_deliverables: [],
-                five_years_vision: aq.answers?.q7 || '',
-                notes: JSON.stringify({
-                  type: 'artist_questionnaire',
-                  artist_name: aq.artist_name || 'Artista Anonimo',
-                  email: aq.email || '',
-                  structured_data: aq.structured_data,
-                  answers: aq.answers
-                }),
-                is_deleted: aq.is_deleted || false,
-                is_read: aq.is_read || false,
-                created_at: aq.created_at || new Date().toISOString()
-              });
+          if (!isAlreadyPresent) {
+            converted.push({
+              id: aq.id,
+              company_name: `[ARTISTA] ${aq.artist_name || 'Artista Anonimo'}`,
+              name_meaning: '',
+              business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${aq.email || 'Non indicata'}`,
+              products_services: '',
+              strength_point: '',
+              slogan: aq.answers?.q20 || '',
+              target_customers: '',
+              age_range: '',
+              customer_type: '',
+              market_scope: '',
+              brand_perception_target: '',
+              keywords: ['Identità Artistica', 'Musica'],
+              brand_perception: aq.answers?.q11 || '',
+              brand_personified: aq.answers?.q10 || '',
+              palette_favorite: '',
+              palette_avoid: '',
+              logo_style: '',
+              logo_composition: '',
+              logos_liked: '',
+              logos_disliked: '',
+              competitors: '',
+              admired_companies: '',
+              differentiation_strategy: '',
+              logo_applications: [],
+              deadline: '',
+              extra_deliverables: [],
+              five_years_vision: aq.answers?.q7 || '',
+              notes: JSON.stringify({
+                type: 'artist_questionnaire',
+                artist_name: aq.artist_name || 'Artista Anonimo',
+                email: aq.email || '',
+                structured_data: aq.structured_data,
+                answers: aq.answers
+              }),
+              is_deleted: aq.is_deleted || false,
+              is_read: aq.is_read || false,
+              created_at: aq.created_at || new Date().toISOString()
+            });
+          }
+        }
+
+        allQuests = [...allQuests, ...converted];
+      }
+    } catch (e) {
+      // silent fallback if artist_questionnaires table doesn't exist
+    }
+
+    // Merge local backups from localStorage if present
+    try {
+      const localBackupRaw = localStorage.getItem('local_questionnaires_backup');
+      if (localBackupRaw) {
+        const localItems: Questionnaire[] = JSON.parse(localBackupRaw);
+        if (Array.isArray(localItems)) {
+          for (const localQ of localItems) {
+            const exists = allQuests.some(q => q.id === localQ.id || (
+              q.company_name === localQ.company_name && 
+              Math.abs(new Date(q.created_at).getTime() - new Date(localQ.created_at).getTime()) < 600000
+            ));
+            if (!exists) {
+              allQuests.unshift(localQ);
             }
           }
-
-          allQuests = [...allQuests, ...converted].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
-      } catch (e) {
-        // silent fallback if artist_questionnaires table doesn't exist
       }
-
-      setQuestionnaires(allQuests);
-      setErrorInfo(null);
-    } catch (err: any) {
-      console.error("Fetch questionnaires error:", err);
-      if (err.message && err.message.includes("relation") && err.message.includes("does not exist")) {
-        setErrorInfo("La tabella 'questionnaires' non esiste nel tuo database Supabase. Assicurati di aver eseguito lo script SQL per creare la tabella e le politiche di sicurezza.");
-      } else {
-        setErrorInfo(err.message || "Impossibile recuperare i questionari.");
-      }
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.warn("Errore lettura local_questionnaires_backup:", e);
     }
+
+    allQuests.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    setQuestionnaires(allQuests);
+    setErrorInfo(schemaError);
+    setLoading(false);
   };
 
   const toggleReadStatus = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {

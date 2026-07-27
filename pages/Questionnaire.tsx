@@ -483,6 +483,25 @@ const Questionnaire: React.FC = () => {
       notes: finalNotes
     };
 
+    // Backup locale in localStorage
+    try {
+      const backupItem = {
+        ...payload,
+        id: 'local-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+        is_deleted: false,
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+      const existingRaw = localStorage.getItem('local_questionnaires_backup');
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      if (Array.isArray(existing)) {
+        existing.unshift(backupItem);
+        localStorage.setItem('local_questionnaires_backup', JSON.stringify(existing));
+      }
+    } catch (e) {
+      console.warn("Impossibile salvare il backup locale in localStorage:", e);
+    }
+
     try {
       const { error } = await supabase
         .from('questionnaires')
