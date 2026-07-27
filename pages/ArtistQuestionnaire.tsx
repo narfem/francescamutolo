@@ -184,12 +184,77 @@ const ArtistQuestionnaire: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [questionsSchema, setQuestionsSchema] = useState<any>(null);
 
   const topCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    const loadCustomQuestions = async () => {
+      try {
+        const { data } = await supabase
+          .from('settings')
+          .select('mutey_rules')
+          .eq('id', 'artist_questionnaire_questions')
+          .maybeSingle();
+        if (data && data.mutey_rules) {
+          setQuestionsSchema(JSON.parse(data.mutey_rules));
+        }
+      } catch (e) {
+        console.error("Errore recupero domande custom artista:", e);
+      }
+    };
+    loadCustomQuestions();
+  }, []);
+
+  const dynamicSections = React.useMemo(() => {
+    if (!questionsSchema) return SECTIONS;
+
+    return SECTIONS.map(sec => {
+      const stepKey = `step${sec.id}`;
+      const stepConfig = questionsSchema[stepKey];
+      if (!stepConfig) return sec;
+
+      const title = stepConfig.title || sec.title;
+      const deletedFields = stepConfig.deleted_fields || [];
+      const customQs = stepConfig.custom_questions || [];
+
+      const updatedQuestions: any[] = [];
+      sec.questions.forEach(q => {
+        if (!deletedFields.includes(q.id)) {
+          const customText = stepConfig[`${q.id}_label`];
+          const customSubtext = stepConfig[`${q.id}_subtext`];
+          const customPlaceholder = stepConfig[`${q.id}_placeholder`];
+          updatedQuestions.push({
+            ...q,
+            text: customText || q.text,
+            subtext: customSubtext !== undefined ? customSubtext : q.subtext,
+            placeholder: customPlaceholder
+          });
+        }
+      });
+
+      customQs.forEach((cq: any, idx: number) => {
+        updatedQuestions.push({
+          id: cq.id,
+          number: updatedQuestions.length + 1,
+          text: cq.label || `Domanda personalizzata ${idx + 1}`,
+          placeholder: cq.placeholder || '',
+          type: cq.type || 'textarea',
+          isCustom: true
+        });
+      });
+
+      return {
+        ...sec,
+        title,
+        questions: updatedQuestions
+      };
+    });
+  }, [questionsSchema]);
 
   const handleAnswerChange = (qId: string, value: string, element?: HTMLTextAreaElement) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
@@ -199,8 +264,8 @@ const ArtistQuestionnaire: React.FC = () => {
     }
   };
 
-  const currentSection = SECTIONS.find(s => s.id === currentStep) || SECTIONS[0];
-  const progressPercent = Math.round((currentStep / SECTIONS.length) * 100);
+  const currentSection = dynamicSections.find(s => s.id === currentStep) || dynamicSections[0];
+  const progressPercent = Math.round((currentStep / dynamicSections.length) * 100);
 
   const scrollToTopForm = () => {
     if (topCardRef.current) {
@@ -215,7 +280,7 @@ const ArtistQuestionnaire: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (currentStep < SECTIONS.length) {
+    if (currentStep < dynamicSections.length) {
       setCurrentStep(prev => prev + 1);
       scrollToTopForm();
     }
@@ -237,7 +302,7 @@ const ArtistQuestionnaire: React.FC = () => {
     setLoading(true);
     setErrorMessage(null);
 
-    const structuredAnswers = SECTIONS.map(sec => ({
+    const structuredAnswers = dynamicSections.map(sec => ({
       section_id: sec.id,
       section_title: sec.title,
       questions: sec.questions.map(q => ({
@@ -260,7 +325,7 @@ const ArtistQuestionnaire: React.FC = () => {
     const formattedNotes = `=== QUESTIONARIO IDENTITÀ ARTISTICA ===\n` +
       `Nome Artista: ${artistName.trim() || 'Artista Anonimo'}\n` +
       `Email: ${contactEmail.trim() || 'Non indicata'}\n\n` +
-      SECTIONS.map(sec => 
+      dynamicSections.map(sec => 
         `--- ${sec.title} ---\n` + 
         sec.questions.map(q => `[Domanda ${q.number}]: ${q.text}\n[Risposta]: ${answers[q.id] || '(Nessuna risposta)'}`).join('\n\n')
       ).join('\n\n');
@@ -452,7 +517,7 @@ const ArtistQuestionnaire: React.FC = () => {
           {/* PROGRESS & NAVIGATION TABS */}
           <div className="p-6 md:p-8 border-b border-gray-100 bg-white">
             <div className="flex items-center justify-between mb-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              <span>Sezione {currentStep} di {SECTIONS.length} — {currentSection.title}</span>
+              <span>Sezione {currentStep} di {dynamicSections.length} — {currentSection.title}</span>
               <span className="text-primary">{progressPercent}% Completato</span>
             </div>
 
@@ -466,7 +531,7 @@ const ArtistQuestionnaire: React.FC = () => {
 
             {/* Pulsanti Rapidi Sezione */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 chat-scrollbar">
-              {SECTIONS.map((sec) => {
+              {dynamicSections.map((sec) => {
                 const isActive = sec.id === currentStep;
                 const isAnswered = sec.questions.some(q => !!answers[q.id]?.trim());
 
@@ -528,7 +593,7 @@ const ArtistQuestionnaire: React.FC = () => {
                     rows={4}
                     value={answers[q.id] || ''}
                     onChange={(e) => handleAnswerChange(q.id, e.target.value, e.target)}
-                    placeholder="Scrivi qui liberamente la tua risposta..."
+                    placeholder={q.placeholder || "Scrivi qui liberamente la tua risposta..."}
                     className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 font-normal leading-relaxed text-sm md:text-base resize-y min-h-[120px] bg-white shadow-inner"
                   />
                 </div>
@@ -551,7 +616,7 @@ const ArtistQuestionnaire: React.FC = () => {
                 <span>Sezione Precedente</span>
               </button>
 
-              {currentStep < SECTIONS.length ? (
+              {currentStep < dynamicSections.length ? (
                 <button
                   key={`next-btn-step-${currentStep}`}
                   type="button"

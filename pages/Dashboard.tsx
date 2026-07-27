@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
-  Archive, GripVertical, ExternalLink, Music
+  Archive, GripVertical, ExternalLink, Music, Heart, Compass, BookOpen, Award, Search
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -1541,6 +1541,73 @@ const DEFAULT_QUESTIONS = {
   }
 };
 
+const DEFAULT_ARTIST_QUESTIONS = {
+  step1: {
+    title: "1. Chi sei oggi?",
+    q1_label: "Raccontami chi sei in poche righe. Non come artista, ma come persona.",
+    q1_placeholder: "La tua risposta...",
+    q2_label: "Quali sono tre parole che i tuoi amici userebbero per descriverti?",
+    q2_placeholder: "La tua risposta...",
+    q3_label: "C'è qualcosa del tuo carattere che ritieni ti distingua davvero dagli altri?",
+    q3_placeholder: "La tua risposta...",
+  },
+  step2: {
+    title: "2. Perché fai musica?",
+    q4_label: "Quando hai capito che volevi fare musica? Raccontami quel momento.",
+    q4_placeholder: "La tua risposta...",
+    q5_label: "Se domani non potessi guadagnare un euro con la musica, continueresti comunque a farla? Perché?",
+    q5_placeholder: "La tua risposta...",
+    q6_label: "Cosa provi quando scrivi o registri un brano?",
+    q6_placeholder: "La tua risposta...",
+  },
+  step3: {
+    title: "3. Dove vuoi arrivare?",
+    q7_label: "Immagina di essere tra cinque anni sul palco davanti a migliaia di persone. Qual è la prima cosa che vorresti che il pubblico pensasse vedendoti entrare?",
+    q7_placeholder: "La tua risposta...",
+    q8_label: "Quale frase ti piacerebbe leggere nei commenti sotto una tua canzone?",
+    q8_placeholder: "La tua risposta...",
+    q9_label: "Quando qualcuno sentirà il tuo nome, cosa vorresti che gli venisse subito in mente?",
+    q9_placeholder: "La tua risposta...",
+  },
+  step4: {
+    title: "4. La tua identità",
+    q10_label: "Se la tua musica fosse una persona, come sarebbe?",
+    q10_subtext: "Non descrivere l'aspetto fisico. Descrivi il carattere.",
+    q10_placeholder: "La tua risposta...",
+    q11_label: "Se dovessi scegliere una sola emozione da lasciare a chi ascolta le tue canzoni, quale sarebbe? Perché?",
+    q11_placeholder: "La tua risposta...",
+    q12_label: "C'è un messaggio che vorresti trasmettere con la tua musica? Anche se ancora non riesci a esprimerlo perfettamente.",
+    q12_placeholder: "La tua risposta...",
+  },
+  step5: {
+    title: "5. I tuoi riferimenti",
+    q13_label: "Quali artisti ti ispirano davvero? Per ognuno spiegami cosa ammiri.",
+    q13_subtext: "Non limitarti solo al genere musicale.",
+    q13_placeholder: "La tua risposta...",
+    q14_label: "C'è un artista a cui non vorresti mai essere associato? Perché?",
+    q14_placeholder: "La tua risposta...",
+  },
+  step6: {
+    title: "6. La tua unicità",
+    q15_label: "Se eliminassimo il tuo nome dalla copertina di un tuo brano, come potrebbe una persona capire che quella canzone è tua?",
+    q15_subtext: "Non esiste una risposta giusta. Mi interessa capire cosa rende il tuo modo di fare musica riconoscibile.",
+    q15_placeholder: "La tua risposta...",
+    q16_label: "Cosa pensi che nessun altro artista faccia come lo fai tu?",
+    q16_placeholder: "La tua risposta...",
+    q17_label: "Cosa vuoi che il pubblico ricordi di te anche dopo tanti anni?",
+    q17_placeholder: "La tua risposta...",
+  },
+  step7: {
+    title: "7. Il tuo futuro",
+    q18_label: "Quando la tua carriera sarà avviata, quale sarà il motivo più importante per cui dirai: \"Ce l'ho fatta\"?",
+    q18_placeholder: "La tua risposta...",
+    q19_label: "C'è qualcosa su cui non scenderesti mai a compromessi, anche se ti aiutasse ad avere più successo?",
+    q19_placeholder: "La tua risposta...",
+    q20_label: "Se dovessi riassumere l'artista che vuoi diventare in una sola frase, quale sarebbe?",
+    q20_placeholder: "La tua risposta...",
+  }
+};
+
 const ManageQuestionnaires = () => {
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1557,7 +1624,11 @@ const ManageQuestionnaires = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'edit_questions'>('active');
+  const [filterType, setFilterType] = useState<'all' | 'brand' | 'artist'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingTarget, setEditingTarget] = useState<'brand' | 'artist'>('brand');
   const [questionsSchema, setQuestionsSchema] = useState<any>(null);
+  const [artistQuestionsSchema, setArtistQuestionsSchema] = useState<any>(null);
   const [editorStep, setEditorStep] = useState(1);
   const [savingQuestions, setSavingQuestions] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -1578,23 +1649,42 @@ const ManageQuestionnaires = () => {
       console.error("Errore fetch domande custom:", e);
       setQuestionsSchema(DEFAULT_QUESTIONS);
     }
+
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('mutey_rules')
+        .eq('id', 'artist_questionnaire_questions')
+        .maybeSingle();
+      if (!error && data && data.mutey_rules) {
+        setArtistQuestionsSchema(JSON.parse(data.mutey_rules));
+      } else {
+        setArtistQuestionsSchema(DEFAULT_ARTIST_QUESTIONS);
+      }
+    } catch (e) {
+      console.error("Errore fetch domande custom artista:", e);
+      setArtistQuestionsSchema(DEFAULT_ARTIST_QUESTIONS);
+    }
   };
 
   const handleSaveQuestions = async () => {
     setSavingQuestions(true);
     setSaveStatus(null);
+    const targetId = editingTarget === 'brand' ? 'questionnaire_questions' : 'artist_questionnaire_questions';
+    const targetSchema = editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema;
     try {
       const { error } = await supabase
         .from('settings')
         .upsert({
-          id: 'questionnaire_questions',
-          mutey_rules: JSON.stringify(questionsSchema),
+          id: targetId,
+          mutey_rules: JSON.stringify(targetSchema),
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
       if (error) {
         setSaveStatus({ type: 'error', message: 'Errore durante il salvataggio: ' + error.message });
       } else {
-        setSaveStatus({ type: 'success', message: 'Domande del questionario salvate con successo!' });
+        const labelName = editingTarget === 'brand' ? 'Brand Identity' : 'Identità Artistica';
+        setSaveStatus({ type: 'success', message: `Domande del questionario (${labelName}) salvate con successo!` });
         setTimeout(() => setSaveStatus(null), 4000);
       }
     } catch (err: any) {
@@ -1605,12 +1695,13 @@ const ManageQuestionnaires = () => {
   };
 
   const handleFieldChange = (stepNum: number, field: string, value: string) => {
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${stepNum}`;
       return {
         ...prev,
         [stepKey]: {
-          ...prev[stepKey],
+          ...prev?.[stepKey],
           [field]: value
         }
       };
@@ -1619,12 +1710,13 @@ const ManageQuestionnaires = () => {
 
   const handleArrayFieldChange = (stepNum: number, field: string, commaString: string) => {
     const arr = commaString.split(',').map(s => s.trim()).filter(Boolean);
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${stepNum}`;
       return {
         ...prev,
         [stepKey]: {
-          ...prev[stepKey],
+          ...prev?.[stepKey],
           [field]: arr
         }
       };
@@ -1632,15 +1724,17 @@ const ManageQuestionnaires = () => {
   };
 
   const isFieldDeleted = (stepNum: number, field: string) => {
+    const schema = editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema;
     const stepKey = `step${stepNum}`;
-    const stepObj = questionsSchema?.[stepKey];
+    const stepObj = schema?.[stepKey];
     return stepObj?.deleted_fields?.includes(field) || false;
   };
 
   const toggleFieldDeletion = (stepNum: number, field: string) => {
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${stepNum}`;
-      const stepObj = prev[stepKey] || {};
+      const stepObj = prev?.[stepKey] || {};
       const deletedList = stepObj.deleted_fields || [];
       let nextDeleted;
       if (deletedList.includes(field)) {
@@ -1659,9 +1753,10 @@ const ManageQuestionnaires = () => {
   };
 
   const handleAddCustomQuestion = () => {
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${editorStep}`;
-      const stepObj = prev[stepKey] || {};
+      const stepObj = prev?.[stepKey] || {};
       const customQs = stepObj.custom_questions || [];
       const newId = `custom_${Date.now()}`;
       const newQ = {
@@ -1681,9 +1776,10 @@ const ManageQuestionnaires = () => {
   };
 
   const handleCustomQuestionChange = (id: string, prop: 'label' | 'placeholder' | 'type', value: string) => {
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${editorStep}`;
-      const stepObj = prev[stepKey] || {};
+      const stepObj = prev?.[stepKey] || {};
       const customQs = stepObj.custom_questions || [];
       const updatedQs = customQs.map((cq: any) => {
         if (cq.id === id) {
@@ -1702,9 +1798,10 @@ const ManageQuestionnaires = () => {
   };
 
   const handleDeleteCustomQuestion = (id: string) => {
-    setQuestionsSchema((prev: any) => {
+    const setter = editingTarget === 'brand' ? setQuestionsSchema : setArtistQuestionsSchema;
+    setter((prev: any) => {
       const stepKey = `step${editorStep}`;
-      const stepObj = prev[stepKey] || {};
+      const stepObj = prev?.[stepKey] || {};
       const customQs = stepObj.custom_questions || [];
       const updatedQs = customQs.filter((cq: any) => cq.id !== id);
       return {
@@ -2186,10 +2283,11 @@ const ManageQuestionnaires = () => {
   const isArtistQuestionnaire = (quest: Questionnaire | null | undefined): boolean => {
     if (!quest) return false;
     return (
-      quest.company_name.startsWith('[ARTISTA]') ||
-      Boolean(quest.notes && quest.notes.includes('artist_questionnaire')) ||
-      Boolean(quest.notes && quest.notes.includes('IDENTITÀ ARTISTICA')) ||
-      Boolean(quest.business_description && quest.business_description.includes('Identità Artistica'))
+      (quest.company_name && quest.company_name.startsWith('[ARTISTA]')) ||
+      Boolean(quest.notes && quest.notes.toLowerCase().includes('artist_questionnaire')) ||
+      Boolean(quest.notes && quest.notes.toLowerCase().includes('identità artistica')) ||
+      Boolean(quest.business_description && quest.business_description.toLowerCase().includes('identità artistica')) ||
+      Boolean(quest.keywords && quest.keywords.some(k => k.toLowerCase().includes('identità artistica') || k.toLowerCase().includes('musica')))
     );
   };
 
@@ -2707,49 +2805,72 @@ const ManageQuestionnaires = () => {
           .order('created_at', { ascending: false });
 
         if (artistRows && artistRows.length > 0) {
-          const existingIds = new Set(allQuests.map(q => q.id));
-          const converted: Questionnaire[] = artistRows
-            .filter((aq: any) => !existingIds.has(aq.id))
-            .map((aq: any) => ({
-              id: aq.id,
-              company_name: `[ARTISTA] ${aq.artist_name || 'Artista Anonimo'}`,
-              name_meaning: '',
-              business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${aq.email || 'Non indicata'}`,
-              products_services: '',
-              strength_point: '',
-              slogan: aq.answers?.q20 || '',
-              target_customers: '',
-              age_range: '',
-              customer_type: '',
-              market_scope: '',
-              brand_perception_target: '',
-              keywords: ['Identità Artistica', 'Musica'],
-              brand_perception: aq.answers?.q11 || '',
-              brand_personified: aq.answers?.q10 || '',
-              palette_favorite: '',
-              palette_avoid: '',
-              logo_style: '',
-              logo_composition: '',
-              logos_liked: '',
-              logos_disliked: '',
-              competitors: '',
-              admired_companies: '',
-              differentiation_strategy: '',
-              logo_applications: [],
-              deadline: '',
-              extra_deliverables: [],
-              five_years_vision: aq.answers?.q7 || '',
-              notes: JSON.stringify({
-                type: 'artist_questionnaire',
-                artist_name: aq.artist_name || 'Artista Anonimo',
-                email: aq.email || '',
-                structured_data: aq.structured_data,
-                answers: aq.answers
-              }),
-              is_deleted: aq.is_deleted || false,
-              is_read: aq.is_read || false,
-              created_at: aq.created_at || new Date().toISOString()
-            }));
+          const converted: Questionnaire[] = [];
+          for (const aq of artistRows) {
+            const isAlreadyPresent = allQuests.some(q => {
+              if (q.id === aq.id) return true;
+              if (isArtistQuestionnaire(q)) {
+                const { artistName, email } = getArtistData(q);
+                const normNameQ = (artistName || '').trim().toLowerCase();
+                const normNameAQ = (aq.artist_name || '').trim().toLowerCase();
+                const nameMatch = normNameQ && normNameAQ && normNameQ === normNameAQ;
+
+                const normEmailQ = (email || '').trim().toLowerCase();
+                const normEmailAQ = (aq.email || '').trim().toLowerCase();
+                const emailMatch = normEmailQ && normEmailAQ && normEmailQ === normEmailAQ;
+
+                if (nameMatch || emailMatch) {
+                  const timeQ = new Date(q.created_at).getTime();
+                  const timeAQ = new Date(aq.created_at).getTime();
+                  if (Math.abs(timeQ - timeAQ) < 600000) return true;
+                }
+              }
+              return false;
+            });
+
+            if (!isAlreadyPresent) {
+              converted.push({
+                id: aq.id,
+                company_name: `[ARTISTA] ${aq.artist_name || 'Artista Anonimo'}`,
+                name_meaning: '',
+                business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${aq.email || 'Non indicata'}`,
+                products_services: '',
+                strength_point: '',
+                slogan: aq.answers?.q20 || '',
+                target_customers: '',
+                age_range: '',
+                customer_type: '',
+                market_scope: '',
+                brand_perception_target: '',
+                keywords: ['Identità Artistica', 'Musica'],
+                brand_perception: aq.answers?.q11 || '',
+                brand_personified: aq.answers?.q10 || '',
+                palette_favorite: '',
+                palette_avoid: '',
+                logo_style: '',
+                logo_composition: '',
+                logos_liked: '',
+                logos_disliked: '',
+                competitors: '',
+                admired_companies: '',
+                differentiation_strategy: '',
+                logo_applications: [],
+                deadline: '',
+                extra_deliverables: [],
+                five_years_vision: aq.answers?.q7 || '',
+                notes: JSON.stringify({
+                  type: 'artist_questionnaire',
+                  artist_name: aq.artist_name || 'Artista Anonimo',
+                  email: aq.email || '',
+                  structured_data: aq.structured_data,
+                  answers: aq.answers
+                }),
+                is_deleted: aq.is_deleted || false,
+                is_read: aq.is_read || false,
+                created_at: aq.created_at || new Date().toISOString()
+              });
+            }
+          }
 
           allQuests = [...allQuests, ...converted].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         }
@@ -2990,7 +3111,25 @@ ALTER TABLE questionnaires ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Inserimento pubblico questionari" ON questionnaires FOR INSERT WITH CHECK (true);
 CREATE POLICY "Admin Select Questionnaires" ON questionnaires FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Admin Update Questionnaires" ON questionnaires FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authenticated USING (true);`}
+CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authenticated USING (true);
+
+-- TABELLA PER QUESTIONARI IDENTITÀ ARTISTICA:
+CREATE TABLE IF NOT EXISTS artist_questionnaires (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  artist_name TEXT NOT NULL,
+  email TEXT,
+  answers JSONB,
+  structured_data JSONB,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE artist_questionnaires ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Inserimento pubblico artist_questionnaires" ON artist_questionnaires FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admin Select artist_questionnaires" ON artist_questionnaires FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin Update artist_questionnaires" ON artist_questionnaires FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin Delete artist_questionnaires" ON artist_questionnaires FOR ALL TO authenticated USING (true);`}
           </div>
           <p className="mt-4 text-xs">Esegui questa query nel SQL Editor di Supabase per sincronizzare.</p>
         </div>
@@ -3045,136 +3184,292 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
         </div>
 
         {activeTab !== 'edit_questions' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).map(quest => {
-              const isArtist = isArtistQuestionnaire(quest);
-              const { artistName } = isArtist ? getArtistData(quest) : { artistName: '' };
+          (() => {
+            const tabQuests = questionnaires.filter(q => {
+              const isArchived = archivedQuestIds.includes(q.id);
+              return activeTab === 'active' ? !isArchived : isArchived;
+            });
 
-              return (
-                <div 
-                  key={quest.id}
-                  onClick={() => setSelectedQuest(quest)}
-                  className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform ${isArtist ? 'bg-purple-50 text-purple-600' : 'bg-primary/10 text-primary'}`}>
-                          {isArtist ? <Sparkles size={22} /> : <ClipboardList size={22} />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">
-                              {isArtist ? artistName : quest.company_name}
-                            </h3>
-                            {isArtist && (
-                              <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-purple-50 text-purple-600 border border-purple-150/60">
-                                Identità Artistica
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                            {new Date(quest.created_at).toLocaleDateString('it-IT')}
-                          </p>
-                        </div>
-                      </div>
+            const countAll = tabQuests.length;
+            const countBrand = tabQuests.filter(q => !isArtistQuestionnaire(q)).length;
+            const countArtist = tabQuests.filter(q => isArtistQuestionnaire(q)).length;
 
-                      <button 
-                        onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
-                          quest.is_read 
-                            ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
-                            : 'bg-green-50 text-green-600 border-green-100/50'
-                        }`}
-                        title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
+            const filteredQuestionnaires = tabQuests.filter(q => {
+              const isArtist = isArtistQuestionnaire(q);
+              if (filterType === 'brand' && isArtist) return false;
+              if (filterType === 'artist' && !isArtist) return false;
+
+              if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase();
+                const { artistName, email } = isArtist ? getArtistData(q) : { artistName: '', email: '' };
+                const company = (q.company_name || '').toLowerCase();
+                const artist = (artistName || '').toLowerCase();
+                const em = (email || '').toLowerCase();
+                const desc = (q.business_description || '').toLowerCase();
+                const slogan = (q.slogan || '').toLowerCase();
+                const notes = (q.notes || '').toLowerCase();
+
+                return company.includes(query) || artist.includes(query) || em.includes(query) || desc.includes(query) || slogan.includes(query) || notes.includes(query);
+              }
+
+              return true;
+            });
+
+            return (
+              <div className="space-y-6">
+                {/* SUB-FILTER & SEARCH TOOLBAR */}
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-gray-50/80 p-3 rounded-2xl border border-gray-100">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider px-1">Tipologia:</span>
+                    <button
+                      type="button"
+                      onClick={() => setFilterType('all')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        filterType === 'all'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200/80'
+                      }`}
+                    >
+                      <span>Tutti</span>
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-black ${filterType === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                        {countAll}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilterType('brand')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        filterType === 'brand'
+                          ? 'bg-primary text-white shadow-sm'
+                          : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200/80'
+                      }`}
+                    >
+                      <Building size={13} />
+                      <span>Brand Identity</span>
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-black ${filterType === 'brand' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                        {countBrand}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilterType('artist')}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        filterType === 'artist'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-white text-purple-700 hover:bg-purple-50/50 border border-purple-200/80'
+                      }`}
+                    >
+                      <Sparkles size={13} />
+                      <span>Identità Artistica</span>
+                      <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-black ${filterType === 'artist' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
+                        {countArtist}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* SEARCH BOX */}
+                  <div className="relative min-w-[220px] sm:w-64">
+                    <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Cerca per nome, email..."
+                      className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-gray-400"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
                       >
-                        <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
-                        {quest.is_read ? 'Letto' : 'Nuovo'}
+                        <X size={13} />
                       </button>
-                    </div>
-
-                  <div className="space-y-2 my-4">
-                    {quest.slogan && (
-                      <p className="text-xs italic text-gray-500 font-medium">"{quest.slogan}"</p>
-                    )}
-                    {quest.business_description && (
-                      <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium">
-                        {quest.business_description}
-                      </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
-                  <div className="flex flex-wrap gap-1 max-w-[50%]">
-                    {quest.keywords?.slice(0, 3).map(k => (
-                      <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
-                    ))}
-                    {quest.keywords?.length > 3 && (
-                      <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleFormulaQuote(quest); }}
-                      className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
-                      title="Formula Preventivo"
-                    >
-                      <Sparkles size={11} />
-                      <span className="hidden xl:inline">preventivo</span>
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
-                      className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
-                      title="Scarica come TXT"
-                    >
-                      <Download size={16} />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDownloadQuestPdf(quest); }}
-                      className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100 flex items-center justify-center"
-                      title="Scarica come PDF"
-                      disabled={exportingPdf}
-                    >
-                      {exportingPdf && pdfActiveQuote?.questId === quest.id ? (
-                        <RefreshCw size={16} className="animate-spin text-primary" />
-                      ) : (
-                        <FileText size={16} />
+                {/* CARDS GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredQuestionnaires.map(quest => {
+                    const isArtist = isArtistQuestionnaire(quest);
+                    const { artistName } = isArtist ? getArtistData(quest) : { artistName: '' };
+
+                    return (
+                      <div 
+                        key={quest.id}
+                        onClick={() => setSelectedQuest(quest)}
+                        className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 hover:border-primary/40 transition-all cursor-pointer relative group flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform ${isArtist ? 'bg-purple-50 text-purple-600' : 'bg-primary/10 text-primary'}`}>
+                                {isArtist ? <Sparkles size={22} /> : <ClipboardList size={22} />}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-extrabold text-gray-900 text-lg leading-tight group-hover:text-primary transition-colors">
+                                    {isArtist ? artistName : quest.company_name}
+                                  </h3>
+                                  {isArtist && (
+                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-purple-50 text-purple-600 border border-purple-150/60">
+                                      Identità Artistica
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                                  {new Date(quest.created_at).toLocaleDateString('it-IT')}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button 
+                              onClick={(e) => toggleReadStatus(e, quest.id, quest.is_read)}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${
+                                quest.is_read 
+                                  ? 'bg-gray-50 text-gray-400 border-gray-100 hover:text-primary hover:border-primary/20' 
+                                  : 'bg-green-50 text-green-600 border-green-100/50'
+                              }`}
+                              title={quest.is_read ? "Segna come non letto" : "Segna come letto"}
+                            >
+                              <Flag size={10} fill={quest.is_read ? "none" : "currentColor"} />
+                              {quest.is_read ? 'Letto' : 'Nuovo'}
+                            </button>
+                          </div>
+
+                          <div className="space-y-2 my-4">
+                            {quest.slogan && (
+                              <p className="text-xs italic text-gray-500 font-medium">"{quest.slogan}"</p>
+                            )}
+                            {quest.business_description && (
+                              <p className="text-xs text-gray-600 line-clamp-3 bg-gray-50/50 p-4 rounded-xl border border-gray-100 leading-relaxed font-medium">
+                                {quest.business_description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-50 mt-4">
+                          <div className="flex flex-wrap gap-1 max-w-[50%]">
+                            {quest.keywords?.slice(0, 3).map(k => (
+                              <span key={k} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md">{k}</span>
+                            ))}
+                            {quest.keywords?.length > 3 && (
+                              <span className="text-[9px] text-gray-400 font-bold">+{quest.keywords.length - 3}</span>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleFormulaQuote(quest); }}
+                              className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
+                              title="Formula Preventivo"
+                            >
+                              <Sparkles size={11} />
+                              <span className="hidden xl:inline">preventivo</span>
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); downloadQuestTxt(quest); }}
+                              className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
+                              title="Scarica come TXT"
+                            >
+                              <Download size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleDownloadQuestPdf(quest); }}
+                              className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                              title="Scarica come PDF"
+                              disabled={exportingPdf}
+                            >
+                              {exportingPdf && pdfActiveQuote?.questId === quest.id ? (
+                                <RefreshCw size={16} className="animate-spin text-primary" />
+                              ) : (
+                                <FileText size={16} />
+                              )}
+                            </button>
+                            <button 
+                              onClick={(e) => handleToggleArchiveQuest(e, quest.id)}
+                              className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
+                                archivedQuestIds.includes(quest.id)
+                                  ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                                  : 'text-gray-400 hover:text-primary'
+                              }`}
+                              title={archivedQuestIds.includes(quest.id) ? "Ripristina nei Questionari Attivi" : "Archivia Questionario"}
+                            >
+                              <Archive size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setQuestToDelete(quest); }}
+                              className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full hover:bg-red-50"
+                              title="Elimina Questionario"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {filteredQuestionnaires.length === 0 && !loading && (
+                    <div className="col-span-full py-16 text-center text-gray-400 font-medium border-2 border-dashed border-gray-100 rounded-[2rem] space-y-2">
+                      <p className="font-bold text-gray-600 text-sm">
+                        {filterType === 'artist'
+                          ? 'Nessun questionario di Identità Artistica trovato'
+                          : filterType === 'brand'
+                            ? 'Nessun questionario di Brand Identity trovato'
+                            : activeTab === 'active'
+                              ? 'Nessun questionario attivo'
+                              : 'Nessun questionario archiviato'}
+                      </p>
+                      {searchQuery && (
+                        <p className="text-xs text-gray-400">
+                          Nessun risultato per "{searchQuery}". <button onClick={() => setSearchQuery('')} className="text-primary underline font-semibold">Azzera ricerca</button>
+                        </p>
                       )}
-                    </button>
-                    <button 
-                      onClick={(e) => handleToggleArchiveQuest(e, quest.id)}
-                      className={`p-2 transition-colors bg-gray-50 rounded-full hover:bg-gray-100 ${
-                        archivedQuestIds.includes(quest.id)
-                          ? 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                          : 'text-gray-400 hover:text-primary'
-                      }`}
-                      title={archivedQuestIds.includes(quest.id) ? "Ripristina nei Questionari Attivi" : "Archivia Questionario"}
-                    >
-                      <Archive size={16} />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setQuestToDelete(quest); }}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-gray-50 rounded-full hover:bg-red-50"
-                      title="Elimina Questionario"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );
-          })}
-
-            {(activeTab === 'active' ? questionnaires.filter(q => !archivedQuestIds.includes(q.id)) : questionnaires.filter(q => archivedQuestIds.includes(q.id))).length === 0 && !loading && (
-              <div className="col-span-full py-16 text-center text-gray-300 font-medium border-2 border-dashed border-gray-100 rounded-[2rem]">
-                {activeTab === 'active' ? 'Nessun questionario di brand identity attivo' : 'Nessun questionario di brand identity archiviato'}
-              </div>
-            )}
-          </div>
+          })()
         ) : (
           /* QUESTION BUILDER EDITOR FORM (uguale al questionario stesso) */
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {/* SUB-TABS: SELECT WHICH QUESTIONNAIRE TO EDIT */}
+            <div className="flex items-center gap-2 p-1.5 bg-gray-100/80 rounded-2xl w-fit border border-gray-200/60 shadow-inner">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingTarget('brand');
+                  setEditorStep(1);
+                }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  editingTarget === 'brand'
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-150'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <Building size={15} className={editingTarget === 'brand' ? 'text-primary' : ''} />
+                <span>Questionario Brand Identity</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingTarget('artist');
+                  setEditorStep(1);
+                }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  editingTarget === 'artist'
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-150'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <Music size={15} className={editingTarget === 'artist' ? 'text-primary' : ''} />
+                <span>Questionario Identità Artistica</span>
+              </button>
+            </div>
+
             {/* Explanatory Banner */}
             <div className="bg-gradient-to-r from-primary/5 to-[#F39637]/5 border border-primary/10 p-6 rounded-[2rem] mb-6">
               <div className="flex flex-col sm:flex-row items-start gap-4">
@@ -3182,9 +3477,11 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-gray-900 text-base">Modifica Domande del Questionario</h3>
+                  <h3 className="font-extrabold text-gray-900 text-base">
+                    Modifica Domande — {editingTarget === 'brand' ? 'Brand Identity' : 'Identità Artistica'}
+                  </h3>
                   <p className="text-xs text-slate-500 leading-relaxed mt-1">
-                    Gestisci le domande, segnaposto e opzioni del modulo di valutazione. Le modifiche appariranno immediatamente quando un cliente apre la pagina del questionario pubblico di Francesca Mutolo.
+                    Gestisci le domande, segnaposto e opzioni del modulo {editingTarget === 'brand' ? 'Brand Identity' : 'Identità Artistica'}. Le modifiche appariranno immediatamente quando un utente apre il questionario pubblico.
                   </p>
                 </div>
               </div>
@@ -3192,7 +3489,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
 
             {/* Custom Step indicator */}
             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mb-8">
-              {[
+              {(editingTarget === 'brand' ? [
                 { num: 1, name: 'Attività', icon: Building },
                 { num: 2, name: 'Target', icon: Users },
                 { num: 3, name: 'Personalità', icon: Target },
@@ -3201,7 +3498,15 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                 { num: 6, name: 'Utilizzo', icon: Monitor },
                 { num: 7, name: 'Consegna', icon: FileText },
                 { num: 8, name: 'Visione', icon: Sparkles },
-              ].map((st) => {
+              ] : [
+                { num: 1, name: 'Chi sei', icon: Users },
+                { num: 2, name: 'Perché musica', icon: Heart },
+                { num: 3, name: 'Dove arrivare', icon: Compass },
+                { num: 4, name: 'Identità', icon: Sparkles },
+                { num: 5, name: 'Riferimenti', icon: BookOpen },
+                { num: 6, name: 'Unicità', icon: Award },
+                { num: 7, name: 'Futuro', icon: Target },
+              ]).map((st) => {
                 const isActive = editorStep === st.num;
                 const StepIcon = st.icon;
                 return (
@@ -3241,7 +3546,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                 <div>
                   <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Configurazione Campi dello Step {editorStep}</span>
                   <h3 className="text-lg font-bold text-gray-900 mt-0.5">
-                    {questionsSchema ? questionsSchema[`step${editorStep}`]?.title : 'Caricamento...'}
+                    {(editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema) ? (editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema)[`step${editorStep}`]?.title : 'Caricamento...'}
                   </h3>
                 </div>
                 <div className="flex items-center gap-2">
@@ -3249,7 +3554,11 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     type="button"
                     onClick={() => {
                       if (confirm("Sei sicuro di voler ripristinare le domande al loro valore originale?")) {
-                        setQuestionsSchema(DEFAULT_QUESTIONS);
+                        if (editingTarget === 'brand') {
+                          setQuestionsSchema(DEFAULT_QUESTIONS);
+                        } else {
+                          setArtistQuestionsSchema(DEFAULT_ARTIST_QUESTIONS);
+                        }
                         setSaveStatus({ type: 'success', message: 'Ripristinate domande predefinite! Premi "Salva" per confermare.' });
                         setTimeout(() => setSaveStatus(null), 4000);
                       }
@@ -3280,92 +3589,160 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
 
               {/* Dynamic Edit inputs */}
               <div className="space-y-5">
-                {questionsSchema && [
-                  { step: 1, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'company_name_label', label: 'Domanda: Nome Azienda/Brand', type: 'text' },
-                    { field: 'company_name_placeholder', label: 'Segnaposto: Nome Azienda/Brand', type: 'text' },
-                    { field: 'name_meaning_label', label: 'Domanda: Significato del nome', type: 'text' },
-                    { field: 'name_meaning_placeholder', label: 'Segnaposto: Significato del nome', type: 'textarea' },
-                    { field: 'business_description_label', label: 'Domanda: Di cosa si occupa', type: 'text' },
-                    { field: 'business_description_placeholder', label: 'Segnaposto: Di cosa si occupa', type: 'textarea' },
-                    { field: 'products_services_label', label: 'Domanda: Prodotti o Servizi', type: 'text' },
-                    { field: 'products_services_placeholder', label: 'Segnaposto: Prodotti o Servizi', type: 'textarea' },
-                    { field: 'strength_point_label', label: 'Domanda: Punto di Forza principale', type: 'text' },
-                    { field: 'strength_point_placeholder', label: 'Segnaposto: Punto di Forza principale', type: 'textarea' },
-                    { field: 'slogan_label', label: 'Domanda: Slogan o payoff', type: 'text' },
-                    { field: 'slogan_placeholder', label: 'Segnaposto: Slogan o payoff', type: 'text' },
-                  ]},
-                  { step: 2, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'target_customers_label', label: 'Domanda: Clienti ideali', type: 'text' },
-                    { field: 'target_customers_placeholder', label: 'Segnaposto: Clienti ideali', type: 'textarea' },
-                    { field: 'age_range_label', label: 'Domanda: Fascia d\'età prevalente', type: 'text' },
-                    { field: 'age_range_placeholder', label: 'Segnaposto: Fascia d\'età prevalente', type: 'text' },
-                    { field: 'customer_type_label', label: 'Domanda: Composizione clientela', type: 'text' },
-                    { field: 'customer_type_options', label: 'Opzioni: Composizione clientela (separate da virgola)', type: 'array' },
-                    { field: 'market_scope_label', label: 'Domanda: Ambito del mercato di riferimento', type: 'text' },
-                    { field: 'market_scope_options', label: 'Opzioni: Ambito del mercato di riferimento (separate da virgola)', type: 'array' },
-                    { field: 'brand_perception_target_label', label: 'Domanda: Percezione desiderata', type: 'text' },
-                    { field: 'brand_perception_target_placeholder', label: 'Segnaposto: Percezione desiderata', type: 'textarea' },
-                  ]},
-                  { step: 3, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'keywords_label', label: 'Domanda: Selezione parole chiave', type: 'text' },
-                    { field: 'keywords_options', label: 'Opzioni: Selezione parole chiave (separate da virgola)', type: 'array' },
-                    { field: 'brand_perception_label', label: 'Domanda: Percezione brand desiderata', type: 'text' },
-                    { field: 'brand_perception_placeholder', label: 'Segnaposto: Percezione brand desiderata', type: 'textarea' },
-                    { field: 'brand_personified_label', label: 'Domanda: Se il brand fosse una persona', type: 'text' },
-                    { field: 'brand_personified_placeholder', label: 'Segnaposto: Se il brand fosse una persona', type: 'textarea' },
-                  ]},
-                  { step: 4, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'palette_favorite_label', label: 'Domanda: Colori preferiti', type: 'text' },
-                    { field: 'palette_favorite_placeholder', label: 'Segnaposto: Colori preferiti', type: 'text' },
-                    { field: 'palette_avoid_label', label: 'Domanda: Colori da evitare', type: 'text' },
-                    { field: 'palette_avoid_placeholder', label: 'Segnaposto: Colori da evitare', type: 'textarea' },
-                    { field: 'logo_style_label', label: 'Domanda: Stile del logo preferito', type: 'text' },
-                    { field: 'logo_style_options', label: 'Opzioni: Stile del logo preferito (separate da virgola)', type: 'array' },
-                    { field: 'logo_composition_label', label: 'Domanda: Composizione del logo', type: 'text' },
-                    { field: 'logo_composition_options', label: 'Opzioni: Composizione del logo (separate da virgola)', type: 'array' },
-                    { field: 'logos_liked_label', label: 'Domanda: Esempi di loghi graditi', type: 'text' },
-                    { field: 'logos_liked_placeholder', label: 'Segnaposto: Esempi di loghi graditi', type: 'textarea' },
-                    { field: 'logos_disliked_label', label: 'Domanda: Esempi di loghi sgraditi', type: 'text' },
-                    { field: 'logos_disliked_placeholder', label: 'Segnaposto: Esempi di loghi sgraditi', type: 'textarea' },
-                  ]},
-                  { step: 5, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'competitors_label', label: 'Domanda: Principali concorrenti', type: 'text' },
-                    { field: 'competitors_placeholder', label: 'Segnaposto: Principali concorrenti', type: 'textarea' },
-                    { field: 'admired_companies_label', label: 'Domanda: Aziende apprezzate', type: 'text' },
-                    { field: 'admired_companies_placeholder', label: 'Segnaposto: Aziende apprezzate', type: 'textarea' },
-                    { field: 'differentiation_strategy_label', label: 'Domanda: Strategia di differenziazione desiderata', type: 'text' },
-                    { field: 'differentiation_strategy_options', label: 'Opzioni: Strategia di differenziazione desiderata (separate da virgola)', type: 'array' },
-                  ]},
-                  { step: 6, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'logo_applications_label', label: 'Domanda: Utilizzo principale del logo', type: 'text' },
-                    { field: 'logo_applications_options', label: 'Opzioni: Utilizzo principale del logo (separate da virgola)', type: 'array' },
-                  ]},
-                  { step: 7, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'deadline_label', label: 'Domanda: Entro quando serve il progetto', type: 'text' },
-                    { field: 'deadline_placeholder', label: 'Segnaposto: Entro quando serve il progetto', type: 'text' },
-                    { field: 'extra_deliverables_label', label: 'Domanda: Elementi aggiuntivi richiesti', type: 'text' },
-                    { field: 'extra_deliverables_options', label: 'Opzioni: Elementi aggiuntivi richiesti (separate da virgola)', type: 'array' },
-                  ]},
-                  { step: 8, fields: [
-                    { field: 'title', label: 'Titolo dello step', type: 'text' },
-                    { field: 'five_years_vision_label', label: 'Domanda: Visione a 5 anni', type: 'text' },
-                    { field: 'five_years_vision_placeholder', label: 'Segnaposto: Visione a 5 anni', type: 'textarea' },
-                    { field: 'notes_label', label: 'Domanda: Note aggiuntive', type: 'text' },
-                    { field: 'notes_placeholder', label: 'Segnaposto: Note aggiuntive', type: 'textarea' },
-                  ]}
-                ].find(item => item.step === editorStep)?.fields.map((f) => {
+                {(editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema) && (
+                  editingTarget === 'brand' ? [
+                    { step: 1, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'company_name_label', label: 'Domanda: Nome Azienda/Brand', type: 'text' },
+                      { field: 'company_name_placeholder', label: 'Segnaposto: Nome Azienda/Brand', type: 'text' },
+                      { field: 'name_meaning_label', label: 'Domanda: Significato del nome', type: 'text' },
+                      { field: 'name_meaning_placeholder', label: 'Segnaposto: Significato del nome', type: 'textarea' },
+                      { field: 'business_description_label', label: 'Domanda: Di cosa si occupa', type: 'text' },
+                      { field: 'business_description_placeholder', label: 'Segnaposto: Di cosa si occupa', type: 'textarea' },
+                      { field: 'products_services_label', label: 'Domanda: Prodotti o Servizi', type: 'text' },
+                      { field: 'products_services_placeholder', label: 'Segnaposto: Prodotti o Servizi', type: 'textarea' },
+                      { field: 'strength_point_label', label: 'Domanda: Punto di Forza principale', type: 'text' },
+                      { field: 'strength_point_placeholder', label: 'Segnaposto: Punto di Forza principale', type: 'textarea' },
+                      { field: 'slogan_label', label: 'Domanda: Slogan o payoff', type: 'text' },
+                      { field: 'slogan_placeholder', label: 'Segnaposto: Slogan o payoff', type: 'text' },
+                    ]},
+                    { step: 2, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'target_customers_label', label: 'Domanda: Clienti ideali', type: 'text' },
+                      { field: 'target_customers_placeholder', label: 'Segnaposto: Clienti ideali', type: 'textarea' },
+                      { field: 'age_range_label', label: 'Domanda: Fascia d\'età prevalente', type: 'text' },
+                      { field: 'age_range_placeholder', label: 'Segnaposto: Fascia d\'età prevalente', type: 'text' },
+                      { field: 'customer_type_label', label: 'Domanda: Composizione clientela', type: 'text' },
+                      { field: 'customer_type_options', label: 'Opzioni: Composizione clientela (separate da virgola)', type: 'array' },
+                      { field: 'market_scope_label', label: 'Domanda: Ambito del mercato di riferimento', type: 'text' },
+                      { field: 'market_scope_options', label: 'Opzioni: Ambito del mercato di riferimento (separate da virgola)', type: 'array' },
+                      { field: 'brand_perception_target_label', label: 'Domanda: Percezione desiderata', type: 'text' },
+                      { field: 'brand_perception_target_placeholder', label: 'Segnaposto: Percezione desiderata', type: 'textarea' },
+                    ]},
+                    { step: 3, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'keywords_label', label: 'Domanda: Selezione parole chiave', type: 'text' },
+                      { field: 'keywords_options', label: 'Opzioni: Selezione parole chiave (separate da virgola)', type: 'array' },
+                      { field: 'brand_perception_label', label: 'Domanda: Percezione brand desiderata', type: 'text' },
+                      { field: 'brand_perception_placeholder', label: 'Segnaposto: Percezione brand desiderata', type: 'textarea' },
+                      { field: 'brand_personified_label', label: 'Domanda: Se il brand fosse una persona', type: 'text' },
+                      { field: 'brand_personified_placeholder', label: 'Segnaposto: Se il brand fosse una persona', type: 'textarea' },
+                    ]},
+                    { step: 4, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'palette_favorite_label', label: 'Domanda: Colori preferiti', type: 'text' },
+                      { field: 'palette_favorite_placeholder', label: 'Segnaposto: Colori preferiti', type: 'text' },
+                      { field: 'palette_avoid_label', label: 'Domanda: Colori da evitare', type: 'text' },
+                      { field: 'palette_avoid_placeholder', label: 'Segnaposto: Colori da evitare', type: 'textarea' },
+                      { field: 'logo_style_label', label: 'Domanda: Stile del logo preferito', type: 'text' },
+                      { field: 'logo_style_options', label: 'Opzioni: Stile del logo preferito (separate da virgola)', type: 'array' },
+                      { field: 'logo_composition_label', label: 'Domanda: Composizione del logo', type: 'text' },
+                      { field: 'logo_composition_options', label: 'Opzioni: Composizione del logo (separate da virgola)', type: 'array' },
+                      { field: 'logos_liked_label', label: 'Domanda: Esempi di loghi graditi', type: 'text' },
+                      { field: 'logos_liked_placeholder', label: 'Segnaposto: Esempi di loghi graditi', type: 'textarea' },
+                      { field: 'logos_disliked_label', label: 'Domanda: Esempi di loghi sgraditi', type: 'text' },
+                      { field: 'logos_disliked_placeholder', label: 'Segnaposto: Esempi di loghi sgraditi', type: 'textarea' },
+                    ]},
+                    { step: 5, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'competitors_label', label: 'Domanda: Principali concorrenti', type: 'text' },
+                      { field: 'competitors_placeholder', label: 'Segnaposto: Principali concorrenti', type: 'textarea' },
+                      { field: 'admired_companies_label', label: 'Domanda: Aziende apprezzate', type: 'text' },
+                      { field: 'admired_companies_placeholder', label: 'Segnaposto: Aziende apprezzate', type: 'textarea' },
+                      { field: 'differentiation_strategy_label', label: 'Domanda: Strategia di differenziazione desiderata', type: 'text' },
+                      { field: 'differentiation_strategy_options', label: 'Opzioni: Strategia di differenziazione desiderata (separate da virgola)', type: 'array' },
+                    ]},
+                    { step: 6, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'logo_applications_label', label: 'Domanda: Utilizzo principale del logo', type: 'text' },
+                      { field: 'logo_applications_options', label: 'Opzioni: Utilizzo principale del logo (separate da virgola)', type: 'array' },
+                    ]},
+                    { step: 7, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'deadline_label', label: 'Domanda: Entro quando serve il progetto', type: 'text' },
+                      { field: 'deadline_placeholder', label: 'Segnaposto: Entro quando serve il progetto', type: 'text' },
+                      { field: 'extra_deliverables_label', label: 'Domanda: Elementi aggiuntivi richiesti', type: 'text' },
+                      { field: 'extra_deliverables_options', label: 'Opzioni: Elementi aggiuntivi richiesti (separate da virgola)', type: 'array' },
+                    ]},
+                    { step: 8, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'five_years_vision_label', label: 'Domanda: Visione a 5 anni', type: 'text' },
+                      { field: 'five_years_vision_placeholder', label: 'Segnaposto: Visione a 5 anni', type: 'textarea' },
+                      { field: 'notes_label', label: 'Domanda: Note aggiuntive', type: 'text' },
+                      { field: 'notes_placeholder', label: 'Segnaposto: Note aggiuntive', type: 'textarea' },
+                    ]}
+                  ] : [
+                    { step: 1, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q1_label', label: 'Domanda 1: Chi sei oggi (persona)', type: 'textarea' },
+                      { field: 'q1_placeholder', label: 'Segnaposto: Domanda 1', type: 'text' },
+                      { field: 'q2_label', label: 'Domanda 2: Tre parole descrittive', type: 'textarea' },
+                      { field: 'q2_placeholder', label: 'Segnaposto: Domanda 2', type: 'text' },
+                      { field: 'q3_label', label: 'Domanda 3: Distinzione di carattere', type: 'textarea' },
+                      { field: 'q3_placeholder', label: 'Segnaposto: Domanda 3', type: 'text' },
+                    ]},
+                    { step: 2, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q4_label', label: 'Domanda 4: Quando hai capito di voler fare musica', type: 'textarea' },
+                      { field: 'q4_placeholder', label: 'Segnaposto: Domanda 4', type: 'text' },
+                      { field: 'q5_label', label: 'Domanda 5: Se non potessi guadagnare con la musica', type: 'textarea' },
+                      { field: 'q5_placeholder', label: 'Segnaposto: Domanda 5', type: 'text' },
+                      { field: 'q6_label', label: 'Domanda 6: Sensazioni scrittura/registrazione', type: 'textarea' },
+                      { field: 'q6_placeholder', label: 'Segnaposto: Domanda 6', type: 'text' },
+                    ]},
+                    { step: 3, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q7_label', label: 'Domanda 7: Palco tra 5 anni', type: 'textarea' },
+                      { field: 'q7_placeholder', label: 'Segnaposto: Domanda 7', type: 'text' },
+                      { field: 'q8_label', label: 'Domanda 8: Frase desiderata nei commenti', type: 'textarea' },
+                      { field: 'q8_placeholder', label: 'Segnaposto: Domanda 8', type: 'text' },
+                      { field: 'q9_label', label: 'Domanda 9: Prima associazione col tuo nome', type: 'textarea' },
+                      { field: 'q9_placeholder', label: 'Segnaposto: Domanda 9', type: 'text' },
+                    ]},
+                    { step: 4, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q10_label', label: 'Domanda 10: Se la tua musica fosse una persona', type: 'textarea' },
+                      { field: 'q10_subtext', label: 'Sottotesto: Domanda 10', type: 'textarea' },
+                      { field: 'q10_placeholder', label: 'Segnaposto: Domanda 10', type: 'text' },
+                      { field: 'q11_label', label: 'Domanda 11: Emozione singola da lasciare', type: 'textarea' },
+                      { field: 'q11_placeholder', label: 'Segnaposto: Domanda 11', type: 'text' },
+                      { field: 'q12_label', label: 'Domanda 12: Messaggio da trasmettere', type: 'textarea' },
+                      { field: 'q12_placeholder', label: 'Segnaposto: Domanda 12', type: 'text' },
+                    ]},
+                    { step: 5, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q13_label', label: 'Domanda 13: Artisti di ispirazione', type: 'textarea' },
+                      { field: 'q13_subtext', label: 'Sottotesto: Domanda 13', type: 'textarea' },
+                      { field: 'q13_placeholder', label: 'Segnaposto: Domanda 13', type: 'text' },
+                      { field: 'q14_label', label: 'Domanda 14: Artisti da evitare', type: 'textarea' },
+                      { field: 'q14_placeholder', label: 'Segnaposto: Domanda 14', type: 'text' },
+                    ]},
+                    { step: 6, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q15_label', label: 'Domanda 15: Riconoscibilità senza nome', type: 'textarea' },
+                      { field: 'q15_subtext', label: 'Sottotesto: Domanda 15', type: 'textarea' },
+                      { field: 'q15_placeholder', label: 'Segnaposto: Domanda 15', type: 'text' },
+                      { field: 'q16_label', label: 'Domanda 16: Cosa fai solo tu', type: 'textarea' },
+                      { field: 'q16_placeholder', label: 'Segnaposto: Domanda 16', type: 'text' },
+                      { field: 'q17_label', label: 'Domanda 17: Cosa ricorderà il pubblico', type: 'textarea' },
+                      { field: 'q17_placeholder', label: 'Segnaposto: Domanda 17', type: 'text' },
+                    ]},
+                    { step: 7, fields: [
+                      { field: 'title', label: 'Titolo dello step', type: 'text' },
+                      { field: 'q18_label', label: 'Domanda 18: Motivo "ce l\'ho fatta"', type: 'textarea' },
+                      { field: 'q18_placeholder', label: 'Segnaposto: Domanda 18', type: 'text' },
+                      { field: 'q19_label', label: 'Domanda 19: Compromessi inaccettabili', type: 'textarea' },
+                      { field: 'q19_placeholder', label: 'Segnaposto: Domanda 19', type: 'text' },
+                      { field: 'q20_label', label: 'Domanda 20: Sintesi in una sola frase', type: 'textarea' },
+                      { field: 'q20_placeholder', label: 'Segnaposto: Domanda 20', type: 'text' },
+                    ]}
+                  ]
+                ).find(item => item.step === editorStep)?.fields.map((f) => {
+                  const schema = editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema;
                   const stepKey = `step${editorStep}`;
-                  const val = questionsSchema[stepKey]?.[f.field];
+                  const val = schema?.[stepKey]?.[f.field];
 
-                  const fieldBaseName = f.field.replace('_label', '').replace('_placeholder', '').replace('_options', '');
+                  const fieldBaseName = f.field.replace('_label', '').replace('_placeholder', '').replace('_subtext', '').replace('_options', '');
                   const deleted = isFieldDeleted(editorStep, fieldBaseName);
                   const canDelete = f.field !== 'title' && !f.field.startsWith('company_name');
 
@@ -3446,7 +3823,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
               </div>
 
               {/* DOMANDE PERSONALIZZATE AGGIUNTIVE */}
-              {questionsSchema && (
+              {(editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema) && (
                 <div className="mt-8 pt-6 border-t border-gray-250 space-y-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
@@ -3465,12 +3842,12 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                   </div>
 
                   <div className="space-y-4">
-                    {(questionsSchema[`step${editorStep}`]?.custom_questions || []).length === 0 ? (
+                    {((editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema)[`step${editorStep}`]?.custom_questions || []).length === 0 ? (
                       <div className="text-center py-6 border border-dashed border-gray-250 rounded-xl bg-gray-50/30">
                         <p className="text-[11px] text-gray-400 font-bold">Nessuna domanda personalizzata aggiuntiva per questo step.</p>
                       </div>
                     ) : (
-                      (questionsSchema[`step${editorStep}`]?.custom_questions || []).map((cq: any, idx: number) => (
+                      ((editingTarget === 'brand' ? questionsSchema : artistQuestionsSchema)[`step${editorStep}`]?.custom_questions || []).map((cq: any, idx: number) => (
                         <div key={cq.id} className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm space-y-3">
                           <div className="flex justify-between items-center pb-2 border-b border-gray-150">
                             <span className="text-[10px] font-semibold text-primary/70 uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-md">Domanda Dinamica #{idx+1}</span>
@@ -3555,7 +3932,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                   <div />
                 )}
 
-                {editorStep < 8 ? (
+                {editorStep < (editingTarget === 'brand' ? 8 : 7) ? (
                   <button
                     type="button"
                     onClick={() => setEditorStep(prev => prev + 1)}
@@ -3568,7 +3945,7 @@ CREATE POLICY "Admin Delete Questionnaires" ON questionnaires FOR ALL TO authent
                     type="button"
                     onClick={handleSaveQuestions}
                     disabled={savingQuestions}
-                    className="flex items-center justify-center bg-gradient-brand text-white h-10 px-5 text-xs font-black uppercase tracking-wider rounded-xl hover:opacity-95 transition-all shadow-sm disabled:opacity-50"
+                    className="flex items-center justify-center bg-gradient-brand text-white h-10 px-5 text-xs font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all shadow-sm disabled:opacity-50"
                   >
                     {savingQuestions ? 'Salvataggio...' : 'Salva Domande'}
                   </button>
