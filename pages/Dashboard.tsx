@@ -6,7 +6,7 @@ import {
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
-  Archive, GripVertical, ExternalLink
+  Archive, GripVertical, ExternalLink, Music
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -233,6 +233,13 @@ const DashboardHome = () => (
           </div>
           <p className="text-gray-500 text-sm font-medium">Questionari</p>
           <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Brand Identity</p>
+        </Link>
+        <Link to="/questionario-artista" target="_blank" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group relative">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-primary">
+            <Music size={24} />
+          </div>
+          <p className="text-gray-500 text-sm font-medium">Questionario Artista</p>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">Identità Artistica →</p>
         </Link>
         <Link to="/dashboard/feedback" className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-all group">
           <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform text-secondary">
@@ -2600,7 +2607,38 @@ Inviato il: ${formattedDate}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Questionari Ricevuti</h1>
-          <p className="text-sm text-gray-500 mt-1">Indagini approfondite per la progettazione del brand</p>
+          <p className="text-sm text-gray-500 mt-1">Indagini approfondite per la progettazione del brand ed identità artistica</p>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 md:p-8 rounded-[2rem] text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-gray-800 shadow-xl">
+        <div className="space-y-2 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-bold uppercase tracking-wider">
+            <Music size={14} /> Questionario Identità Artistica
+          </div>
+          <h3 className="text-xl md:text-2xl font-black text-white">Sessione di Scoperta dell'Identità Artistica</h3>
+          <p className="text-gray-300 text-sm leading-relaxed">
+            Modulo di branding strategico riservato ai clienti in ambito musicale per esplorare la visione e la direzione visiva.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto shrink-0">
+          <a
+            href="/questionario-artista"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-3 rounded-xl bg-white text-gray-900 font-bold text-xs hover:bg-gray-100 transition-colors flex items-center gap-2 shadow-md"
+          >
+            <ExternalLink size={14} /> Apri Modulo
+          </a>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/questionario-artista`);
+              alert('Link del questionario artista copiato negli appunti!');
+            }}
+            className="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-lg"
+          >
+            <Copy size={14} /> Copia Link
+          </button>
         </div>
       </div>
 

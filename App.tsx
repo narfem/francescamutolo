@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Questionnaire from './pages/Questionnaire';
+import ArtistQuestionnaire from './pages/ArtistQuestionnaire';
 import ClientFeedback from './pages/ClientFeedback';
 
 const ScrollToTop: React.FC = () => {
@@ -26,6 +27,8 @@ const App: React.FC = () => {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="questionario" element={<Questionnaire />} />
+          <Route path="questionario-artista" element={<ArtistQuestionnaire />} />
+          <Route path="identita-artistica" element={<ArtistQuestionnaire />} />
           <Route path="valutazione-servizio" element={<ClientFeedback />} />
           <Route path="login" element={<Login />} />
           <Route path="dashboard/*" element={<Dashboard />} />
