@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -11,10 +11,16 @@ import ClientFeedback from './pages/ClientFeedback';
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (window.location.hash && window.location.hash.startsWith('#/')) {
+      const cleanPath = window.location.hash.substring(1);
+      navigate(cleanPath, { replace: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, navigate]);
 
   return null;
 };
