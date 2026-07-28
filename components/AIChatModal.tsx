@@ -56,7 +56,7 @@ const AIChatModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const systemInstruction = `
         Sei Mutey, la mascotte ufficiale e assistente virtuale di Francesca Mutolo. 
         Profilo di Francesca: 
-        - Senior Graphic & AI Product Designer.
+        - Senior Brand Designer.
         - Nata nel 1986, sarda (Sardegna).
         - Oltre 15 anni di esperienza nella comunicazione visiva.
         - Specializzazioni: Creazione loghi, immagine coordinata, grafica per social, volantini e poster.

@@ -1976,7 +1976,7 @@ const ManageQuestionnaires = () => {
                   </span>
                 )}
                 <span className="text-[10px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
-                  Graphic & AI Product Designer
+                  Brand Designer
                 </span>
               </div>
             </div>
@@ -2186,7 +2186,7 @@ const ManageQuestionnaires = () => {
           <div className="flex justify-between items-end gap-6 pt-6 mt-6 border-t border-gray-100 text-[8px] text-gray-400 text-left">
             <div className="space-y-0.5">
               <p className="font-black text-gray-850 uppercase tracking-wider font-sans">Francesca Mutolo</p>
-              <p className="font-sans">Graphic & AI Product Designer</p>
+              <p className="font-sans">Brand Designer</p>
             </div>
 
             <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">
@@ -2447,7 +2447,7 @@ const ManageQuestionnaires = () => {
                     Francesca Mutolo
                   </span>
                   <span className="text-[9px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
-                    Graphic & AI Product Designer
+                    Brand Designer
                   </span>
                 </div>
               </div>
@@ -2521,7 +2521,7 @@ const ManageQuestionnaires = () => {
                   Francesca Mutolo
                 </span>
                 <span className="text-[9px] font-black text-[#F39637] uppercase tracking-[0.14em] leading-none mt-1 whitespace-nowrap font-sans">
-                  Graphic & AI Product Designer
+                  Brand Designer
                 </span>
               </div>
             </div>
@@ -2754,7 +2754,7 @@ const ManageQuestionnaires = () => {
         <div className="flex justify-between items-end gap-6 pt-5 mt-5 border-t border-gray-150 text-[8px] text-gray-400 text-left">
           <div className="space-y-0.5">
             <p className="font-black text-gray-850 uppercase tracking-wider font-sans">Francesca Mutolo</p>
-            <p className="font-sans">Graphic & AI Product Designer</p>
+            <p className="font-sans">Brand Designer</p>
           </div>
 
           <div className="text-right space-y-1 text-[8px] font-sans text-gray-400 shrink-0">

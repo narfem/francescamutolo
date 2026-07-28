@@ -128,7 +128,7 @@ const ClientFeedback: React.FC = () => {
               Grazie di cuore per il tuo feedback!
             </h1>
             <p className="text-gray-600 max-w-lg mx-auto text-sm md:text-base leading-relaxed">
-              La tua testimonianza è memorizzata con successo. La tua soddisfazione è l'obiettivo principale del mio percorso creativo come Graphic & AI Product Designer.
+              La tua testimonianza è memorizzata con successo. La tua soddisfazione è l'obiettivo principale del mio percorso creativo come Brand Designer.
             </p>
           </div>
 

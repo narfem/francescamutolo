@@ -74,7 +74,7 @@ const Layout: React.FC = () => {
                   Francesca Mutolo
                 </span>
                 <span className="text-[10px] font-extrabold text-secondary uppercase tracking-[0.15em] leading-none mt-1">
-                  Graphic & AI Product Designer
+                  Brand Designer
                 </span>
               </div>
             </Link>
@@ -198,7 +198,7 @@ const Layout: React.FC = () => {
                     Francesca Mutolo
                   </span>
                   <span className="text-[10px] md:text-[11px] font-extrabold text-secondary uppercase tracking-[0.15em] leading-none mt-1 whitespace-nowrap">
-                    Graphic & AI Product Designer
+                    Brand Designer
                   </span>
                 </div>
               </div>
