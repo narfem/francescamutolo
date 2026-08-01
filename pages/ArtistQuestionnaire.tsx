@@ -3,8 +3,16 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
   Music, Sparkles, Send, CheckCircle, ArrowRight, ArrowLeft, 
-  User, Heart, Target, Compass, BookOpen, Star, Award, Copy, Check
+  User, Heart, Target, Compass, BookOpen, Star, Award, Copy, Check,
+  BookmarkCheck
 } from 'lucide-react';
+import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
+import { DraftSavedModal } from '../components/DraftSavedModal';
+import { QuestionnaireDraft } from '../lib/draftService';
+
+interface ArtistQuestionnaireProps {
+  initialDraft?: QuestionnaireDraft;
+}
 
 interface Question {
   id: string;
@@ -175,16 +183,37 @@ const SECTIONS: Section[] = [
   }
 ];
 
-const ArtistQuestionnaire: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [artistName, setArtistName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft }) => {
+  const initialPayload = initialDraft?.payload || {};
+  const [currentStep, setCurrentStep] = useState(initialDraft?.current_step || 1);
+  const [artistName, setArtistName] = useState(initialDraft?.company_or_artist_name || initialPayload.companyName || initialPayload.artistName || '');
+  const [contactEmail, setContactEmail] = useState(initialDraft?.contact_email || initialPayload.email || '');
+  const [answers, setAnswers] = useState<Record<string, string>>(initialPayload.formData || initialPayload.answers || {});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [questionsSchema, setQuestionsSchema] = useState<any>(null);
+
+  const {
+    activeToken,
+    isSaving,
+    lastSavedTime,
+    isModalOpen,
+    setIsModalOpen,
+    resumeUrl,
+    saveCurrentDraft,
+    markDraftAsCompleted
+  } = useQuestionnaireDraft({
+    questionnaireType: 'artist',
+    formData: answers,
+    currentStep,
+    totalSteps: 7,
+    companyOrArtistName: artistName,
+    contactEmail: contactEmail,
+    extraState: { artistName, contactEmail },
+    initialToken: initialDraft?.token || null
+  });
 
   const topCardRef = useRef<HTMLDivElement>(null);
 
@@ -440,11 +469,13 @@ const ArtistQuestionnaire: React.FC = () => {
       }
 
       setSubmitted(true);
+      await markDraftAsCompleted();
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (err: any) {
       console.error("Errore durante l'invio del questionario artista:", err);
       // Anche in caso di errore di rete Supabase, abbiamo salvato in localStorage
       setSubmitted(true);
+      await markDraftAsCompleted();
       window.scrollTo({ top: 0, behavior: 'instant' });
     } finally {
       setLoading(false);
@@ -663,19 +694,32 @@ const ArtistQuestionnaire: React.FC = () => {
 
             {/* BOTTOM NAVIGATION BUTTONS */}
             <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <button
-                type="button"
-                onClick={handlePrevSection}
-                disabled={currentStep === 1}
-                className={`w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                  currentStep === 1
-                    ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                <ArrowLeft size={16} />
-                <span>Sezione Precedente</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handlePrevSection}
+                  disabled={currentStep === 1}
+                  className={`px-5 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all flex-1 sm:flex-initial ${
+                    currentStep === 1
+                      ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Precedente</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => saveCurrentDraft(true)}
+                  disabled={isSaving}
+                  className="px-4 py-3.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all flex-1 sm:flex-initial shadow-sm"
+                  title="Salva i dati compilati finora per riprendere in seguito"
+                >
+                  <BookmarkCheck size={18} className="shrink-0" />
+                  <span>{isSaving ? 'Salvataggio...' : 'Salva in bozza'}</span>
+                </button>
+              </div>
 
               {currentStep < dynamicSections.length ? (
                 <button
@@ -711,6 +755,16 @@ const ArtistQuestionnaire: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Modal Bozza Salvata */}
+      <DraftSavedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        token={activeToken || ''}
+        resumeUrl={resumeUrl}
+        questionnaireTitle={artistName ? `Identità Artistica: ${artistName}` : "Identità Artistica"}
+        lastSavedAt={lastSavedTime || undefined}
+      />
     </div>
   );
 };

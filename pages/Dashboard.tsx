@@ -6,12 +6,14 @@ import {
   Plus, Trash2, Pencil, Star, Download, FileJson, 
   X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
-  Archive, GripVertical, ExternalLink, Music, Heart, Compass, BookOpen, Award, Search
+  Archive, GripVertical, ExternalLink, Music, Heart, Compass, BookOpen, Award, Search,
+  BookmarkCheck
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
 import ManageFeedbacks from './ManageFeedbacks';
 import ManageContactsEngine from './ManageContactsEngine';
+import ManageDrafts from './ManageDrafts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { logoBase64String } from './logoBase64';
@@ -112,8 +114,11 @@ const Dashboard: React.FC = () => {
         <Link to="/dashboard/leads" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/leads') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <MessageSquare size={18} /> Messaggi & Brief
         </Link>
-        <Link to="/dashboard/questionari" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/questionari') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
-          <ClipboardList size={18} /> Questionari
+        <Link to="/dashboard/questionari" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/questionari') && !location.pathname.includes('/bozze') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
+          <ClipboardList size={18} /> Questionari Inviati
+        </Link>
+        <Link to="/dashboard/bozze" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/bozze') ? 'bg-amber-600 text-white font-bold' : 'hover:bg-white/10'}`}>
+          <BookmarkCheck size={18} className="text-amber-400" /> Questionari in Bozza
         </Link>
         <Link to="/dashboard/feedback" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${location.pathname.includes('/feedback') ? 'bg-primary text-white' : 'hover:bg-white/10'}`}>
           <Star size={18} /> Gestisci Feedback
@@ -180,6 +185,7 @@ const Dashboard: React.FC = () => {
               <Route path="portfolio" element={<ManagePortfolio />} />
               <Route path="leads" element={<ManageLeads />} />
               <Route path="questionari" element={<ManageQuestionnaires />} />
+              <Route path="bozze" element={<ManageDrafts />} />
               <Route path="feedback" element={<ManageFeedbacks />} />
               <Route path="cv" element={<ManageCV />} />
               <Route path="mutey" element={<ManageMutey />} />

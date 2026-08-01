@@ -3,8 +3,16 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
   Send, CheckCircle, ArrowRight, ArrowLeft, Sparkles, 
-  Building, Users, Target, Palette, Shield, Monitor, FileText 
+  Building, Users, Target, Palette, Shield, Monitor, FileText,
+  BookmarkCheck
 } from 'lucide-react';
+import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
+import { DraftSavedModal } from '../components/DraftSavedModal';
+import { QuestionnaireDraft } from '../lib/draftService';
+
+interface QuestionnaireProps {
+  initialDraft?: QuestionnaireDraft;
+}
 
 const DEFAULT_QUESTIONS = {
   step1: {
@@ -89,8 +97,8 @@ const DEFAULT_QUESTIONS = {
   }
 };
 
-const Questionnaire: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+const Questionnaire: React.FC<QuestionnaireProps> = ({ initialDraft }) => {
+  const [currentStep, setCurrentStep] = useState(initialDraft?.current_step || 1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -119,10 +127,15 @@ const Questionnaire: React.FC = () => {
     loadCustomQuestions();
   }, []);
 
-  const [hasOtherKeyword, setHasOtherKeyword] = useState(false);
-  const [otherKeywordText, setOtherKeywordText] = useState('');
+  const initialPayloadData = initialDraft?.payload?.formData || initialDraft?.payload || {};
+  const initialExtraState = initialDraft?.payload?.extraState || {};
 
-  const [customAnswers, setCustomAnswers] = useState<Record<string, { label: string, value: string }>>({});
+  const [hasOtherKeyword, setHasOtherKeyword] = useState<boolean>(initialExtraState.hasOtherKeyword || false);
+  const [otherKeywordText, setOtherKeywordText] = useState<string>(initialExtraState.otherKeywordText || '');
+
+  const [customAnswers, setCustomAnswers] = useState<Record<string, { label: string, value: string }>>(
+    initialExtraState.customAnswers || {}
+  );
 
   const isLabelOptional = (label: string) => {
     if (!label) return false;
@@ -186,11 +199,11 @@ const Questionnaire: React.FC = () => {
     );
   };
 
-  const [hasOtherLogoApp, setHasOtherLogoApp] = useState(false);
-  const [otherLogoAppText, setOtherLogoAppText] = useState('');
+  const [hasOtherLogoApp, setHasOtherLogoApp] = useState<boolean>(initialExtraState.hasOtherLogoApp || false);
+  const [otherLogoAppText, setOtherLogoAppText] = useState<string>(initialExtraState.otherLogoAppText || '');
 
-  const [hasOtherDeliverable, setHasOtherDeliverable] = useState(false);
-  const [otherDeliverableText, setOtherDeliverableText] = useState('');
+  const [hasOtherDeliverable, setHasOtherDeliverable] = useState<boolean>(initialExtraState.hasOtherDeliverable || false);
+  const [otherDeliverableText, setOtherDeliverableText] = useState<string>(initialExtraState.otherDeliverableText || '');
 
   const toggleOtherKeyword = () => {
     if (!hasOtherKeyword && formData.keywords.length >= 4) {
@@ -205,37 +218,64 @@ const Questionnaire: React.FC = () => {
   }, [submitted]);
 
   const [formData, setFormData] = useState({
-    company_name: '',
-    name_meaning: '',
-    business_description: '',
-    products_services: '',
-    strength_point: '',
-    slogan: '',
-    target_customers: '',
-    age_range: '',
-    customer_type: '',
-    market_scope: '',
-    brand_perception_target: '',
-    keywords: [] as string[],
-    brand_perception: '',
-    brand_personified: '',
-    palette_favorite: '',
-    palette_avoid: '',
-    logo_style: '',
-    logo_composition: '',
-    logos_liked: '',
-    logos_disliked: '',
-    competitors: '',
-    admired_companies: '',
-    differentiation_strategy: '',
-    logo_applications: [] as string[],
-    deadline: '',
-    extra_deliverables: [] as string[],
-    five_years_vision: '',
-    notes: ''
+    company_name: initialPayloadData.company_name || initialDraft?.company_or_artist_name || '',
+    name_meaning: initialPayloadData.name_meaning || '',
+    business_description: initialPayloadData.business_description || '',
+    products_services: initialPayloadData.products_services || '',
+    strength_point: initialPayloadData.strength_point || '',
+    slogan: initialPayloadData.slogan || '',
+    target_customers: initialPayloadData.target_customers || '',
+    age_range: initialPayloadData.age_range || '',
+    customer_type: initialPayloadData.customer_type || '',
+    market_scope: initialPayloadData.market_scope || '',
+    brand_perception_target: initialPayloadData.brand_perception_target || '',
+    keywords: initialPayloadData.keywords || [] as string[],
+    brand_perception: initialPayloadData.brand_perception || '',
+    brand_personified: initialPayloadData.brand_personified || '',
+    palette_favorite: initialPayloadData.palette_favorite || '',
+    palette_avoid: initialPayloadData.palette_avoid || '',
+    logo_style: initialPayloadData.logo_style || '',
+    logo_composition: initialPayloadData.logo_composition || '',
+    logos_liked: initialPayloadData.logos_liked || '',
+    logos_disliked: initialPayloadData.logos_disliked || '',
+    competitors: initialPayloadData.competitors || '',
+    admired_companies: initialPayloadData.admired_companies || '',
+    differentiation_strategy: initialPayloadData.differentiation_strategy || '',
+    logo_applications: initialPayloadData.logo_applications || [] as string[],
+    deadline: initialPayloadData.deadline || '',
+    extra_deliverables: initialPayloadData.extra_deliverables || [] as string[],
+    five_years_vision: initialPayloadData.five_years_vision || '',
+    notes: initialPayloadData.notes || ''
   });
 
   const totalSteps = 8;
+
+  const {
+    activeToken,
+    isSaving,
+    lastSavedTime,
+    isModalOpen,
+    setIsModalOpen,
+    resumeUrl,
+    saveCurrentDraft,
+    markDraftAsCompleted
+  } = useQuestionnaireDraft({
+    questionnaireType: 'brand',
+    formData,
+    currentStep,
+    totalSteps: 8,
+    companyOrArtistName: formData.company_name,
+    extraState: {
+      customAnswers,
+      hasOtherKeyword,
+      otherKeywordText,
+      hasOtherLogoApp,
+      otherLogoAppText,
+      hasOtherDeliverable,
+      otherDeliverableText
+    },
+    initialToken: initialDraft?.token || null
+  });
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -530,6 +570,7 @@ const Questionnaire: React.FC = () => {
         }
       }
       setSubmitted(true);
+      await markDraftAsCompleted();
       window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (error: any) {
       console.error("Errore salvataggio questionario:", error);
@@ -1291,24 +1332,35 @@ const Questionnaire: React.FC = () => {
             )}
 
             {/* Navigation Controls */}
-            <div className="flex items-center justify-between gap-4 pt-6 border-t border-gray-100">
-              {currentStep > 1 ? (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-gray-100">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="flex items-center justify-center h-12 text-sm sm:text-base font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-all hover:bg-slate-50 flex-1 sm:flex-initial px-5"
+                  >
+                    <span>Indietro</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={prevStep}
-                  className="flex items-center justify-center h-12 text-sm sm:text-base font-bold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-all hover:bg-slate-50 flex-1 sm:flex-initial min-w-[125px] sm:min-w-[145px]"
+                  onClick={() => saveCurrentDraft(true)}
+                  disabled={isSaving}
+                  className="flex items-center justify-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-4 h-12 text-sm font-bold rounded-xl transition-all shadow-sm flex-1 sm:flex-initial"
+                  title="Salva i dati compilati finora per riprendere in seguito"
                 >
-                  <span>Indietro</span>
+                  <BookmarkCheck size={18} className="shrink-0" />
+                  <span>{isSaving ? 'Salvataggio...' : 'Salva in bozza'}</span>
                 </button>
-              ) : (
-                <div className="flex-1 sm:flex-initial" />
-              )}
+              </div>
 
               {currentStep < totalSteps ? (
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex items-center justify-center bg-gradient-brand text-white h-12 text-sm sm:text-base font-bold tracking-wide rounded-xl hover:opacity-95 transition-all shadow-md shadow-primary/10 flex-1 sm:flex-initial min-w-[125px] sm:min-w-[145px]"
+                  className="w-full sm:w-auto flex items-center justify-center bg-gradient-brand text-white h-12 text-sm sm:text-base font-bold tracking-wide rounded-xl hover:opacity-95 transition-all shadow-md shadow-primary/10 px-8"
                 >
                   <span>Continua</span>
                 </button>
@@ -1317,7 +1369,7 @@ const Questionnaire: React.FC = () => {
                   type="button"
                   onClick={submitQuestionnaire}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 bg-gradient-brand text-white px-6 h-12 text-sm sm:text-base font-black tracking-wide rounded-xl hover:opacity-95 transition-all shadow-lg hover:scale-[1.02] active:scale-95 disabled:opacity-50 flex-1 sm:flex-initial min-w-[125px] sm:min-w-[145px]"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-brand text-white px-8 h-12 text-sm sm:text-base font-black tracking-wide rounded-xl hover:opacity-95 transition-all shadow-lg hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
                   <span>{loading ? 'Invio...' : 'Invia'}</span>
                   {!loading && (
@@ -1330,6 +1382,16 @@ const Questionnaire: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Bozza Salvata */}
+      <DraftSavedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        token={activeToken || ''}
+        resumeUrl={resumeUrl}
+        questionnaireTitle={formData.company_name ? `Brand Identity: ${formData.company_name}` : "Brand Identity"}
+        lastSavedAt={lastSavedTime || undefined}
+      />
     </div>
   );
 };
