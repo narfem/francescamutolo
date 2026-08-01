@@ -1,12 +1,15 @@
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Instagram, Lock, ArrowUp } from 'lucide-react';
+import { Menu, X, Instagram, Lock, ArrowUp, Settings } from 'lucide-react';
+import { CookieBanner } from './CookieBanner';
+import { CookiePreferencesModal } from './CookiePreferencesModal';
 
 const Layout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [showScrollTop, setShowScrollTop] = React.useState(false);
   const [privacyOpen, setPrivacyOpen] = React.useState(false);
   const [cookieOpen, setCookieOpen] = React.useState(false);
+  const [preferencesModalOpen, setPreferencesModalOpen] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const isDashboard = location.pathname.startsWith('/dashboard');
@@ -216,7 +219,7 @@ const Layout: React.FC = () => {
             <div className="text-gray-500 text-xs tracking-widest leading-relaxed">
               <p className="mb-1 font-bold">© {new Date().getFullYear()} FRANCESCA MUTOLO</p>
               <p className="mb-3">DESIGN & INNOVATION</p>
-              <div className="flex justify-center md:justify-start space-x-3 text-[10px] text-gray-500 font-semibold">
+              <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 text-[10px] text-gray-500 font-semibold">
                 <button 
                   type="button"
                   onClick={() => setPrivacyOpen(true)}
@@ -232,11 +235,28 @@ const Layout: React.FC = () => {
                 >
                   Cookie Policy
                 </button>
+                <span className="text-gray-700">|</span>
+                <button 
+                  type="button"
+                  onClick={() => setPreferencesModalOpen(true)}
+                  className="text-secondary hover:text-primary transition-colors uppercase tracking-wider cursor-pointer font-bold"
+                >
+                  Gestisci Consenso Cookie
+                </button>
               </div>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Cookie Banner System */}
+      <CookieBanner />
+
+      {/* Preferences Modal (Triggerabile dal footer) */}
+      <CookiePreferencesModal
+        isOpen={preferencesModalOpen}
+        onClose={() => setPreferencesModalOpen(false)}
+      />
 
       {/* Privacy Policy Modal */}
       {privacyOpen && (
@@ -266,7 +286,7 @@ const Layout: React.FC = () => {
               </p>
               <ul className="list-disc pl-5 space-y-1">
                 <li>Dati forniti volontariamente dall'utente tramite i moduli di contatto (Contatto Rapido, Brief di Progetto, Questionario): Nome, E-mail, Telefono, risposte alle domande del questionario e altre informazioni sul progetto.</li>
-                <li>Dati di navigazione raccolti in modalità anonima e aggregata al solo scopo di monitorare le prestazioni del sito.</li>
+                <li>Dati di navigazione raccolti in modalità anonima e aggregata (previo consenso esplicito) tramite Google Analytics 4.</li>
               </ul>
               <h4 className="font-bold text-gray-800 mt-4">3. Finalità del Trattamento</h4>
               <p>
@@ -276,14 +296,15 @@ const Layout: React.FC = () => {
                 <li>Rispondere alle richieste inviate tramite i moduli di contatto o brief.</li>
                 <li>Analizzare l'efficacia del servizio tramite questionari di valutazione compilati volontariamente dall'utente.</li>
                 <li>Garantire il corretto funzionamento tecnico e la sicurezza del sito web.</li>
+                <li>Effettuare analisi statistiche anonime aggregate sull'utilizzo del sito previo tuo consenso.</li>
               </ul>
               <h4 className="font-bold text-gray-800 mt-4">4. Base Giuridica del Trattamento</h4>
               <p>
-                Il trattamento si basa sul consenso esplicito dell'utente (espresso tramite l'invio volontario dei moduli) e sull'esecuzione di misure precontrattuali o contrattuali adottate su richiesta dell'interessato.
+                Il trattamento si basa sul consenso esplicito dell'utente (espresso tramite il banner cookie e/o l'invio volontario dei moduli) e sull'esecuzione di misure precontrattuali o contrattuali adottate su richiesta dell'interessato.
               </p>
               <h4 className="font-bold text-gray-800 mt-4">5. Conservazione dei Dati</h4>
               <p>
-                I dati saranno conservati esclusivamente per il tempo necessario a dare riscontro alle richieste dell'interessato o per adempiere a obblighi normativi.
+                I dati saranno conservati esclusivamente per il tempo necessario a dare riscontro alle richieste dell'interessato o per adempiere a obblighi normativi. Le scelte espresse in merito ai cookie vengono memorizzate nel tuo browser per 12 mesi o fino a tua revoca.
               </p>
               <h4 className="font-bold text-gray-800 mt-4">6. Diritti dell'Interessato</h4>
               <p>
@@ -320,37 +341,56 @@ const Layout: React.FC = () => {
             <div className="overflow-y-auto pr-2 space-y-4 text-sm text-gray-600 leading-relaxed text-left flex-grow">
               <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-4">Informativa Cookie (Cookie Policy)</h3>
               <p>
-                Questa Cookie Policy spiega cosa sono i cookie, come vengono utilizzati su questo sito web (francescamutolo.it) e come puoi gestirli in conformità alla normativa italiana ed europea.
+                Questa Cookie Policy spiega cosa sono i cookie, come vengono utilizzati su questo sito web (francescamutolo.it) e come puoi gestirli o revocarli in conformità alla normativa italiana ed europea (GDPR / Direttiva ePrivacy).
               </p>
+
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 my-2">
+                <div>
+                  <h5 className="font-extrabold text-gray-900 text-xs uppercase tracking-wider">Gestisci le tue Preferenze</h5>
+                  <p className="text-xs text-gray-500">Puoi modificare o revocare il tuo consenso in qualsiasi momento.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCookieOpen(false);
+                    setPreferencesModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-gradient-brand text-white rounded-xl text-xs font-bold hover:shadow-md transition-all shrink-0 flex items-center gap-1.5"
+                >
+                  <Settings size={14} />
+                  <span>Modifica Preferenze</span>
+                </button>
+              </div>
+
               <h4 className="font-bold text-gray-800 mt-4">1. Cosa sono i Cookie?</h4>
               <p>
                 I cookie sono piccoli file di testo che i siti visitati dagli utenti inviano ai loro terminali, dove vengono memorizzati per essere trasmessi nuovamente ai medesimi siti in occasione di visite successive.
               </p>
+
               <h4 className="font-bold text-gray-800 mt-4">2. Tipologie di Cookie utilizzate</h4>
               <p>
                 Questo sito utilizza esclusivamente le seguenti tipologie di cookie:
               </p>
               <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Cookie Tecnici:</strong> Necessari per il corretto funzionamento del sito, la navigazione e l'erogazione dei servizi richiesti dall'utente.</li>
-                <li><strong>Cookie Analitici (Google Analytics):</strong> Utilizzati per raccogliere informazioni in forma anonima e statistica sull'utilizzo del sito da parte degli utenti (es. pagine visitate, tempo trascorso). L'indirizzo IP viene anonimizzato per escludere qualsiasi forma di profilazione o tracciamento dell'identità.</li>
+                <li><strong>Cookie Tecnici (Sempre Attivi):</strong> Indispensabili per il funzionamento del sito, la navigazione sicura, la gestione dei moduli di contatto, il salvataggio automatico in bozza dei questionari e la memorizzazione della scelta del consenso cookie.</li>
+                <li><strong>Cookie Analitici / Statistica (Google Analytics 4):</strong> Vengono caricati ed eseguiti <strong>solo ed esclusivamente previo consenso esplicito dell'utente</strong>. Vengono impiegati per raccogliere informazioni in forma anonima e aggregata sull'utilizzo del sito (pagine visitate, tempo di permanenza). L'indirizzo IP viene anonimizzato ed è configurato Google Consent Mode v2 con impostazione predefinita bloccata (denied).</li>
               </ul>
-              <h4 className="font-bold text-gray-800 mt-4">3. Cookie di Terze Parti</h4>
+
+              <h4 className="font-bold text-gray-800 mt-4">3. Revoca e Gestione del Consenso</h4>
               <p>
-                Durante la navigazione, il sito potrebbe interagire con servizi esterni forniti da terze parti (come Google per i font o per l'incorporazione di immagini/mappe e Instagram). Ciascun servizio di terza parte applica le proprie politiche sulla privacy e sui cookie.
+                L'utente può modificare o revocare il proprio consenso in qualsiasi momento cliccando sul link <strong className="text-primary">"Gestisci Consenso Cookie"</strong> situato nel piè di pagina (footer) di ogni pagina del sito. La revoca del consenso disattiva immediatamente il tracciamento analitico e rimuove i cookie analitici (`_ga`, `_ga_*`) memorizzati nel browser.
               </p>
-              <h4 className="font-bold text-gray-800 mt-4">4. Come disabilitare i Cookie dal Browser</h4>
+
+              <h4 className="font-bold text-gray-800 mt-4">4. Disabilitazione tramite Browser</h4>
               <p>
-                Puoi controllare, bloccare o eliminare i cookie in qualsiasi momento modificando le impostazioni del tuo browser internet. Di seguito i link alle istruzioni dei principali browser:
+                Puoi inoltre controllare o eliminare i cookie modificando le impostazioni del tuo browser internet:
               </p>
-              <ul className="list-disc pl-5 space-y-1">
+              <ul className="list-disc pl-5 space-y-1 text-xs">
                 <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">Google Chrome</a></li>
                 <li><a href="https://support.mozilla.org/it/kb/Attivare%20e%20disattivare%20i%20cookie" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">Mozilla Firefox</a></li>
                 <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">Apple Safari</a></li>
                 <li><a href="https://support.microsoft.com/it-it/windows/gestire-i-cookie-in-microsoft-edge-60451397-235a-478a-7451-aa311a2a09c2" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">Microsoft Edge</a></li>
               </ul>
-              <p className="mt-4 text-xs text-gray-500">
-                La disabilitazione dei cookie tecnici potrebbe compromettere la corretta visualizzazione di alcune sezioni o funzionalità del sito.
-              </p>
             </div>
             
             <div className="mt-6 border-t pt-4 flex justify-end">
