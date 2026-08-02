@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Instagram, Lock, ArrowUp, Settings } from 'lucide-react';
 import { CookieBanner } from './CookieBanner';
 import { CookiePreferencesModal } from './CookiePreferencesModal';
+import WhatsAppButton from './WhatsAppButton';
 
 const Layout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -183,12 +184,15 @@ const Layout: React.FC = () => {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-4 bg-gradient-brand text-white rounded-full shadow-2xl z-50 hover:-translate-y-2 transition-all active:translate-y-0"
+          className="fixed bottom-[88px] right-5 sm:bottom-[96px] sm:right-6 p-3.5 sm:p-4 bg-gradient-brand text-white rounded-full shadow-2xl z-40 hover:-translate-y-2 transition-all active:translate-y-0"
           aria-label="Torna all'inizio"
         >
           <ArrowUp size={24} />
         </button>
       )}
+
+      {/* Floating WhatsApp Button */}
+      <WhatsAppButton />
 
       <footer className="bg-brandDark text-white py-16 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
