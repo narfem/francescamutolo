@@ -18,6 +18,9 @@ const Home: React.FC = () => {
             <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto italic">
               "Il design è l'ambasciatore silenzioso del tuo brand."
             </p>
+            <h2 className="mt-3 text-base md:text-lg font-medium text-gray-500 max-w-3xl mx-auto">
+              Brand identity e siti web per professionisti e artigiani a Cagliari e in Sardegna
+            </h2>
           </div>
           <PortfolioGrid />
         </div>

@@ -210,7 +210,7 @@ const PortfolioGrid: React.FC = () => {
                   <span className="text-xs font-black text-primary uppercase tracking-widest">{selectedItem.category?.replace(/flayer/i, 'Flyer')}</span>
                   {selectedItem.is_featured && <Star size={14} className="fill-primary text-primary" />}
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h2>
+                <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h3>
                 {selectedItem.description && (
                   <p className="mt-2 md:mt-4 text-gray-600 leading-relaxed italic text-sm md:text-base line-clamp-2 md:line-clamp-none">
                     {getCleanDescription(selectedItem.description)}
