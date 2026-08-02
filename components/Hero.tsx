@@ -95,7 +95,7 @@ const Hero: React.FC = () => {
             <div className="relative z-10 aspect-[4/5] overflow-hidden rounded-xl md:rounded-[2.5rem] shadow-2xl border md:border-4 border-white bg-slate-100">
               <img 
                 src={imageUrl} 
-                alt="Francesca Mutolo Professional Portrait" 
+                alt="Francesca Mutolo, brand designer" 
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"

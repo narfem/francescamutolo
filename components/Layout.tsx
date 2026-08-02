@@ -73,7 +73,7 @@ const Layout: React.FC = () => {
               <div className="relative">
                 <img 
                   src={logoUrl} 
-                  alt="Francesca Mutolo Logo" 
+                  alt="Logo Francesca Mutolo" 
                   referrerPolicy="no-referrer"
                   className="h-10 w-10 object-cover rounded-full border-2 border-primary shadow-sm transition-transform group-hover:scale-105"
                 />
@@ -198,7 +198,7 @@ const Layout: React.FC = () => {
                 <div className="relative flex-shrink-0">
                   <img 
                     src={logoUrl} 
-                    alt="Logo White" 
+                    alt="Logo Francesca Mutolo" 
                     referrerPolicy="no-referrer"
                     className="h-10 w-10 md:h-12 md:w-12 object-cover rounded-full border border-white/20 shadow-sm transition-transform" 
                   />
@@ -224,6 +224,9 @@ const Layout: React.FC = () => {
               </a>
             </div>
             <div className="text-gray-500 text-xs tracking-widest leading-relaxed">
+              <p className="text-gray-400 text-xs font-medium tracking-normal mb-2">
+                Francesca Mutolo — Brand Designer | Cagliari, Sardegna
+              </p>
               <p className="mb-1 font-bold">© {new Date().getFullYear()} FRANCESCA MUTOLO</p>
               <p className="mb-3">DESIGN & INNOVATION</p>
               <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 text-[10px] text-gray-500 font-semibold">

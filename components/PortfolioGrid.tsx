@@ -51,6 +51,41 @@ const PortfolioGrid: React.FC = () => {
     return desc.replace(/\[SITE_URL:.*?\]/, '').trim();
   };
 
+  const getAltText = (item: PortfolioItem) => {
+    const title = item.title || '';
+    const cleanTitle = title.trim();
+    const titleLower = cleanTitle.toLowerCase();
+
+    if (titleLower.includes('samten beats')) {
+      return 'Brand identity e artwork per il progetto musicale SamTen Beats';
+    }
+    if (titleLower.includes('salone') || titleLower.includes('parruccheria')) {
+      return 'Brand identity per salone di parrucchieria - progetto concept Cagliari';
+    }
+    if (titleLower.includes('farmacia') || titleLower.includes("sant'ignazio")) {
+      return 'Logo e brand identity per farmacia - progetto concept';
+    }
+    if (titleLower.includes('sanoflex')) {
+      return 'Poster pubblicitario per Sanoflex Megastore - dispositivi medici';
+    }
+    if (titleLower.includes('psicologia')) {
+      return 'Sito web per studio di psicologia - progetto concept';
+    }
+    if (titleLower.includes('modux')) {
+      return 'Logo e brand identity per studio di consulenza legale - progetto concept';
+    }
+    if (titleLower.includes('studio medico') || (titleLower.includes('medico') && !titleLower.includes('sanoflex'))) {
+      return 'Sito web per studio medico - progetto concept';
+    }
+    if (titleLower.includes('adele deidda') || titleLower.includes('architetta')) {
+      return 'Brand identity per studio di architettura - progetto concept';
+    }
+
+    const category = item.category?.replace(/flayer/i, 'Flyer') || 'Brand identity';
+    const isConcept = (item.description || '').toLowerCase().includes('concept') || titleLower.includes('concept');
+    return `${cleanTitle} - ${category} per attività e professionisti in Sardegna${isConcept ? ' - progetto concept' : ''}`;
+  };
+
   const handleCardClick = (item: PortfolioItem) => {
     const siteUrl = item.site_url || getSiteUrlFromDescription(item.description || '');
     if (item.category === 'Web' && siteUrl) {
@@ -116,7 +151,7 @@ const PortfolioGrid: React.FC = () => {
               {item.image_url ? (
                 <img 
                   src={item.image_url} 
-                  alt={item.title} 
+                  alt={getAltText(item)} 
                   referrerPolicy="no-referrer"
                   className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${item.category === 'Web' ? 'object-top' : 'object-center'}`}
                   onError={(e) => {
@@ -199,7 +234,7 @@ const PortfolioGrid: React.FC = () => {
               <div className="flex-grow flex items-center justify-center bg-gray-50 overflow-hidden p-4 md:p-6 min-h-0">
                 <img 
                   src={selectedItem.image_url} 
-                  alt={selectedItem.title} 
+                  alt={getAltText(selectedItem)} 
                   referrerPolicy="no-referrer"
                   className="max-w-full max-h-full w-auto h-auto object-contain mx-auto transition-all"
                   onError={(e) => { (e.target as any).src = 'https://placehold.co/1200x800?text=Errore+Caricamento' }}
