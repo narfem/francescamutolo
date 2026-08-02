@@ -80,9 +80,9 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section id="home" className="relative min-h-[80vh] pt-6 lg:pt-10 pb-20 flex items-start bg-white overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F39637]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#C13C8D]/5 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4"></div>
+    <section id="home" className="relative min-h-[85vh] md:min-h-[680px] pt-6 lg:pt-10 pb-20 flex items-start bg-white overflow-hidden clear-both">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#F39637]/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#C13C8D]/5 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4 pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full">
         <div className="relative">
@@ -165,6 +165,7 @@ const Hero: React.FC = () => {
               )}
             </div>
           </div>
+          <div className="clear-both"></div>
         </div>
       </div>
 

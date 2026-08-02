@@ -139,9 +139,24 @@ const PortfolioGrid: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="text-gray-400 font-medium animate-pulse">Caricamento progetti...</p>
+      <div className="min-h-[600px]">
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 animate-pulse">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-10 sm:h-11 w-28 sm:w-36 bg-gray-100 rounded-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="rounded-3xl bg-gray-50/80 border border-gray-100 overflow-hidden animate-pulse">
+              <div className="aspect-[4/3] bg-gray-200/70" />
+              <div className="p-6 space-y-3">
+                <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                <div className="h-6 w-3/4 bg-gray-200 rounded" />
+                <div className="h-4 w-full bg-gray-200 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
