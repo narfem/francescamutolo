@@ -225,7 +225,7 @@ const Layout: React.FC = () => {
             </div>
             <div className="text-gray-500 text-xs tracking-widest leading-relaxed">
               <p className="text-gray-400 text-xs font-medium tracking-normal mb-2">
-                Francesca Mutolo — Brand Designer | Cagliari, Sardegna
+                Francesca Mutolo <br /> Brand Designer | Cagliari, Sardegna
               </p>
               <p className="mb-1 font-bold">© {new Date().getFullYear()} FRANCESCA MUTOLO</p>
               <p className="mb-3">DESIGN & INNOVATION</p>
