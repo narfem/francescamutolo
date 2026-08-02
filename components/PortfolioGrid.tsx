@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { PortfolioItem } from '../types';
-import { Image as ImageIcon, X, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { Image as ImageIcon, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const isConceptProject = (item: PortfolioItem): boolean => {
   const titleLower = (item.title || '').toLowerCase().trim();
@@ -210,7 +210,6 @@ const PortfolioGrid: React.FC = () => {
                 <h3 className="text-2xl font-bold text-gray-900 group-hover:text-primary transition-colors duration-300">
                   {item.title}
                 </h3>
-                {item.is_featured && <Star size={14} className="fill-primary text-primary" />}
               </div>
               <p className="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-2 italic">{getCleanDescription(item.description)}</p>
             </div>
@@ -286,7 +285,6 @@ const PortfolioGrid: React.FC = () => {
                       Progetto Concept
                     </span>
                   )}
-                  {selectedItem.is_featured && <Star size={14} className="fill-primary text-primary" />}
                 </div>
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h3>
                 {selectedItem.description && (
