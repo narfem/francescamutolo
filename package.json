@@ -12,6 +12,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@google/genai": "^1.4.0",
     "@supabase/supabase-js": "^2.45.4",
     "cors": "^2.8.6",
