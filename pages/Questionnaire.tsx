@@ -9,6 +9,7 @@ import {
 import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
 import { DraftSavedModal } from '../components/DraftSavedModal';
 import { QuestionnaireDraft } from '../lib/draftService';
+import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 
 interface QuestionnaireProps {
   initialDraft?: QuestionnaireDraft;
@@ -103,6 +104,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ initialDraft }) => {
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [authorized, setAuthorized] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
 
   const [questions, setQuestions] = useState<any>(null);
 
@@ -485,7 +487,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ initialDraft }) => {
     }
 
     if (!authorized) {
-      alert("È necessario autorizzare l'utilizzo delle informazioni e dei dati inseriti per poter inviare il questionario.");
+      setPrivacyError(true);
       return;
     }
 
@@ -1315,18 +1317,15 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ initialDraft }) => {
                 {renderCustomQuestionsForStep(8)}
 
                 <div className="pt-6 mt-6 border-t border-gray-100">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      required
-                      className="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary accent-primary shrink-0 cursor-pointer"
-                      checked={authorized}
-                      onChange={e => setAuthorized(e.target.checked)}
-                    />
-                    <span className="text-sm text-gray-600 leading-relaxed font-semibold select-none">
-                      Autorizzo Francesca Mutolo all'utilizzo e al trattamento delle informazioni e dei dati personali inseriti in questo questionario, ai sensi del GDPR, al fine esclusivo di poter procedere alla lavorazione e allo sviluppo del mio progetto.
-                    </span>
-                  </label>
+                  <PrivacyConsentCheckbox
+                    id="questionnaire-privacy-consent"
+                    checked={authorized}
+                    onChange={(val) => {
+                      setAuthorized(val);
+                      if (val) setPrivacyError(false);
+                    }}
+                    error={privacyError}
+                  />
                 </div>
               </div>
             )}

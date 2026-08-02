@@ -18,8 +18,15 @@ const Layout: React.FC = () => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };
+    const handleOpenPrivacy = () => setPrivacyOpen(true);
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('open-privacy-policy', handleOpenPrivacy);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('open-privacy-policy', handleOpenPrivacy);
+    };
   }, []);
 
   const navLinks: { name: string; targetId?: string; path?: string }[] = [
@@ -226,14 +233,6 @@ const Layout: React.FC = () => {
                   className="hover:text-primary transition-colors uppercase tracking-wider cursor-pointer"
                 >
                   Privacy Policy
-                </button>
-                <span className="text-gray-700">|</span>
-                <button 
-                  type="button"
-                  onClick={() => setCookieOpen(true)}
-                  className="hover:text-primary transition-colors uppercase tracking-wider cursor-pointer"
-                >
-                  Cookie Policy
                 </button>
                 <span className="text-gray-700">|</span>
                 <button 

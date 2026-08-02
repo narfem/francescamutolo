@@ -1,5 +1,6 @@
 {
   "name": "Pubblicato - Francesca Mutolo - Brand Designer",
   "description": "Professional portfolio and project management dashboard for Francesca Mutolo, featuring dynamic portfolio management, detailed brand identity questionnaire, and project brief lead generation.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

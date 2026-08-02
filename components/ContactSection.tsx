@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Send, CheckCircle } from 'lucide-react';
+import { PrivacyConsentCheckbox } from './PrivacyConsentCheckbox';
 
 const ContactSection: React.FC = () => {
   const [activeForm, setActiveForm] = useState<'simple' | 'brief'>('simple');
@@ -11,12 +12,16 @@ const ContactSection: React.FC = () => {
 
   // Simple Form State
   const [simpleData, setSimpleData] = useState({ name: '', email: '', message: '' });
+  const [simplePrivacyConsent, setSimplePrivacyConsent] = useState(false);
+  const [simplePrivacyError, setSimplePrivacyError] = useState(false);
 
   // Brief Form State
   const [briefData, setBriefData] = useState({
     name: '', email: '', phone: '', colors: '', notes: '',
     services: [] as string[]
   });
+  const [briefPrivacyConsent, setBriefPrivacyConsent] = useState(false);
+  const [briefPrivacyError, setBriefPrivacyError] = useState(false);
 
   const servicesList = [
     'Nuovo logo', 'Rinnovo logo esistente', 'Biglietto da visita', 
@@ -25,6 +30,11 @@ const ContactSection: React.FC = () => {
 
   const handleSimpleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!simplePrivacyConsent) {
+      setSimplePrivacyError(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/contact', {
@@ -43,6 +53,8 @@ const ContactSection: React.FC = () => {
       if (data.success) {
         setSubmitted(true);
         setSimpleData({ name: '', email: '', message: '' });
+        setSimplePrivacyConsent(false);
+        setSimplePrivacyError(false);
       } else {
         alert(data.error || "Si è verificato un errore durante l'invio del messaggio.");
       }
@@ -54,6 +66,11 @@ const ContactSection: React.FC = () => {
 
   const handleBriefSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!briefPrivacyConsent) {
+      setBriefPrivacyError(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const formattedMessage = `Servizi richiesti: ${briefData.services.join(', ')}\nColori preferiti: ${briefData.colors}\n\nNote aggiuntive:\n${briefData.notes}`;
@@ -78,6 +95,8 @@ const ContactSection: React.FC = () => {
       if (data.success) {
         setSubmitted(true);
         setBriefData({ name: '', email: '', phone: '', colors: '', notes: '', services: [] });
+        setBriefPrivacyConsent(false);
+        setBriefPrivacyError(false);
       } else {
         alert(data.error || "Si è verificato un errore durante l'invio del brief.");
       }
@@ -185,6 +204,17 @@ const ContactSection: React.FC = () => {
                   onChange={e => setSimpleData({...simpleData, message: e.target.value})}
                 ></textarea>
               </div>
+
+              <PrivacyConsentCheckbox
+                id="simple-privacy-consent"
+                checked={simplePrivacyConsent}
+                onChange={(val) => {
+                  setSimplePrivacyConsent(val);
+                  if (val) setSimplePrivacyError(false);
+                }}
+                error={simplePrivacyError}
+              />
+
               <button 
                 type="submit" 
                 disabled={loading}
@@ -251,6 +281,16 @@ const ContactSection: React.FC = () => {
                   onChange={e => setBriefData({...briefData, notes: e.target.value})}
                 ></textarea>
               </div>
+
+              <PrivacyConsentCheckbox
+                id="brief-privacy-consent"
+                checked={briefPrivacyConsent}
+                onChange={(val) => {
+                  setBriefPrivacyConsent(val);
+                  if (val) setBriefPrivacyError(false);
+                }}
+                error={briefPrivacyError}
+              />
 
               <button 
                 type="submit" 

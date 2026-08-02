@@ -9,6 +9,7 @@ import {
 import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
 import { DraftSavedModal } from '../components/DraftSavedModal';
 import { QuestionnaireDraft } from '../lib/draftService';
+import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 
 interface ArtistQuestionnaireProps {
   initialDraft?: QuestionnaireDraft;
@@ -194,6 +195,8 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [questionsSchema, setQuestionsSchema] = useState<any>(null);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
 
   const {
     activeToken,
@@ -287,6 +290,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
 
   const handleAnswerChange = (qId: string, value: string, element?: HTMLTextAreaElement) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
+    if (errorMessage) setErrorMessage(null);
     if (element) {
       element.style.height = 'auto';
       element.style.height = `${Math.max(120, element.scrollHeight)}px`;
@@ -309,6 +313,21 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
       e.preventDefault();
       e.stopPropagation();
     }
+
+    if (!artistName.trim()) {
+      setErrorMessage("Inserisci il tuo Nome d'arte / Nome e Cognome per proseguire.");
+      scrollToTopForm();
+      return;
+    }
+
+    const unansweredCurrent = currentSection.questions.filter(q => !answers[q.id]?.trim());
+    if (unansweredCurrent.length > 0) {
+      setErrorMessage("Tutte le domande di questa sezione sono obbligatorie. Compila tutti i campi prima di proseguire.");
+      scrollToTopForm();
+      return;
+    }
+
+    setErrorMessage(null);
     if (currentStep < dynamicSections.length) {
       setCurrentStep(prev => prev + 1);
       scrollToTopForm();
@@ -320,6 +339,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
       e.preventDefault();
       e.stopPropagation();
     }
+    setErrorMessage(null);
     if (currentStep > 1) {
       setCurrentStep(prev => prev - 1);
       scrollToTopForm();
@@ -328,6 +348,28 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!artistName.trim()) {
+      setErrorMessage("Inserisci il tuo Nome d'arte / Nome e Cognome per proseguire.");
+      scrollToTopForm();
+      return;
+    }
+
+    for (const sec of dynamicSections) {
+      const missingQ = sec.questions.find(q => !answers[q.id]?.trim());
+      if (missingQ) {
+        setErrorMessage(`Tutte le domande del questionario sono obbligatorie. Rispondi a tutte le domande della Sezione ${sec.id}.`);
+        setCurrentStep(sec.id);
+        scrollToTopForm();
+        return;
+      }
+    }
+
+    if (!privacyConsent) {
+      setPrivacyError(true);
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
@@ -632,6 +674,15 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                     key={sec.id}
                     type="button"
                     onClick={() => {
+                      if (sec.id > currentStep) {
+                        const unansweredCurrent = currentSection.questions.filter(q => !answers[q.id]?.trim());
+                        if (unansweredCurrent.length > 0) {
+                          setErrorMessage("Tutte le domande sono obbligatorie. Compila le risposte della sezione corrente prima di passare a quelle successive.");
+                          scrollToTopForm();
+                          return;
+                        }
+                      }
+                      setErrorMessage(null);
                       setCurrentStep(sec.id);
                       scrollToTopForm();
                     }}
@@ -654,6 +705,12 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
           {/* FORM CONTENT BY SECTION */}
           <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-10">
 
+            {errorMessage && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-semibold animate-in fade-in flex items-center gap-2">
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {/* SEC TITLE */}
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
@@ -670,7 +727,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                 <div key={q.id} className="space-y-3 text-left animate-in fade-in duration-300">
                   <div className="space-y-1">
                     <label className="block text-base font-bold text-gray-900 leading-snug">
-                      <span className="text-primary mr-1">{q.number}.</span> {q.text}
+                      <span className="text-primary mr-1">{q.number}.</span> {q.text} <span className="text-primary">*</span>
                     </label>
 
                     {q.subtext && (
@@ -683,6 +740,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                   {/* CAMPO TESTUALE LIBERO TEXTAREA ESPANDIBILE */}
                   <textarea
                     rows={4}
+                    required
                     value={answers[q.id] || ''}
                     onChange={(e) => handleAnswerChange(q.id, e.target.value, e.target)}
                     placeholder={q.placeholder || "Scrivi qui liberamente la tua risposta..."}
@@ -691,6 +749,20 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                 </div>
               ))}
             </div>
+
+            {currentStep === dynamicSections.length && (
+              <div className="pt-6 border-t border-gray-100">
+                <PrivacyConsentCheckbox
+                  id="artist-privacy-consent"
+                  checked={privacyConsent}
+                  onChange={(val) => {
+                    setPrivacyConsent(val);
+                    if (val) setPrivacyError(false);
+                  }}
+                  error={privacyError}
+                />
+              </div>
+            )}
 
             {/* BOTTOM NAVIGATION BUTTONS */}
             <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { 
   ArrowLeft, CheckCircle, Send, Award, Smile 
 } from 'lucide-react';
+import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 
 const ClientFeedback: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,8 @@ const ClientFeedback: React.FC = () => {
 
   // Section 7: Consenso utilizzo contenuti
   const [authorizeCaseStudy, setAuthorizeCaseStudy] = useState(false);
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -37,6 +40,11 @@ const ClientFeedback: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!privacyConsent) {
+      setPrivacyError(true);
+      return;
+    }
+
     if (!name.trim()) {
       alert("Il tuo nome è richiesto.");
       return;
@@ -327,6 +335,18 @@ const ClientFeedback: React.FC = () => {
                 <label htmlFor="authorizeCaseStudy" className="text-xs text-gray-650 leading-relaxed font-semibold cursor-pointer select-none">
                   Autorizzo l’utilizzo del feedback e del progetto come case study su questo sito e sui miei canali professionali.
                 </label>
+              </div>
+
+              <div className="p-5 bg-white rounded-2xl border border-gray-100">
+                <PrivacyConsentCheckbox
+                  id="feedback-privacy-consent"
+                  checked={privacyConsent}
+                  onChange={(val) => {
+                    setPrivacyConsent(val);
+                    if (val) setPrivacyError(false);
+                  }}
+                  error={privacyError}
+                />
               </div>
             </div>
 
