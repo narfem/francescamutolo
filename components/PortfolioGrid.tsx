@@ -3,6 +3,33 @@ import { supabase } from '../lib/supabase';
 import { PortfolioItem } from '../types';
 import { Image as ImageIcon, X, Star, ChevronDown, ChevronUp } from 'lucide-react';
 
+export const isConceptProject = (item: PortfolioItem): boolean => {
+  const titleLower = (item.title || '').toLowerCase().trim();
+  if (
+    titleLower.includes('samten beats') ||
+    titleLower.includes('sanoflex') ||
+    titleLower.includes('modux')
+  ) {
+    return false;
+  }
+  if (
+    titleLower.includes('salone') ||
+    titleLower.includes('parruccheria') ||
+    titleLower.includes('farmacia') ||
+    titleLower.includes("sant'ignazio") ||
+    titleLower.includes('psicologia') ||
+    titleLower.includes('studio medico') ||
+    (titleLower.includes('medico') && !titleLower.includes('sanoflex')) ||
+    titleLower.includes('adele deidda') ||
+    titleLower.includes('architetta') ||
+    titleLower.includes('concept') ||
+    (item.description || '').toLowerCase().includes('concept')
+  ) {
+    return true;
+  }
+  return false;
+};
+
 const PortfolioGrid: React.FC = () => {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +99,7 @@ const PortfolioGrid: React.FC = () => {
       return 'Sito web per studio di psicologia - progetto concept';
     }
     if (titleLower.includes('modux')) {
-      return 'Logo e brand identity per studio di consulenza legale - progetto concept';
+      return 'Logo e brand identity per studio di consulenza legale a Cagliari';
     }
     if (titleLower.includes('studio medico') || (titleLower.includes('medico') && !titleLower.includes('sanoflex'))) {
       return 'Sito web per studio medico - progetto concept';
@@ -82,7 +109,7 @@ const PortfolioGrid: React.FC = () => {
     }
 
     const category = item.category?.replace(/flayer/i, 'Flyer') || 'Brand identity';
-    const isConcept = (item.description || '').toLowerCase().includes('concept') || titleLower.includes('concept');
+    const isConcept = isConceptProject(item);
     return `${cleanTitle} - ${category} per attività e professionisti in Sardegna${isConcept ? ' - progetto concept' : ''}`;
   };
 
@@ -148,6 +175,14 @@ const PortfolioGrid: React.FC = () => {
             onClick={() => handleCardClick(item)}
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-sm group-hover:shadow-2xl transition-all duration-500 bg-gray-100">
+              {isConceptProject(item) && (
+                <span 
+                  aria-label="Progetto dimostrativo, non cliente reale"
+                  className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-sm"
+                >
+                  Progetto Concept
+                </span>
+              )}
               {item.image_url ? (
                 <img 
                   src={item.image_url} 
@@ -241,8 +276,16 @@ const PortfolioGrid: React.FC = () => {
                 />
               </div>
               <div className="p-6 md:p-8 bg-white border-t border-gray-100 flex-shrink-0">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <span className="text-xs font-black text-primary uppercase tracking-widest">{selectedItem.category?.replace(/flayer/i, 'Flyer')}</span>
+                  {isConceptProject(selectedItem) && (
+                    <span 
+                      aria-label="Progetto dimostrativo, non cliente reale"
+                      className="bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full shadow-sm"
+                    >
+                      Progetto Concept
+                    </span>
+                  )}
                   {selectedItem.is_featured && <Star size={14} className="fill-primary text-primary" />}
                 </div>
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h3>

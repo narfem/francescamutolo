@@ -21,6 +21,9 @@ const Home: React.FC = () => {
             <h2 className="mt-3 text-base md:text-lg font-medium text-gray-500 max-w-3xl mx-auto">
               Brand identity e siti web per professionisti e artigiani a Cagliari e in Sardegna
             </h2>
+            <p className="mt-2 text-xs md:text-sm text-gray-400 max-w-2xl mx-auto">
+              I progetti contrassegnati come 'Progetto Concept' sono case study dimostrativi, pensati per mostrare il mio approccio a settori specifici.
+            </p>
           </div>
           <PortfolioGrid />
         </div>
