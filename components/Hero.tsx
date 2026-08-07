@@ -44,7 +44,8 @@ const Hero: React.FC = () => {
 
           <div className="mb-4 md:mb-12">
             <h1 className="text-[1.35rem] sm:text-3xl md:text-5xl lg:text-7xl xl:text-8xl font-bold leading-[1.15] text-slate-900 tracking-tight mb-2 md:mb-8">
-              Grafica e brand identity <br className="hidden sm:inline" />
+              Grafica <br />
+              e brand identity <br />
               in <span className="brand-orange italic text-[#F39637]">Sardegna,</span> <br />
               con base a{" "}
               <span className="relative inline-block">
