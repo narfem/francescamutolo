@@ -46,7 +46,7 @@ const SECTIONS: Section[] = [
       {
         id: "q1",
         number: 1,
-        text: "Quando sei con le persone con cui ti senti più te stesso, come ti comporti di solito?",
+        text: "Quando sei con le persone con cui ti senti più a tuo agio, come ti comporti di solito?",
         subtext: "Scegli massimo 3 risposte.",
         type: 'checkbox_group',
         maxSelect: 3,
@@ -371,17 +371,26 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
   // Risposte principali (memorizzate come dictionary key-value)
   const [answers, setAnswers] = useState<Record<string, any>>(initialPayload.formData || initialPayload.answers || {});
   
-  // Stato per slider bipolari
+  // Stato per slider bipolari (4 posizioni discrete: 1, 2, 3, 4)
   const [sliders, setSliders] = useState<Record<string, number>>(() => {
     const savedSliders = initialPayload.sliders || {};
+    const normalize = (val: any) => {
+      if (val === undefined || val === null) return 0;
+      const num = Number(val);
+      if (num >= 1 && num <= 4) return num;
+      if (num <= 25) return 1;
+      if (num <= 50) return 2;
+      if (num <= 75) return 3;
+      return 4;
+    };
     return {
-      q7: savedSliders.q7 ?? 50,
-      q8: savedSliders.q8 ?? 50,
-      q9: savedSliders.q9 ?? 50,
-      q10: savedSliders.q10 ?? 50,
-      q11: savedSliders.q11 ?? 50,
-      q12: savedSliders.q12 ?? 50,
-      q13: savedSliders.q13 ?? 50,
+      q7: normalize(savedSliders.q7),
+      q8: normalize(savedSliders.q8),
+      q9: normalize(savedSliders.q9),
+      q10: normalize(savedSliders.q10),
+      q11: normalize(savedSliders.q11),
+      q12: normalize(savedSliders.q12),
+      q13: normalize(savedSliders.q13),
     };
   });
 
@@ -462,17 +471,16 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
     setAnswers(prev => ({ ...prev, [qId]: updated }));
   };
 
-  // Handler Slider Bipolare
+  // Handler Slider Bipolare (4 posizioni discrete)
   const handleSliderChange = (qId: string, value: number) => {
     setSliders(prev => ({ ...prev, [qId]: value }));
     const q = SECTIONS[1].questions.find(item => item.id === qId);
     if (q) {
       let desc = '';
-      if (value === 50) desc = "Posizione Intermedia / Bilanciato";
-      else if (value < 30) desc = `Molto vicino a "${q.leftLabel}" (${value}%)`;
-      else if (value < 50) desc = `Più vicino a "${q.leftLabel}" (${value}%)`;
-      else if (value > 70) desc = `Molto vicino a "${q.rightLabel}" (${value}%)`;
-      else desc = `Più vicino a "${q.rightLabel}" (${value}%)`;
+      if (value === 1) desc = `Molto vicino a "${q.leftLabel}"`;
+      else if (value === 2) desc = `Più vicino a "${q.leftLabel}"`;
+      else if (value === 3) desc = `Più vicino a "${q.rightLabel}"`;
+      else if (value === 4) desc = `Molto vicino a "${q.rightLabel}"`;
       
       setAnswers(prev => ({ ...prev, [qId]: `${q.leftLabel} ↔ ${q.rightLabel}: ${desc}` }));
     }
@@ -571,9 +579,10 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
           return false;
         }
       } else if (q.type === 'bipolar_slider') {
-        // Slider bipolare: ha già valore predefinito 50%
-        if (!answers[q.id]) {
-          handleSliderChange(q.id, sliders[q.id] ?? 50);
+        if (!sliders[q.id] || sliders[q.id] === 0) {
+          setErrorMessage(`Seleziona una delle 4 posizioni per la domanda ${q.number} (${q.leftLabel} / ${q.rightLabel}).`);
+          scrollToTopForm();
+          return false;
         }
       } else {
         const textVal = answers[q.id];
@@ -819,8 +828,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
           <div className="absolute top-0 left-0 w-2 h-full bg-gradient-brand"></div>
           <p className="text-gray-700 text-sm md:text-base leading-relaxed font-medium">
             Questa sessione serve a capire meglio chi sei come persona e quale artista vuoi diventare. 
-            Non ci sono risposte giuste o sbagliate: prenditi il tempo necessario e scegli ciò che senti più vicino a te. 
-            Se una domanda ti mette in difficoltà, puoi saltarla e tornarci in un secondo momento.
+            Non ci sono risposte giuste o sbagliate: prenditi il tempo necessario e scegli ciò che senti più vicino a te.
           </p>
         </div>
 
@@ -1015,34 +1023,52 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                       </div>
                     )}
 
-                    {/* TYPE 3: BIPOLAR SLIDER */}
-                    {q.type === 'bipolar_slider' && (
-                      <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200/80 space-y-4">
-                        <div className="flex items-center justify-between text-sm md:text-base font-bold text-gray-900">
-                          <span className="text-primary">{q.leftLabel}</span>
-                          <span className="text-xs px-3 py-1 bg-white rounded-full border border-gray-200 shadow-xs font-semibold text-gray-600">
-                            {sliders[q.id] === 50 ? 'Intermedio (50%)' : sliders[q.id] < 50 ? `Verso ${q.leftLabel}` : `Verso ${q.rightLabel}`}
-                          </span>
-                          <span className="text-primary">{q.rightLabel}</span>
-                        </div>
+                    {/* TYPE 3: BIPOLAR SLIDER (4 POSIZIONI DISCRETE) */}
+                    {q.type === 'bipolar_slider' && (() => {
+                      const selectedVal = sliders[q.id];
+                      const options = [
+                        { value: 1, label: `Molto ${q.leftLabel}` },
+                        { value: 2, label: `Più ${q.leftLabel}` },
+                        { value: 3, label: `Più ${q.rightLabel}` },
+                        { value: 4, label: `Molto ${q.rightLabel}` },
+                      ];
 
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={sliders[q.id] ?? 50}
-                          onChange={(e) => handleSliderChange(q.id, parseInt(e.target.value, 10))}
-                          className="w-full h-2.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                        />
+                      return (
+                        <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200/80 space-y-4">
+                          <div className="flex items-center justify-between text-sm md:text-base font-bold text-gray-900">
+                            <span className="text-primary font-black">{q.leftLabel}</span>
+                            <span className="text-xs px-3 py-1 bg-white rounded-full border border-gray-200 shadow-xs font-semibold text-gray-600">
+                              {selectedVal === 1 && `Molto vicino a "${q.leftLabel}"`}
+                              {selectedVal === 2 && `Più vicino a "${q.leftLabel}"`}
+                              {selectedVal === 3 && `Più vicino a "${q.rightLabel}"`}
+                              {selectedVal === 4 && `Molto vicino a "${q.rightLabel}"`}
+                              {(!selectedVal || selectedVal === 0) && 'Seleziona una posizione'}
+                            </span>
+                            <span className="text-primary font-black">{q.rightLabel}</span>
+                          </div>
 
-                        <div className="flex justify-between items-center text-[10px] sm:text-xs text-gray-400 font-medium">
-                          <span>Estremo 1</span>
-                          <span>Centrato</span>
-                          <span>Estremo 2</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            {options.map((opt) => {
+                              const isSelected = selectedVal === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => handleSliderChange(q.id, opt.value)}
+                                  className={`p-3.5 rounded-xl border text-center text-xs font-bold transition-all flex flex-col items-center justify-center gap-1.5 ${
+                                    isSelected
+                                      ? 'bg-primary text-white border-primary shadow-md scale-[1.02]'
+                                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <span>{opt.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* TYPE 4: DOMANDA 14 - SELECT EXACTLY 5 WORDS */}
                     {q.type === 'q14_select' && (
