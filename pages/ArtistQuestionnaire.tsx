@@ -11,6 +11,12 @@ import { DraftSavedModal } from '../components/DraftSavedModal';
 import { QuestionnaireDraft } from '../lib/draftService';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
 
+// Image Assets for Section 7 (Vite static asset bundling)
+import moodsBoard1 from '../src/assets/images/artist-questionnaire/moods-board-1.jpg';
+import moodsBoard2 from '../src/assets/images/artist-questionnaire/moods-board-2.jpg';
+import symbolsBoard1 from '../src/assets/images/artist-questionnaire/symbols-board-1.jpg';
+import symbolsBoard2 from '../src/assets/images/artist-questionnaire/symbols-board-2.jpg';
+
 interface ArtistQuestionnaireProps {
   initialDraft?: QuestionnaireDraft;
 }
@@ -1294,13 +1300,16 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                               <div className="space-y-2">
                                 <span className="text-xs font-bold text-gray-600 block text-center">Tavola 1 (Mood 01 - 12)</span>
                                 <div 
-                                  onClick={() => setLightboxImage({ src: '/images/artist-questionnaire/moods-board-1.jpg', title: 'Mood Visivi - Tavola 1' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+                                  onClick={() => setLightboxImage({ src: moodsBoard1, title: 'Mood Visivi - Tavola 1' })}
+                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
                                 >
                                   <img 
-                                    src="/images/artist-questionnaire/moods-board-1.jpg" 
+                                    src={moodsBoard1} 
                                     alt="Mood Visivi Tavola 1" 
-                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = '/images/artist-questionnaire/moods-board-1.jpg';
+                                    }}
+                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300 min-h-[200px]"
                                   />
                                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
                                     <Maximize2 size={16} /> Clicca per ingrandire
@@ -1311,13 +1320,16 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                               <div className="space-y-2">
                                 <span className="text-xs font-bold text-gray-600 block text-center">Tavola 2 (Mood 01 - 12)</span>
                                 <div 
-                                  onClick={() => setLightboxImage({ src: '/images/artist-questionnaire/moods-board-2.jpg', title: 'Mood Visivi - Tavola 2' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+                                  onClick={() => setLightboxImage({ src: moodsBoard2, title: 'Mood Visivi - Tavola 2' })}
+                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
                                 >
                                   <img 
-                                    src="/images/artist-questionnaire/moods-board-2.jpg" 
+                                    src={moodsBoard2} 
                                     alt="Mood Visivi Tavola 2" 
-                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = '/images/artist-questionnaire/moods-board-2.jpg';
+                                    }}
+                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300 min-h-[200px]"
                                   />
                                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
                                     <Maximize2 size={16} /> Clicca per ingrandire
@@ -1330,13 +1342,16 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                               <div className="space-y-2">
                                 <span className="text-xs font-bold text-gray-600 block text-center">Tavola 1 (Simboli 01 - 24)</span>
                                 <div 
-                                  onClick={() => setLightboxImage({ src: '/images/artist-questionnaire/symbols-board-1.jpg', title: 'Simboli - Tavola 1' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+                                  onClick={() => setLightboxImage({ src: symbolsBoard1, title: 'Simboli - Tavola 1' })}
+                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
                                 >
                                   <img 
-                                    src="/images/artist-questionnaire/symbols-board-1.jpg" 
+                                    src={symbolsBoard1} 
                                     alt="Simboli Tavola 1" 
-                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = '/images/artist-questionnaire/symbols-board-1.jpg';
+                                    }}
+                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300 min-h-[200px]"
                                   />
                                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
                                     <Maximize2 size={16} /> Clicca per ingrandire
@@ -1347,13 +1362,16 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                               <div className="space-y-2">
                                 <span className="text-xs font-bold text-gray-600 block text-center">Tavola 2 (Simboli 01 - 24)</span>
                                 <div 
-                                  onClick={() => setLightboxImage({ src: '/images/artist-questionnaire/symbols-board-2.jpg', title: 'Simboli - Tavola 2' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+                                  onClick={() => setLightboxImage({ src: symbolsBoard2, title: 'Simboli - Tavola 2' })}
+                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
                                 >
                                   <img 
-                                    src="/images/artist-questionnaire/symbols-board-2.jpg" 
+                                    src={symbolsBoard2} 
                                     alt="Simboli Tavola 2" 
-                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = '/images/artist-questionnaire/symbols-board-2.jpg';
+                                    }}
+                                    className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-300 min-h-[200px]"
                                   />
                                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
                                     <Maximize2 size={16} /> Clicca per ingrandire

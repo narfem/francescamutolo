@@ -61,21 +61,21 @@ const Hero: React.FC = () => {
             </p>
 
             <div className="font-medium text-xs sm:text-base md:text-lg lg:text-2xl text-slate-900 border-l-2 sm:border-l-4 border-[#F39637] pl-3 md:pl-8 py-1 md:py-2 italic bg-slate-50/30 rounded-r-xl">
-              Dopo anni ad ascoltare davvero le persone nel mondo della vendita, oggi uso la stessa attenzione per raccontare il tuo brand, con la velocità in più che mi dà l'intelligenza artificiale.
+              Dopo anni ad ascoltare davvero le persone nel mondo della vendita, oggi uso la stessa attenzione per raccontare il tuo brand con metodo, cura per i dettagli, e strumenti moderni che mi permettono di seguirti passo dopo passo.
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pt-6 md:pt-10">
               <a 
                 href="#contact" 
                 onClick={(e) => scrollToSection(e, 'contact')}
-                className="group px-6 md:px-10 py-3 md:py-5 bg-gradient-brand text-white rounded-full font-bold transition-all hover:shadow-lg hover:shadow-primary/30 flex items-center space-x-3 text-sm md:text-base"
+                className="group px-8 md:px-11 py-4 md:py-5 bg-gradient-brand text-white rounded-full font-extrabold text-base md:text-lg shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center space-x-3 cursor-pointer"
               >
                 <span>Collaboriamo</span>
               </a>
               <a 
                 href="#portfolio" 
                 onClick={(e) => scrollToSection(e, 'portfolio')}
-                className="group px-6 md:px-10 py-3 md:py-5 bg-white text-slate-900 border border-slate-200 rounded-full font-bold hover:border-[#F39637] transition-all flex items-center space-x-3 text-sm md:text-base"
+                className="group px-6 md:px-8 py-3.5 md:py-4 bg-transparent text-slate-600 hover:text-slate-900 font-semibold border border-slate-200/80 hover:border-slate-400 rounded-full text-sm md:text-base transition-all flex items-center space-x-2 cursor-pointer"
               >
                 <span>Guarda i lavori</span>
                 <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform text-[#F39637]" />

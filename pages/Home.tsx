@@ -3,8 +3,6 @@ import React from 'react';
 import Hero from '../components/Hero';
 import PortfolioGrid from '../components/PortfolioGrid';
 import ContactSection from '../components/ContactSection';
-import FeedbackSection from '../components/FeedbackSection';
-import PublishedFeedbacks from '../components/PublishedFeedbacks';
 
 const Home: React.FC = () => {
   return (
@@ -16,7 +14,7 @@ const Home: React.FC = () => {
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">I Miei Lavori</h2>
             <div className="w-24 h-1 bg-gradient-brand mx-auto rounded-full"></div>
             <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto italic">
-              "Il design è l'ambasciatore silenzioso del tuo brand."
+              "Non progetto solo loghi: costruisco identità che parlano la lingua di chi le userà ogni giorno."
             </p>
             <h2 className="mt-3 text-base md:text-lg font-medium text-gray-500 max-w-3xl mx-auto">
               Brand identity e siti web per professionisti e artigiani a Cagliari e in Sardegna
@@ -30,10 +28,6 @@ const Home: React.FC = () => {
       </section>
       <section id="contact" className="py-24 bg-gray-50 scroll-mt-20">
         <ContactSection />
-      </section>
-      <PublishedFeedbacks />
-      <section id="feedback" className="py-24 bg-white scroll-mt-20 border-t border-gray-100">
-        <FeedbackSection />
       </section>
     </div>
   );

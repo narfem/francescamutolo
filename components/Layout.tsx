@@ -32,6 +32,7 @@ const Layout: React.FC = () => {
 
   const navLinks: { name: string; targetId?: string; path?: string }[] = [
     { name: 'Portfolio', targetId: 'portfolio' },
+    { name: 'Recensioni', path: '/recensioni' },
     { name: 'Contatti', targetId: 'contact' },
   ];
 
