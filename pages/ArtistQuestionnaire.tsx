@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
@@ -10,6 +10,7 @@ import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
 import { DraftSavedModal } from '../components/DraftSavedModal';
 import { QuestionnaireDraft } from '../lib/draftService';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
+import { DEFAULT_ARTIST_QUESTIONS } from './Dashboard';
 
 interface ArtistQuestionnaireProps {
   initialDraft?: QuestionnaireDraft;
@@ -21,6 +22,8 @@ interface Question {
   number: number;
   text: string;
   subtext?: string;
+  placeholder?: string;
+  label?: string;
   type: 'text' | 'textarea' | 'checkbox_group' | 'bipolar_slider' | 'q14_select' | 'q15_rank' | 'select_and_rank' | 'visual_gallery';
   maxSelect?: number;
   options?: string[];
@@ -37,332 +40,343 @@ interface Section {
   questions: Question[];
 }
 
-const SECTIONS: Section[] = [
-  {
-    id: 1,
-    title: "1. L'artista che vuoi essere",
-    icon: <User className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q1",
-        number: 1,
-        text: "Quando sei con le persone con cui ti senti più a tuo agio, come ti comporti di solito?",
-        subtext: "Scegli massimo 3 risposte.",
-        type: 'checkbox_group',
-        maxSelect: 3,
-        hasOther: true,
-        options: [
-          "Parlo molto",
-          "Ascolto più di quanto parlo",
-          "Faccio ridere gli altri",
-          "Dico quello che penso",
-          "Cerco di farmi notare",
-          "Sono tranquillo",
-          "Sono molto energico",
-          "Mi piace provocare",
-          "Mi piace osservare",
-          "Tendo a prendere l'iniziativa"
-        ]
-      },
-      {
-        id: "q2",
-        number: 2,
-        text: "Quali caratteristiche senti più vicine al tuo modo di essere?",
-        subtext: "Scegli massimo 3 risposte.",
-        type: 'checkbox_group',
-        maxSelect: 3,
-        hasOther: true,
-        options: [
-          "Sicuro di me",
-          "Ambizioso",
-          "Determinato",
-          "Curioso",
-          "Sensibile",
-          "Ironico",
-          "Testardo",
-          "Impulsivo",
-          "Riflessivo",
-          "Competitivo",
-          "Riservato",
-          "Socievole",
-          "Creativo",
-          "Indipendente"
-        ]
-      },
-      {
-        id: "q3",
-        number: 3,
-        text: "Quali artisti ti ispirano maggiormente?",
-        type: 'textarea'
-      },
-      {
-        id: "q4",
-        number: 4,
-        text: "Cosa ti piace di loro?",
-        subtext: "Può essere il modo di fare musica, il carattere, l'immagine, il modo di stare sul palco o qualsiasi altra cosa.",
-        type: 'textarea'
-      },
-      {
-        id: "q5",
-        number: 5,
-        text: "C'è un artista al quale non vorresti essere associato? Perché?",
-        type: 'textarea'
-      },
-      {
-        id: "q6",
-        number: 6,
-        text: "Se potessi prendere una caratteristica di un artista che ammiri e farla diventare parte della tua identità, quale sceglieresti?",
-        type: 'textarea'
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "2. Come sei e come ti viene naturale esprimerti",
-    icon: <Sliders className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q7",
-        number: 7,
-        text: "Indicatore di personalità 1",
-        type: 'bipolar_slider',
-        leftLabel: "Introverso",
-        rightLabel: "Estroverso"
-      },
-      {
-        id: "q8",
-        number: 8,
-        text: "Indicatore di personalità 2",
-        type: 'bipolar_slider',
-        leftLabel: "Calmo",
-        rightLabel: "Esplosivo"
-      },
-      {
-        id: "q9",
-        number: 9,
-        text: "Indicatore di personalità 3",
-        type: 'bipolar_slider',
-        leftLabel: "Razionale",
-        rightLabel: "Istintivo"
-      },
-      {
-        id: "q10",
-        number: 10,
-        text: "Indicatore di personalità 4",
-        type: 'bipolar_slider',
-        leftLabel: "Serio",
-        rightLabel: "Ironico"
-      },
-      {
-        id: "q11",
-        number: 11,
-        text: "Indicatore di personalità 5",
-        type: 'bipolar_slider',
-        leftLabel: "Spontaneo",
-        rightLabel: "Controllato"
-      },
-      {
-        id: "q12",
-        number: 12,
-        text: "Indicatore di personalità 6",
-        type: 'bipolar_slider',
-        leftLabel: "Discreto",
-        rightLabel: "Protagonista"
-      },
-      {
-        id: "q13",
-        number: 13,
-        text: "Indicatore di personalità 7",
-        type: 'bipolar_slider',
-        leftLabel: "Diretto",
-        rightLabel: "Misterioso"
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "3. Come vuoi essere percepito",
-    icon: <Eye className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q14",
-        number: 14,
-        text: "Scegli 5 parole che descrivono meglio la sensazione che vorresti trasmettere quando le persone entrano nel tuo universo artistico.",
-        subtext: "Seleziona esattamente 5 parole.",
-        type: 'q14_select',
-        maxSelect: 5,
-        options: [
-          "Potente", "Libero", "Sicuro", "Inquietante", "Affascinante", 
-          "Autentico", "Ribelle", "Ambizioso", "Elegante", "Imponente", 
-          "Sfrontato", "Profondo", "Energico", "Inaspettato", "Inconfondibile"
-        ]
-      },
-      {
-        id: "q15",
-        number: 15,
-        text: "Metti in classifica le 3 parole più importanti che hai scelto alla domanda precedente.",
-        subtext: "Ordina le 3 parole principali per livello di importanza.",
-        type: 'q15_rank'
-      },
-      {
-        id: "q16",
-        number: 16,
-        text: "Quando una persona ascolta per la prima volta una tua canzone, quali sensazioni vorresti che provasse?",
-        subtext: "Scegli e metti in classifica le 5 più importanti.",
-        type: 'select_and_rank',
-        maxSelect: 5,
-        options: [
-          "Voglia di muoversi", "Adrenalina", "Carica", "Sicurezza", "Curiosità", 
-          "Libertà", "Emozione", "Nostalgia", "Tensione", "Divertimento", 
-          "Rabbia", "Motivazione", "Sorpresa", "Voglia di riascoltarla"
-        ]
-      }
-    ]
-  },
-  {
-    id: 4,
-    title: "4. Cosa vuoi trasmettere",
-    icon: <Heart className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q17",
-        number: 17,
-        text: "Scegli 5 concetti che senti più vicini alla tua identità artistica e mettili in classifica.",
-        subtext: "Seleziona massimo 5 elementi e successivo ordinamento.",
-        type: 'select_and_rank',
-        maxSelect: 5,
-        options: [
-          "Energia", "Ambizione", "Libertà", "Rivalsa", "Forza", 
-          "Autenticità", "Successo", "Indipendenza", "Passione", "Coraggio", 
-          "Rispetto", "Determinazione", "Appartenenza", "Crescita", "Trasformazione"
-        ]
-      }
-    ]
-  },
-  {
-    id: 5,
-    title: "5. La tua storia",
-    icon: <BookOpen className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q18",
-        number: 18,
-        text: "C'è un'esperienza, una persona o un periodo della tua vita che ha contribuito a renderti la persona e l'artista che sei oggi?",
-        subtext: "In che modo ha influenzato il tuo carattere, il tuo modo di vedere le cose o il tuo modo di fare musica?",
-        type: 'textarea'
-      },
-      {
-        id: "q19",
-        number: 19,
-        text: "Qual è una cosa che hai fatto o raggiunto e di cui sei realmente orgoglioso?",
-        subtext: "Cosa rappresenta per te?",
-        type: 'textarea'
-      },
-      {
-        id: "q20",
-        number: 20,
-        text: "C'è qualcosa che senti di dover dimostrare attraverso la musica?",
-        subtext: "Se sì, a chi o a te stesso?",
-        type: 'textarea'
-      },
-      {
-        id: "q21",
-        number: 21,
-        text: "Quale caratteristica di te vorresti mantenere anche se la tua carriera dovesse cambiare completamente la tua vita?",
-        type: 'textarea'
-      }
-    ]
-  },
-  {
-    id: 6,
-    title: "6. Cosa vuoi ottenere attraverso la musica",
-    icon: <Target className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q22",
-        number: 22,
-        text: "Quale effetto vorresti che la tua musica avesse sulle persone?",
-        subtext: "Scegli e metti in classifica i 3 più importanti.",
-        type: 'select_and_rank',
-        maxSelect: 3,
-        hasOther: true,
-        options: [
-          "Farle divertire",
-          "Dar loro motivazione",
-          "Farle evadere dalla realtà",
-          "Farle riflettere",
-          "Farle emozionare",
-          "Dar loro energia",
-          "Farle sentire libere",
-          "Farle provocare o scuotere"
-        ]
-      },
-      {
-        id: "q23",
-        number: 23,
-        text: "Quali elementi vorresti diventassero riconoscibili e associabili al tuo nome nel tempo?",
-        subtext: "Scegli massimo 4.",
-        type: 'checkbox_group',
-        maxSelect: 4,
-        hasOther: true,
-        options: [
-          "La mia voce",
-          "I miei testi",
-          "Il mio stile visivo",
-          "Il mio modo di vestire",
-          "I simboli associati al mio nome",
-          "Il mio sound",
-          "La mia presenza scenica",
-          "Il mio atteggiamento"
-        ]
-      },
-      {
-        id: "q24",
-        number: 24,
-        text: "Qual è la cosa che desideri di più ottenere attraverso la musica?",
-        subtext: "Scegli massimo 3.",
-        type: 'checkbox_group',
-        maxSelect: 3,
-        hasOther: true,
-        options: [
-          "Successo",
-          "Riconoscibilità",
-          "Rispetto",
-          "Indipendenza economica",
-          "Realizzazione personale",
-          "Riscatto",
-          "Diventare un punto di riferimento",
-          "Dimostrare il mio valore"
-        ]
-      }
-    ]
-  },
-  {
-    id: 7,
-    title: "7. Mood Visivi e Simboli",
-    icon: <Palette className="w-5 h-5 text-primary" />,
-    questions: [
-      {
-        id: "q25",
-        number: 25,
-        text: "I MOOD VISIVI",
-        subtext: "Osserva tutti i mood visivi e scegli quelli che senti più vicini a te e al tipo di artista che vorresti diventare.",
-        type: 'visual_gallery',
-        galleryType: 'moods'
-      },
-      {
-        id: "q26",
-        number: 26,
-        text: "I SIMBOLI",
-        subtext: "Osserva tutti i simboli e scegli quelli che senti più vicini a te. Non pensare al significato del simbolo in relazione alla musica: concentrati semplicemente sulla forma, sul carattere e sulla sensazione che ti trasmette.",
-        type: 'visual_gallery',
-        galleryType: 'symbols'
-      }
-    ]
-  }
-];
+const getSections = (schema: any): Section[] => {
+  const s1 = schema?.step1 || DEFAULT_ARTIST_QUESTIONS.step1;
+  const s2 = schema?.step2 || DEFAULT_ARTIST_QUESTIONS.step2;
+  const s3 = schema?.step3 || DEFAULT_ARTIST_QUESTIONS.step3;
+  const s4 = schema?.step4 || DEFAULT_ARTIST_QUESTIONS.step4;
+  const s5 = schema?.step5 || DEFAULT_ARTIST_QUESTIONS.step5;
+  const s6 = schema?.step6 || DEFAULT_ARTIST_QUESTIONS.step6;
+  const s7 = schema?.step7 || DEFAULT_ARTIST_QUESTIONS.step7;
+
+  const isDeleted = (stepNum: number, field: string) => {
+    const delList = schema?.[`step${stepNum}`]?.deleted_fields;
+    return Array.isArray(delList) && delList.includes(field);
+  };
+
+  const getCustomQs = (stepNum: number) => {
+    const customList = schema?.[`step${stepNum}`]?.custom_questions;
+    if (!Array.isArray(customList)) return [];
+    return customList.map((cq: any, idx: number) => ({
+      id: cq.id || `custom_step${stepNum}_${idx}`,
+      number: 100 + idx,
+      text: cq.label || cq.question || "Domanda personalizzata",
+      placeholder: cq.placeholder || "La tua risposta...",
+      type: 'textarea' as const
+    }));
+  };
+
+  const parseOptions = (opts: any, defaultOpts: string[]) => {
+    if (Array.isArray(opts)) return opts;
+    if (typeof opts === 'string') return opts.split(',').map((s: string) => s.trim()).filter(Boolean);
+    return defaultOpts;
+  };
+
+  return [
+    {
+      id: 1,
+      title: s1.title || "1. L'artista che vuoi essere",
+      icon: <User className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(1, 'q1') && {
+          id: "q1",
+          number: 1,
+          text: s1.q1_text || "Quando sei con le persone con cui ti senti più a tuo agio, come ti comporti di solito?",
+          subtext: s1.q1_subtext || "Scegli massimo 3 risposte.",
+          type: 'checkbox_group' as const,
+          maxSelect: 3,
+          hasOther: true,
+          options: parseOptions(s1.q1_options, DEFAULT_ARTIST_QUESTIONS.step1.q1_options)
+        },
+        !isDeleted(1, 'q2') && {
+          id: "q2",
+          number: 2,
+          text: s1.q2_text || "Quali caratteristiche senti più vicine al tuo modo di essere?",
+          subtext: s1.q2_subtext || "Scegli massimo 3 risposte.",
+          type: 'checkbox_group' as const,
+          maxSelect: 3,
+          hasOther: true,
+          options: parseOptions(s1.q2_options, DEFAULT_ARTIST_QUESTIONS.step1.q2_options)
+        },
+        !isDeleted(1, 'q3') && {
+          id: "q3",
+          number: 3,
+          text: s1.q3_text || "Quali artisti ti ispirano maggiormente?",
+          placeholder: s1.q3_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(1, 'q4') && {
+          id: "q4",
+          number: 4,
+          text: s1.q4_text || "Cosa ti piace di loro?",
+          subtext: s1.q4_subtext || "Può essere il modo di fare musica, il carattere, l'immagine, il modo di stare sul palco o qualsiasi altra cosa.",
+          placeholder: s1.q4_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(1, 'q5') && {
+          id: "q5",
+          number: 5,
+          text: s1.q5_text || "C'è un artista al quale non vorresti essere associato? Perché?",
+          placeholder: s1.q5_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(1, 'q6') && {
+          id: "q6",
+          number: 6,
+          text: s1.q6_text || "Se potessi prendere una caratteristica di un artista che ammiri e farla diventare parte della tua identità, quale sceglieresti?",
+          placeholder: s1.q6_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        ...getCustomQs(1)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 2,
+      title: s2.title || "2. Come sei e come ti viene naturale esprimerti",
+      icon: <Sliders className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(2, 'q7') && {
+          id: "q7",
+          number: 7,
+          text: s2.q7_text || "Indicatore di personalità 1",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q7_leftLabel || "Introverso",
+          rightLabel: s2.q7_rightLabel || "Estroverso"
+        },
+        !isDeleted(2, 'q8') && {
+          id: "q8",
+          number: 8,
+          text: s2.q8_text || "Indicatore di personalità 2",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q8_leftLabel || "Calmo",
+          rightLabel: s2.q8_rightLabel || "Esplosivo"
+        },
+        !isDeleted(2, 'q9') && {
+          id: "q9",
+          number: 9,
+          text: s2.q9_text || "Indicatore di personalità 3",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q9_leftLabel || "Razionale",
+          rightLabel: s2.q9_rightLabel || "Istintivo"
+        },
+        !isDeleted(2, 'q10') && {
+          id: "q10",
+          number: 10,
+          text: s2.q10_text || "Indicatore di personalità 4",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q10_leftLabel || "Serio",
+          rightLabel: s2.q10_rightLabel || "Ironico"
+        },
+        !isDeleted(2, 'q11') && {
+          id: "q11",
+          number: 11,
+          text: s2.q11_text || "Indicatore di personalità 5",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q11_leftLabel || "Spontaneo",
+          rightLabel: s2.q11_rightLabel || "Controllato"
+        },
+        !isDeleted(2, 'q12') && {
+          id: "q12",
+          number: 12,
+          text: s2.q12_text || "Indicatore di personalità 6",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q12_leftLabel || "Discreto",
+          rightLabel: s2.q12_rightLabel || "Protagonista"
+        },
+        !isDeleted(2, 'q13') && {
+          id: "q13",
+          number: 13,
+          text: s2.q13_text || "Indicatore di personalità 7",
+          type: 'bipolar_slider' as const,
+          leftLabel: s2.q13_leftLabel || "Diretto",
+          rightLabel: s2.q13_rightLabel || "Misterioso"
+        },
+        ...getCustomQs(2)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 3,
+      title: s3.title || "3. Come vuoi essere percepito",
+      icon: <Eye className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(3, 'q14') && {
+          id: "q14",
+          number: 14,
+          text: s3.q14_text || "Scegli 5 parole che descrivono meglio la sensazione che vorresti trasmettere quando le persone entrano nel tuo universo artistico.",
+          subtext: s3.q14_subtext || "Seleziona esattamente 5 parole.",
+          type: 'q14_select' as const,
+          options: parseOptions(s3.q14_options, DEFAULT_ARTIST_QUESTIONS.step3.q14_options)
+        },
+        !isDeleted(3, 'q15') && {
+          id: "q15",
+          number: 15,
+          text: s3.q15_text || "Metti in classifica le 3 parole più importanti che hai scelto alla domanda precedente.",
+          subtext: s3.q15_subtext || "Ordina le 3 parole principali per livello di importanza.",
+          type: 'q15_rank' as const
+        },
+        !isDeleted(3, 'q16') && {
+          id: "q16",
+          number: 16,
+          text: s3.q16_text || "Quando una persona ascolta per la prima volta una tua canzone, quali sensazioni vorresti che provasse?",
+          subtext: s3.q16_subtext || "Scegli e metti in classifica le 5 più importanti.",
+          type: 'select_and_rank' as const,
+          maxSelect: 5,
+          options: parseOptions(s3.q16_options, DEFAULT_ARTIST_QUESTIONS.step3.q16_options)
+        },
+        ...getCustomQs(3)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 4,
+      title: s4.title || "4. Cosa vuoi trasmettere",
+      icon: <Heart className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(4, 'q17') && {
+          id: "q17",
+          number: 17,
+          text: s4.q17_text || "Scegli 5 concetti che senti più vicini alla tua identità artistica e mettili in classifica.",
+          subtext: s4.q17_subtext || "Seleziona massimo 5 elementi e successivo ordinamento.",
+          type: 'select_and_rank' as const,
+          maxSelect: 5,
+          options: parseOptions(s4.q17_options, DEFAULT_ARTIST_QUESTIONS.step4.q17_options)
+        },
+        ...getCustomQs(4)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 5,
+      title: s5.title || "5. La tua storia",
+      icon: <BookOpen className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(5, 'q18') && {
+          id: "q18",
+          number: 18,
+          text: s5.q18_text || "C'è un'esperienza, una persona o un periodo della tua vita che ha contribuito a renderti la persona e l'artista che sei oggi?",
+          subtext: s5.q18_subtext || "In che modo ha influenzato il tuo carattere, il tuo modo di vedere le cose o il tuo modo di fare musica?",
+          placeholder: s5.q18_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(5, 'q19') && {
+          id: "q19",
+          number: 19,
+          text: s5.q19_text || "Qual è una cosa che hai fatto o raggiunto e di cui sei realmente orgoglioso?",
+          subtext: s5.q19_subtext || "Cosa rappresenta per te?",
+          placeholder: s5.q19_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(5, 'q20') && {
+          id: "q20",
+          number: 20,
+          text: s5.q20_text || "C'è qualcosa che senti di dover dimostrare attraverso la musica?",
+          subtext: s5.q20_subtext || "Se sì, a chi o a te stesso?",
+          placeholder: s5.q20_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        !isDeleted(5, 'q21') && {
+          id: "q21",
+          number: 21,
+          text: s5.q21_text || "Quale caratteristica di te vorresti mantenere anche se la tua carriera dovesse cambiare completamente la tua vita?",
+          placeholder: s5.q21_placeholder || "La tua risposta...",
+          type: 'textarea' as const
+        },
+        ...getCustomQs(5)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 6,
+      title: s6.title || "6. Cosa vuoi ottenere attraverso la musica",
+      icon: <Target className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(6, 'q22') && {
+          id: "q22",
+          number: 22,
+          text: s6.q22_text || "Quale effetto vorresti che la tua musica avesse sulle persone?",
+          subtext: s6.q22_subtext || "Scegli e metti in classifica i 3 più importanti.",
+          type: 'select_and_rank' as const,
+          maxSelect: 3,
+          hasOther: true,
+          options: parseOptions(s6.q22_options, DEFAULT_ARTIST_QUESTIONS.step6.q22_options)
+        },
+        !isDeleted(6, 'q23') && {
+          id: "q23",
+          number: 23,
+          text: s6.q23_text || "Quali elementi vorresti diventassero riconoscibili e associabili al tuo nome nel tempo?",
+          subtext: s6.q23_subtext || "Scegli massimo 4.",
+          type: 'checkbox_group' as const,
+          maxSelect: 4,
+          hasOther: true,
+          options: parseOptions(s6.q23_options, DEFAULT_ARTIST_QUESTIONS.step6.q23_options)
+        },
+        !isDeleted(6, 'q24') && {
+          id: "q24",
+          number: 24,
+          text: s6.q24_text || "Qual è la cosa che desideri di più ottenere attraverso la musica?",
+          subtext: s6.q24_subtext || "Scegli massimo 3.",
+          type: 'checkbox_group' as const,
+          maxSelect: 3,
+          hasOther: true,
+          options: parseOptions(s6.q24_options, DEFAULT_ARTIST_QUESTIONS.step6.q24_options)
+        },
+        ...getCustomQs(6)
+      ].filter(Boolean) as Question[]
+    },
+    {
+      id: 7,
+      title: s7.title || "7. Mood Visivi e Simboli",
+      icon: <Palette className="w-5 h-5 text-primary" />,
+      questions: [
+        !isDeleted(7, 'q25') && {
+          id: "q25",
+          number: 25,
+          text: s7.q25_text || "I MOOD VISIVI",
+          subtext: s7.q25_subtext || "Osserva tutti i mood visivi e scegli quelli che senti più vicini a te e al tipo di artista che vorresti diventare.",
+          label: s7.q25_label || "Scrivi qui i numeri dei mood che ti rappresentano maggiormente e, se vuoi, aggiungi una breve spiegazione del perché.",
+          placeholder: s7.q25_placeholder || "Es. Tavola 1: 02, 06. Tavola 2: 09. Mi piacciono perché...",
+          type: 'visual_gallery' as const,
+          galleryType: 'moods' as const
+        },
+        !isDeleted(7, 'q26') && {
+          id: "q26",
+          number: 26,
+          text: s7.q26_text || "I SIMBOLI",
+          subtext: s7.q26_subtext || "Osserva tutti i simboli e scegli quelli che senti più vicini a te. Non pensare al significato del simbolo in relazione alla musica: concentrati semplicemente sulla forma, sul carattere e sulla sensazione che ti trasmette.",
+          label: s7.q26_label || "Scrivi qui i numeri dei simboli che ti piacciono maggiormente e, se vuoi, aggiungi una breve spiegazione del perché.",
+          placeholder: s7.q26_placeholder || "Es. Simbolo 04 e 15 perché...",
+          type: 'visual_gallery' as const,
+          galleryType: 'symbols' as const
+        },
+        ...getCustomQs(7)
+      ].filter(Boolean) as Question[]
+    }
+  ];
+};
 
 const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft }) => {
+  const [questionsSchema, setQuestionsSchema] = useState<any>(null);
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('mutey_rules')
+          .eq('id', 'artist_questionnaire_questions')
+          .maybeSingle();
+        if (data && data.mutey_rules) {
+          setQuestionsSchema(JSON.parse(data.mutey_rules));
+        } else {
+          setQuestionsSchema(DEFAULT_ARTIST_QUESTIONS);
+        }
+      } catch (e) {
+        console.error("Errore recupero domande custom artista, uso default:", e);
+        setQuestionsSchema(DEFAULT_ARTIST_QUESTIONS);
+      }
+    };
+    loadQuestions();
+  }, []);
+
+  const sections = useMemo(() => getSections(questionsSchema || DEFAULT_ARTIST_QUESTIONS), [questionsSchema]);
+
   const initialPayload = initialDraft?.payload || {};
   const [currentStep, setCurrentStep] = useState(initialDraft?.current_step || 1);
   const [artistName, setArtistName] = useState(initialDraft?.company_or_artist_name || initialPayload.companyName || initialPayload.artistName || '');
@@ -429,8 +443,8 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
     window.scrollTo(0, 0);
   }, []);
 
-  const currentSection = SECTIONS.find(s => s.id === currentStep) || SECTIONS[0];
-  const progressPercent = Math.round((currentStep / SECTIONS.length) * 100);
+  const currentSection = sections.find(s => s.id === currentStep) || sections[0] || { id: 1, title: '', icon: null, questions: [] };
+  const progressPercent = Math.round((currentStep / (sections.length || 7)) * 100);
 
   const scrollToTopForm = () => {
     if (topCardRef.current) {
@@ -471,7 +485,8 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
   // Handler Slider Bipolare (4 posizioni discrete)
   const handleSliderChange = (qId: string, value: number) => {
     setSliders(prev => ({ ...prev, [qId]: value }));
-    const q = SECTIONS[1].questions.find(item => item.id === qId);
+    const step2Sec = sections.find(s => s.id === 2);
+    const q = step2Sec?.questions.find((item: Question) => item.id === qId);
     if (q) {
       let desc = '';
       if (value === 1) desc = `Molto vicino a "${q.leftLabel}"`;
@@ -602,7 +617,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
     }
 
     if (validateCurrentSection()) {
-      if (currentStep < SECTIONS.length) {
+      if (currentStep < sections.length) {
         setCurrentStep(prev => prev + 1);
         scrollToTopForm();
       }
@@ -635,7 +650,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
     setErrorMessage(null);
 
     // Formattazione risposte strutturate
-    const structuredAnswers = SECTIONS.map(sec => ({
+    const structuredAnswers = sections.map(sec => ({
       section_id: sec.id,
       section_title: sec.title,
       questions: sec.questions.map(q => {
@@ -663,7 +678,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
     const formattedNotes = `=== SESSIONE SCOPERTA IDENTITÀ ARTISTICA ===\n` +
       `Nome Artista: ${artistName.trim() || 'Artista Anonimo'}\n` +
       `Email: ${contactEmail.trim() || 'Non indicata'}\n\n` +
-      SECTIONS.map(sec => 
+      sections.map(sec => 
         `--- ${sec.title} ---\n` + 
         sec.questions.map(q => {
           let ans = answers[q.id];
@@ -867,7 +882,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
           {/* PROGRESS & NAVIGATION TABS */}
           <div className="p-6 md:p-8 border-b border-gray-100 bg-white">
             <div className="flex items-center justify-between mb-3 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              <span>Sezione {currentStep} di {SECTIONS.length} — {currentSection.title}</span>
+              <span>Sezione {currentStep} di {sections.length} — {currentSection.title}</span>
               <span className="text-primary">{progressPercent}% Completato</span>
             </div>
 
@@ -881,7 +896,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
 
             {/* Pulsanti Rapidi Sezione */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 chat-scrollbar">
-              {SECTIONS.map((sec) => {
+              {sections.map((sec) => {
                 const isActive = sec.id === currentStep;
                 const isAnswered = sec.questions.some(q => {
                   const a = answers[q.id];
@@ -963,7 +978,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                         required
                         value={typeof answers[q.id] === 'string' ? answers[q.id] : ''}
                         onChange={(e) => handleTextAnswerChange(q.id, e.target.value, e.target)}
-                        placeholder="Scrivi qui liberamente la tua risposta..."
+                        placeholder={q.placeholder || "Scrivi qui liberamente la tua risposta..."}
                         className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 font-normal leading-relaxed text-sm md:text-base resize-y min-h-[120px] bg-white shadow-inner"
                       />
                     )}
@@ -1283,10 +1298,10 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                            {q.galleryType === 'moods'
+                            {q.label || (q.galleryType === 'moods'
                               ? "Scrivi qui i numeri dei mood che ti rappresentano maggiormente e, se vuoi, aggiungi una breve spiegazione del perché."
                               : "Scrivi qui i numeri dei simboli che ti piacciono maggiormente e, se vuoi, aggiungi una breve spiegazione del perché."
-                            }
+                            )}
                           </label>
 
                           <textarea
@@ -1294,7 +1309,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                             required
                             value={typeof answers[q.id] === 'string' ? answers[q.id] : ''}
                             onChange={(e) => handleTextAnswerChange(q.id, e.target.value, e.target)}
-                            placeholder="Es. Tavola 1: 02, 06. Tavola 2: 09. Mi piacciono perché..."
+                            placeholder={q.placeholder || "Es. Tavola 1: 02, 06. Tavola 2: 09. Mi piacciono perché..."}
                             className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-gray-900 font-normal leading-relaxed text-sm md:text-base resize-y min-h-[120px] bg-white shadow-inner"
                           />
                         </div>
@@ -1306,7 +1321,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
               })}
             </div>
 
-            {currentStep === SECTIONS.length && (
+            {currentStep === sections.length && (
               <div className="pt-6 border-t border-gray-100">
                 <PrivacyConsentCheckbox
                   id="artist-privacy-consent"
@@ -1349,7 +1364,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                 </button>
               </div>
 
-              {currentStep < SECTIONS.length ? (
+              {currentStep < sections.length ? (
                 <button
                   type="button"
                   onClick={handleNextSection}
