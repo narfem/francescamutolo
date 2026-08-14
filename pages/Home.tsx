@@ -3,10 +3,15 @@ import React from 'react';
 import Hero from '../components/Hero';
 import PortfolioGrid from '../components/PortfolioGrid';
 import ContactSection from '../components/ContactSection';
+import SEO from '../components/SEO';
 
 const Home: React.FC = () => {
   return (
     <div>
+      <SEO 
+        title="Francesca Mutolo | Brand Designer a Cagliari e in Sardegna"
+        description="Logo, brand identity e siti web per professionisti e attività in Sardegna. Con base a Cagliari, lavoro con studi, artigiani e attività su tutta l'isola."
+      />
       <Hero />
       <section id="portfolio" className="py-24 bg-white scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

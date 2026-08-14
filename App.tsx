@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -9,6 +9,7 @@ import Questionnaire from './pages/Questionnaire';
 import ArtistQuestionnaire from './pages/ArtistQuestionnaire';
 import ClientFeedback from './pages/ClientFeedback';
 import Reviews from './pages/Reviews';
+import PortfolioCategoryPage from './pages/PortfolioCategoryPage';
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -27,6 +28,12 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="portfolio" element={<Navigate to="/" replace />} />
+          <Route path="portfolio/branding" element={<PortfolioCategoryPage categoryKey="branding" />} />
+          <Route path="portfolio/flyer-poster" element={<PortfolioCategoryPage categoryKey="flyer-poster" />} />
+          <Route path="portfolio/social-media" element={<PortfolioCategoryPage categoryKey="social-media" />} />
+          <Route path="portfolio/web" element={<PortfolioCategoryPage categoryKey="web" />} />
+          <Route path="portfolio/:categorySlug" element={<PortfolioCategoryPage />} />
           <Route path="recensioni" element={<Reviews />} />
           <Route path="questionario" element={<Questionnaire />} />
           <Route path="questionario-artista" element={<ArtistQuestionnaire />} />
@@ -39,6 +46,5 @@ const App: React.FC = () => {
     </>
   );
 };
-
 
 export default App;

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { PortfolioItem } from '../types';
 import { Image as ImageIcon, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -30,14 +31,25 @@ export const isConceptProject = (item: PortfolioItem): boolean => {
   return false;
 };
 
-const PortfolioGrid: React.FC = () => {
+export const CATEGORY_LINKS = [
+  { name: 'Tutti', path: '/' },
+  { name: 'Branding', path: '/portfolio/branding' },
+  { name: 'Flyer & Poster', path: '/portfolio/flyer-poster' },
+  { name: 'Social Media', path: '/portfolio/social-media' },
+  { name: 'Web', path: '/portfolio/web' },
+];
+
+interface PortfolioGridProps {
+  fixedCategory?: string;
+}
+
+const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }) => {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('Tutti');
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const categories = ['Tutti', 'Branding', 'Flyer & Poster', 'Social Media', 'Web'];
+  const activeCategory = fixedCategory;
 
   useEffect(() => {
     fetchPortfolio();
@@ -164,22 +176,22 @@ const PortfolioGrid: React.FC = () => {
   return (
     <div>
       <div className="flex flex-wrap justify-center gap-4 mb-16">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => {
-              setActiveCategory(cat);
-              setShowAll(false);
-            }}
-            className={`px-8 py-3 rounded-full transition-all font-bold text-sm tracking-wide ${
-              activeCategory === cat 
-                ? 'bg-gradient-brand text-white shadow-lg shadow-primary/20 scale-105' 
-                : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+        {CATEGORY_LINKS.map((cat) => {
+          const isActive = activeCategory === cat.name;
+          return (
+            <Link
+              key={cat.name}
+              to={cat.path}
+              className={`px-8 py-3 rounded-full transition-all font-bold text-sm tracking-wide inline-flex items-center justify-center ${
+                isActive 
+                  ? 'bg-gradient-brand text-white shadow-lg shadow-primary/20 scale-105 pointer-events-none' 
+                  : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm hover:text-gray-900'
+              }`}
+            >
+              {cat.name}
+            </Link>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap justify-center gap-10 max-w-7xl mx-auto">
