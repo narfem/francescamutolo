@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Feedback } from '../types';
-import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X, Archive, Copy, ExternalLink, Users, Globe, Shield } from 'lucide-react';
+import { Star, Trash2, Check, RefreshCw, AlertTriangle, MessageSquare, Flag, X, Archive, Copy, ExternalLink, Users, Globe, Shield, Pencil, Briefcase } from 'lucide-react';
 
 const parseStructuredFeedback = (message: string) => {
   if (!message || !message.includes('VALUTAZIONE COMPLETA DEL CLIENTE')) {
@@ -55,6 +55,24 @@ const parseStructuredFeedback = (message: string) => {
   return result;
 };
 
+const updateCompanyInMessage = (message: string, newCompany: string): string => {
+  if (!message) return message;
+  const lines = message.split('\n');
+  let found = false;
+  const updatedLines = lines.map(line => {
+    if (line.trim().startsWith('- Azienda o Progetto:')) {
+      found = true;
+      return `- Azienda o Progetto: ${newCompany.trim() || 'Non specificata'}`;
+    }
+    return line;
+  });
+
+  if (!found && message.includes('VALUTAZIONE COMPLETA DEL CLIENTE')) {
+    return message;
+  }
+  return updatedLines.join('\n');
+};
+
 const ManageFeedbacks: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +80,12 @@ const ManageFeedbacks: React.FC = () => {
   const [errorInfo, setErrorInfo] = useState<string | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
   const [feedbackToDelete, setFeedbackToDelete] = useState<string | null>(null);
+
+  // States for editing "Nome Progetto" only
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = useState<string>('');
+  const [isSavingProjectName, setIsSavingProjectName] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   const [archivedFeedbackIds, setArchivedFeedbackIds] = useState<string[]>(() => {
     try {
@@ -182,6 +206,72 @@ const ManageFeedbacks: React.FC = () => {
       alert("Impossibile eliminare il feedback.");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleStartEditProject = (fb: Feedback, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const parsed = parseStructuredFeedback(fb.message);
+    const currentName = fb.company || parsed?.company || '';
+    setEditingFeedbackId(fb.id);
+    setEditingProjectName(
+      currentName === 'Non specificata' || currentName === 'Nessuna azienda' ? '' : currentName
+    );
+  };
+
+  const handleCancelEditProject = () => {
+    setEditingFeedbackId(null);
+    setEditingProjectName('');
+  };
+
+  const handleSaveProjectName = async (feedbackId: string) => {
+    setIsSavingProjectName(true);
+    try {
+      const targetFeedback = feedbacks.find(f => f.id === feedbackId);
+      if (!targetFeedback) return;
+
+      const trimmedName = editingProjectName.trim();
+      const updatedMessage = updateCompanyInMessage(targetFeedback.message, trimmedName);
+
+      const { error } = await supabase
+        .from('feedbacks')
+        .update({
+          company: trimmedName || null,
+          message: updatedMessage
+        })
+        .eq('id', feedbackId);
+
+      if (error) throw error;
+
+      // Update state in feedbacks list
+      setFeedbacks(prev => prev.map(f => {
+        if (f.id === feedbackId) {
+          return {
+            ...f,
+            company: trimmedName || undefined,
+            message: updatedMessage
+          };
+        }
+        return f;
+      }));
+
+      // Update state in selectedFeedback modal
+      if (selectedFeedback && selectedFeedback.id === feedbackId) {
+        setSelectedFeedback(prev => prev ? {
+          ...prev,
+          company: trimmedName || undefined,
+          message: updatedMessage
+        } : null);
+      }
+
+      setSaveSuccessMsg("Nome progetto aggiornato!");
+      setTimeout(() => setSaveSuccessMsg(null), 3000);
+      setEditingFeedbackId(null);
+    } catch (err: any) {
+      console.error("Error updating project name:", err);
+      alert("Impossibile salvare il nuovo nome progetto. Verifica la connessione.");
+    } finally {
+      setIsSavingProjectName(false);
     }
   };
 
@@ -319,13 +409,28 @@ CREATE POLICY "Accesso pubblico in lettura feedback approvati" ON feedbacks FOR 
                             {fb.is_approved ? 'Pubblicato' : 'In Attesa'}
                           </button>
                         </div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                          {fb.company || 'Feedback Cliente'}
-                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Briefcase size={12} className="text-primary/70 shrink-0" />
+                          <p className="text-[11px] text-gray-500 font-bold tracking-tight truncate">
+                            {fb.company || parseStructuredFeedback(fb.message)?.company || 'Nessun progetto specificato'}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex gap-1">
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEditProject(fb, e);
+                          setSelectedFeedback(fb);
+                        }}
+                        className="p-2 text-gray-400 hover:text-primary transition-colors bg-gray-50 rounded-full hover:bg-gray-100"
+                        title="Modifica Nome Progetto"
+                      >
+                        <Pencil size={16} />
+                      </button>
                       <button 
                         type="button"
                         onClick={(e) => handleToggleArchive(e, fb.id)}
@@ -403,7 +508,7 @@ CREATE POLICY "Accesso pubblico in lettura feedback approvati" ON feedbacks FOR 
                 <div>
                   <h3 className="text-xl md:text-2xl font-black text-gray-900 leading-tight">{selectedFeedback.name}</h3>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                    {selectedFeedback.company || 'Feedback Cliente'}
+                    {selectedFeedback.company || parseStructuredFeedback(selectedFeedback.message)?.company || 'Feedback Cliente'}
                   </p>
                 </div>
               </div>
@@ -435,6 +540,96 @@ CREATE POLICY "Accesso pubblico in lettura feedback approvati" ON feedbacks FOR 
                 </div>
               </div>
 
+              {/* Nome Progetto - Unico campo modificabile */}
+              <div className="bg-orange-50/40 border border-orange-200/80 p-5 rounded-2xl">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                    <Briefcase size={16} className="text-primary shrink-0" />
+                    <span>Nome Progetto</span>
+                  </div>
+                  {editingFeedbackId !== selectedFeedback.id && (
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditProject(selectedFeedback)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-extrabold text-primary bg-white border border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
+                      title="Modifica il nome del progetto"
+                    >
+                      <Pencil size={12} />
+                      Modifica
+                    </button>
+                  )}
+                </div>
+
+                {editingFeedbackId === selectedFeedback.id ? (
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <input
+                        type="text"
+                        value={editingProjectName}
+                        onChange={(e) => setEditingProjectName(e.target.value)}
+                        placeholder="Es. Studio Legale Rossi, Centro Benessere, ecc."
+                        className="w-full px-3.5 py-2.5 bg-white border-2 border-primary rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSaveProjectName(selectedFeedback.id);
+                          } else if (e.key === 'Escape') {
+                            handleCancelEditProject();
+                          }
+                        }}
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                        Premi Invio per salvare o Esc per annullare.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={handleCancelEditProject}
+                        disabled={isSavingProjectName}
+                        className="px-3.5 py-2 text-xs font-bold text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all"
+                      >
+                        Annulla
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveProjectName(selectedFeedback.id)}
+                        disabled={isSavingProjectName}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold text-white bg-gradient-brand rounded-xl shadow-md shadow-primary/20 hover:opacity-95 transition-all"
+                      >
+                        {isSavingProjectName ? (
+                          <>
+                            <RefreshCw size={12} className="animate-spin" />
+                            Salvataggio...
+                          </>
+                        ) : (
+                          <>
+                            <Check size={14} />
+                            Salva Nome Progetto
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-orange-100/70 mt-1">
+                    <span className="text-sm font-extrabold text-gray-900">
+                      {selectedFeedback.company || parseStructuredFeedback(selectedFeedback.message)?.company || (
+                        <span className="text-gray-400 italic font-normal">Nessun nome progetto specificato</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {saveSuccessMsg && (
+                  <div className="mt-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 animate-in fade-in">
+                    <Check size={14} />
+                    {saveSuccessMsg}
+                  </div>
+                )}
+              </div>
+
               {(() => {
                 const parsed = parseStructuredFeedback(selectedFeedback.message);
                 if (parsed) {
@@ -450,7 +645,7 @@ CREATE POLICY "Accesso pubblico in lettura feedback approvati" ON feedbacks FOR 
                           <div className="space-y-1">
                             <h4 className="text-xs font-black uppercase text-slate-450 tracking-wider">Dati Cliente</h4>
                             <p className="text-sm font-bold text-slate-900">{parsed.name || selectedFeedback.name}</p>
-                            <p className="text-xs text-slate-600 font-medium">{parsed.company || selectedFeedback.company || 'Nessuna azienda'}</p>
+                            <p className="text-xs text-slate-600 font-medium">{selectedFeedback.company || parsed.company || 'Nessuna azienda'}</p>
                           </div>
                         </div>
 
