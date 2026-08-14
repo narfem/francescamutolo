@@ -3,6 +3,7 @@ import path from "path";
 import cors from "cors";
 import { createServer as createViteServer } from "vite";
 import contactHandler from "./api/contact.js";
+import { sitemapHandler } from "./api/sitemap.js";
 
 // Initialize express app
 const app = express();
@@ -22,6 +23,9 @@ app.get("/api/contact", contactHandler);
 
 // Keep the old /api/contact/status route pointing to the GET request of the contactHandler for backward-compatibility
 app.get("/api/contact/status", contactHandler);
+
+// Dynamic sitemap.xml route - serves live SEO sitemap
+app.get("/sitemap.xml", sitemapHandler);
 
 
 // --- INTEGRATE VITE DEVSERVER MIDDLEWARE AND SPA SERVING ---
