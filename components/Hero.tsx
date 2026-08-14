@@ -47,7 +47,8 @@ const Hero: React.FC = () => {
               Grafica <br />
               e brand identity <br />
               in <span className="brand-orange italic text-[#F39637]">Sardegna,</span> <br />
-              con base a{" "}
+              con base <br />
+              a{" "}
               <span className="relative inline-block">
                 Cagliari.
                 <span className="absolute bottom-1 md:bottom-2 left-0 w-full h-2 md:h-3 bg-[#C13C8D]/10 -z-10"></span>
