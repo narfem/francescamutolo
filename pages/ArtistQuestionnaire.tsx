@@ -4,18 +4,12 @@ import { supabase } from '../lib/supabase';
 import { 
   Music, Sparkles, Send, CheckCircle, ArrowRight, ArrowLeft, 
   User, Heart, Target, Compass, BookOpen, Star, Award,
-  BookmarkCheck, Sliders, Eye, Palette, Maximize2, X, ChevronUp, ChevronDown, Check, Info
+  BookmarkCheck, Sliders, Eye, Palette, X, ChevronUp, ChevronDown, Check, Info
 } from 'lucide-react';
 import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';
 import { DraftSavedModal } from '../components/DraftSavedModal';
 import { QuestionnaireDraft } from '../lib/draftService';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
-
-// Image Assets for Section 7 (Vite static asset bundling)
-import moodsBoard1 from '../src/assets/images/artist-questionnaire/moods-board-1.png';
-import moodsBoard2 from '../src/assets/images/artist-questionnaire/moods-board-2.png';
-import symbolsBoard1 from '../src/assets/images/artist-questionnaire/symbols-board-1.png';
-import symbolsBoard2 from '../src/assets/images/artist-questionnaire/symbols-board-2.png';
 
 interface ArtistQuestionnaireProps {
   initialDraft?: QuestionnaireDraft;
@@ -402,9 +396,6 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
 
   // Stato per "Altro" nei campi multipli
   const [otherInputs, setOtherInputs] = useState<Record<string, string>>(initialPayload.otherInputs || {});
-
-  // Lightbox immagini
-  const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -1287,94 +1278,9 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
                       );
                     })()}
 
-                    {/* TYPE 7: VISUAL GALLERY (DOMANDE 25 & 26) */}
+                    {/* TYPE 7: VISUAL GALLERY (DOMANDE 25 & 26 - Risposta basata su osservazione manuale) */}
                     {q.type === 'visual_gallery' && (
-                      <div className="space-y-6">
-                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-4">
-                          <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
-                            <Sparkles size={14} /> Tavole da osservare (Tocca per ingrandire)
-                          </p>
-
-                          {q.galleryType === 'moods' ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-gray-600 block text-center">Tavola 1 (Mood 01 - 12)</span>
-                                <div 
-                                  onClick={() => setLightboxImage({ src: moodsBoard1, title: 'Mood Visivi - Tavola 1' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
-                                >
-                                  <img 
-                                    src={moodsBoard1} 
-                                    alt="Mood Visivi Tavola 1" 
-                                    referrerPolicy="no-referrer"
-                                    className="w-full h-auto object-contain group-hover:scale-102 transition-transform duration-300 min-h-[160px]"
-                                  />
-                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
-                                    <Maximize2 size={16} /> Clicca per ingrandire
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-gray-600 block text-center">Tavola 2 (Mood 01 - 12)</span>
-                                <div 
-                                  onClick={() => setLightboxImage({ src: moodsBoard2, title: 'Mood Visivi - Tavola 2' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
-                                >
-                                  <img 
-                                    src={moodsBoard2} 
-                                    alt="Mood Visivi Tavola 2" 
-                                    referrerPolicy="no-referrer"
-                                    className="w-full h-auto object-contain group-hover:scale-102 transition-transform duration-300 min-h-[160px]"
-                                  />
-                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
-                                    <Maximize2 size={16} /> Clicca per ingrandire
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-gray-600 block text-center">Tavola 1 (Simboli 01 - 24)</span>
-                                <div 
-                                  onClick={() => setLightboxImage({ src: symbolsBoard1, title: 'Simboli - Tavola 1' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
-                                >
-                                  <img 
-                                    src={symbolsBoard1} 
-                                    alt="Simboli Tavola 1" 
-                                    referrerPolicy="no-referrer"
-                                    className="w-full h-auto object-contain group-hover:scale-102 transition-transform duration-300 min-h-[160px]"
-                                  />
-                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
-                                    <Maximize2 size={16} /> Clicca per ingrandire
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <span className="text-xs font-bold text-gray-600 block text-center">Tavola 2 (Simboli 01 - 24)</span>
-                                <div 
-                                  onClick={() => setLightboxImage({ src: symbolsBoard2, title: 'Simboli - Tavola 2' })}
-                                  className="relative group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all bg-gray-100"
-                                >
-                                  <img 
-                                    src={symbolsBoard2} 
-                                    alt="Simboli Tavola 2" 
-                                    referrerPolicy="no-referrer"
-                                    className="w-full h-auto object-contain group-hover:scale-102 transition-transform duration-300 min-h-[160px]"
-                                  />
-                                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-2">
-                                    <Maximize2 size={16} /> Clicca per ingrandire
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* CAMPO RISPOSTA LIBERO TEXTAREA */}
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
                             {q.galleryType === 'moods'
@@ -1475,38 +1381,6 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
         </div>
 
       </div>
-
-      {/* LIGHTBOX MODAL IMMAGINI TAVOLE */}
-      {lightboxImage && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
-          onClick={() => setLightboxImage(null)}
-        >
-          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center">
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setLightboxImage(null)}
-                className="p-2.5 rounded-full bg-white/20 hover:bg-white/40 text-white transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="text-white text-center mb-3 font-bold text-lg">
-              {lightboxImage.title}
-            </div>
-
-            <img
-              src={lightboxImage.src}
-              alt={lightboxImage.title}
-              referrerPolicy="no-referrer"
-              className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-white/10"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Modal Bozza Salvata */}
       <DraftSavedModal
