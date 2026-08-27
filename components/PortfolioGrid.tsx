@@ -31,6 +31,62 @@ export const isConceptProject = (item: PortfolioItem): boolean => {
   return false;
 };
 
+export const getProjectModalDescription = (item: PortfolioItem): string => {
+  const titleLower = (item.title || '').toLowerCase().trim();
+  const categoryLower = (item.category || '').toLowerCase().trim();
+
+  // 1. SamTen Beats (Sito Web vs Brand Identity)
+  if (titleLower.includes('samten')) {
+    if (categoryLower.includes('web') || titleLower.includes('sito') || titleLower.includes('web')) {
+      return "Progettazione e realizzazione del sito web per SamTen Beats, pensato per presentare il percorso artistico e i contenuti in modo chiaro e coinvolgente.";
+    }
+    return "Sviluppo dell'identità visiva per SamTen Beats: logo, palette colori e coordinato grafico pensati per comunicare energia e riconoscibilità nel settore musicale.";
+  }
+
+  // 2. Sanoflex Megastore
+  if (titleLower.includes('sanoflex')) {
+    return "Poster pubblicitario per Sanoflex Megastore, attività specializzata in dispositivi medici. Un lavoro pensato per comunicare in modo diretto un'offerta commerciale a un pubblico ampio.";
+  }
+
+  // 3. Modux Consulting
+  if (titleLower.includes('modux')) {
+    return "Identità visiva per Modux Consulting, studio di consulenza legale: logo e coordinato grafico pensati per trasmettere autorevolezza e affidabilità.";
+  }
+
+  // 4. Salone Parruccheria
+  if (titleLower.includes('salone') || titleLower.includes('parruccheria') || titleLower.includes('parrucchier')) {
+    return "Case study dimostrativo per un salone di parrucchieria: un esempio di come costruire un'identità visiva curata attorno al concetto di cura del capello e attenzione al dettaglio.";
+  }
+
+  // 5. Farmacia Sant'Ignazio
+  if (titleLower.includes('farmacia') || titleLower.includes("sant'ignazio") || titleLower.includes('sant ignazio') || titleLower.includes('ignazio')) {
+    return "Case study dimostrativo per una farmacia: identità visiva pensata per comunicare professionalità, fiducia e vicinanza al cliente.";
+  }
+
+  // 6. Studio Psicologia
+  if (titleLower.includes('psicologia') || titleLower.includes('psicolog')) {
+    return "Case study dimostrativo per uno studio di psicologia: un sito pensato per accogliere chi cerca supporto, con un tono caldo, chiaro e rassicurante.";
+  }
+
+  // 7. Studio Medico
+  if (titleLower.includes('studio medico') || (titleLower.includes('medico') && !titleLower.includes('sanoflex'))) {
+    return "Case study dimostrativo per uno studio medico: un sito pensato per comunicare competenza clinica e allo stesso tempo un'accoglienza umana verso i pazienti.";
+  }
+
+  // 8. Architetta Adele Deidda
+  if (titleLower.includes('adele deidda') || titleLower.includes('architett') || titleLower.includes('deidda')) {
+    return "Case study dimostrativo per uno studio di architettura: un'identità visiva pensata per raccontare visione progettuale e precisione tecnica.";
+  }
+
+  // Fallback sul campo description (ripulito)
+  if (item.description) {
+    const clean = item.description.replace(/\[SITE_URL:.*?\]/, '').trim();
+    if (clean) return clean;
+  }
+
+  return "";
+};
+
 export const CATEGORY_LINKS = [
   { name: 'Tutti', path: '/' },
   { name: 'Branding', path: '/portfolio/branding' },
@@ -126,12 +182,7 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }
   };
 
   const handleCardClick = (item: PortfolioItem) => {
-    const siteUrl = item.site_url || getSiteUrlFromDescription(item.description || '');
-    if (item.category === 'Web' && siteUrl) {
-      window.open(siteUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      setSelectedItem(item);
-    }
+    setSelectedItem(item);
   };
 
   const categoryItems = activeCategory === 'Tutti' 
@@ -238,7 +289,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }
                   {item.title}
                 </h3>
               </div>
-              <p className="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-2 italic">{getCleanDescription(item.description)}</p>
+              <p className="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-2 italic">
+                {getProjectModalDescription(item) || getCleanDescription(item.description)}
+              </p>
             </div>
           </div>
         ))}
@@ -281,8 +334,9 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }
           onClick={() => setSelectedItem(null)}
         >
           <button 
-            className="absolute top-4 right-4 md:top-8 md:right-8 text-white hover:text-primary transition-colors p-2 z-[110]"
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-primary hover:text-secondary hover:scale-105 transition-all p-2 z-[110] cursor-pointer"
             onClick={(e) => { e.stopPropagation(); setSelectedItem(null); }}
+            aria-label="Chiudi dettaglio progetto"
           >
             <X size={36} />
           </button>
@@ -314,10 +368,22 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }
                   )}
                 </div>
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{selectedItem.title}</h3>
-                {selectedItem.description && (
-                  <p className="mt-2 md:mt-4 text-gray-600 leading-relaxed italic text-sm md:text-base line-clamp-2 md:line-clamp-none">
-                    {getCleanDescription(selectedItem.description)}
+                {(getProjectModalDescription(selectedItem) || selectedItem.description) && (
+                  <p className="mt-2 md:mt-4 text-gray-600 leading-relaxed text-sm md:text-base">
+                    {getProjectModalDescription(selectedItem) || getCleanDescription(selectedItem.description)}
                   </p>
+                )}
+                {(selectedItem.site_url || getSiteUrlFromDescription(selectedItem.description || '')) && (
+                  <div className="mt-4 pt-1">
+                    <a
+                      href={selectedItem.site_url || getSiteUrlFromDescription(selectedItem.description || '')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-secondary underline"
+                    >
+                      Visita il sito web &rarr;
+                    </a>
+                  </div>
                 )}
               </div>
             </div>

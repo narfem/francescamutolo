@@ -1,11 +1,38 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Hero from '../components/Hero';
 import PortfolioGrid from '../components/PortfolioGrid';
 import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
+import { scrollToSectionWithOffset } from '../lib/scrollUtils';
 
 const Home: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const state = location.state as { scrollTo?: string } | null;
+    const targetId = state?.scrollTo;
+
+    if (targetId) {
+      // Puliamo lo state per non rieseguire lo scroll in caso di refresh futuro
+      window.history.replaceState({}, document.title);
+
+      const performScroll = () => {
+        scrollToSectionWithOffset(targetId);
+      };
+
+      // Due trigger a tempi diversi per assicurare il posizionamento anche dopo il caricamento asincrono di immagini o font
+      const t1 = setTimeout(performScroll, 80);
+      const t2 = setTimeout(performScroll, 300);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [location.state]);
+
   return (
     <div>
       <SEO 

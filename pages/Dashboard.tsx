@@ -1964,70 +1964,280 @@ const ManageQuestionnaires = () => {
     );
   };
 
-  const ARTIST_DEFAULT_SECTIONS = [
-    {
-      section_id: 1,
-      section_title: "1. Chi sei oggi?",
-      questions: [
-        { id: "q1", number: 1, question: "Raccontami chi sei in poche righe. Non come artista, ma come persona." },
-        { id: "q2", number: 2, question: "Quali sono tre parole che i tuoi amici userebbero per descriverti?" },
-        { id: "q3", number: 3, question: "C'è qualcosa del tuo carattere che ritieni ti distingua davvero dagli altri?" }
-      ]
-    },
-    {
-      section_id: 2,
-      section_title: "2. Perché fai musica?",
-      questions: [
-        { id: "q4", number: 4, question: "Quando hai capito che volevi fare musica? Raccontami quel momento." },
-        { id: "q5", number: 5, question: "Se domani non potessi guadagnare un euro con la musica, continueresti comunque a farla? Perché?" },
-        { id: "q6", number: 6, question: "Cosa provi quando scrivi o registri un brano?" }
-      ]
-    },
-    {
-      section_id: 3,
-      section_title: "3. Dove vuoi arrivare?",
-      questions: [
-        { id: "q7", number: 7, question: "Immagina di essere tra cinque anni sul palco davanti a migliaia di persone. Qual è la prima cosa che vorresti che il pubblico pensasse vedendoti entrare?" },
-        { id: "q8", number: 8, question: "Quale frase ti piacerebbe leggere nei commenti sotto una tua canzone?" },
-        { id: "q9", number: 9, question: "Quando qualcuno sentirà il tuo nome, cosa vorresti che gli venisse subito in mente?" }
-      ]
-    },
-    {
-      section_id: 4,
-      section_title: "4. La tua identità",
-      questions: [
-        { id: "q10", number: 10, question: "Se la tua musica fosse una persona, come sarebbe?", subtext: "Non descrivere l'aspetto fisico. Descrivi il carattere." },
-        { id: "q11", number: 11, question: "Se dovessi scegliere una sola emozione da lasciare a chi ascolta le tue canzoni, quale sarebbe? Perché?" },
-        { id: "q12", number: 12, question: "C'è un messaggio che vorresti trasmettere con la tua musica? Anche se ancora non riesci a esprimerlo perfettamente." }
-      ]
-    },
-    {
-      section_id: 5,
-      section_title: "5. I tuoi riferimenti",
-      questions: [
-        { id: "q13", number: 13, question: "Quali artisti ti ispirano davvero? Per ognuno spiegami cosa ammiri.", subtext: "Non limitarti solo al genere musicale." },
-        { id: "q14", number: 14, question: "C'è un artista a cui non vorresti mai essere associato? Perché?" }
-      ]
-    },
-    {
-      section_id: 6,
-      section_title: "6. La tua unicità",
-      questions: [
-        { id: "q15", number: 15, question: "Se eliminassimo il tuo nome dalla copertina di un tuo brano, come potrebbe una persona capire che quella canzone è tua?", subtext: "Non esiste una risposta giusta. Mi interessa capire cosa rende il tuo modo di fare musica riconoscibile." },
-        { id: "q16", number: 16, question: "Cosa pensi che nessun altro artista faccia come lo fai tu?" },
-        { id: "q17", number: 17, question: "Cosa vuoi che il pubblico ricordi di te anche dopo tanti anni?" }
-      ]
-    },
-    {
-      section_id: 7,
-      section_title: "7. Il tuo futuro",
-      questions: [
-        { id: "q18", number: 18, question: "Quando la tua carriera sarà avviata, quale sarà il motivo più importante per cui dirai: \"Ce l'ho fatta\"?" },
-        { id: "q19", number: 19, question: "C'è qualcosa su cui non scenderesti mai a compromessi, anche se ti aiutasse ad avere più successo?" },
-        { id: "q20", number: 20, question: "Se dovessi riassumere l'artista che vuoi diventare in una sola frase, quale sarebbe?" }
-      ]
-    }
-  ];
+  const getArtistSections = (schema: any) => {
+    const s1 = schema?.step1 || DEFAULT_ARTIST_QUESTIONS.step1;
+    const s2 = schema?.step2 || DEFAULT_ARTIST_QUESTIONS.step2;
+    const s3 = schema?.step3 || DEFAULT_ARTIST_QUESTIONS.step3;
+    const s4 = schema?.step4 || DEFAULT_ARTIST_QUESTIONS.step4;
+    const s5 = schema?.step5 || DEFAULT_ARTIST_QUESTIONS.step5;
+    const s6 = schema?.step6 || DEFAULT_ARTIST_QUESTIONS.step6;
+    const s7 = schema?.step7 || DEFAULT_ARTIST_QUESTIONS.step7;
+
+    const isDeleted = (stepNum: number, field: string) => {
+      const delList = schema?.[`step${stepNum}`]?.deleted_fields;
+      return Array.isArray(delList) && delList.includes(field);
+    };
+
+    const getCustomQs = (stepNum: number) => {
+      const customList = schema?.[`step${stepNum}`]?.custom_questions;
+      if (!Array.isArray(customList)) return [];
+      return customList.map((cq: any, idx: number) => ({
+        id: cq.id || `custom_step${stepNum}_${idx}`,
+        number: 100 + idx,
+        question: cq.label || cq.question || "Domanda personalizzata",
+        subtext: cq.placeholder || null,
+        type: cq.type || 'textarea'
+      }));
+    };
+
+    return [
+      {
+        section_id: 1,
+        section_title: s1.title || "1. L'artista che vuoi essere",
+        questions: [
+          !isDeleted(1, 'q1') && {
+            id: "q1",
+            number: 1,
+            question: s1.q1_text || "Quando sei con le persone con cui ti senti più a tuo agio, come ti comporti di solito?",
+            subtext: s1.q1_subtext || "Scegli massimo 3 risposte.",
+            type: 'checkbox_group'
+          },
+          !isDeleted(1, 'q2') && {
+            id: "q2",
+            number: 2,
+            question: s1.q2_text || "Quali caratteristiche senti più vicine al tuo modo di essere?",
+            subtext: s1.q2_subtext || "Scegli massimo 3 risposte.",
+            type: 'checkbox_group'
+          },
+          !isDeleted(1, 'q3') && {
+            id: "q3",
+            number: 3,
+            question: s1.q3_text || "Quali artisti ti ispirano maggiormente?",
+            subtext: null,
+            type: 'textarea'
+          },
+          !isDeleted(1, 'q4') && {
+            id: "q4",
+            number: 4,
+            question: s1.q4_text || "Cosa ti piace di loro?",
+            subtext: s1.q4_subtext || "Può essere il modo di fare musica, il carattere, l'immagine, il modo di stare sul palco o qualsiasi altra cosa.",
+            type: 'textarea'
+          },
+          !isDeleted(1, 'q5') && {
+            id: "q5",
+            number: 5,
+            question: s1.q5_text || "C'è un artista al quale non vorresti essere associato? Perché?",
+            subtext: null,
+            type: 'textarea'
+          },
+          !isDeleted(1, 'q6') && {
+            id: "q6",
+            number: 6,
+            question: s1.q6_text || "Se potessi prendere una caratteristica di un artista che ammiri e farla diventare parte della tua identità, quale sceglieresti?",
+            subtext: null,
+            type: 'textarea'
+          },
+          ...getCustomQs(1)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 2,
+        section_title: s2.title || "2. Come sei e come ti viene naturale esprimerti",
+        questions: [
+          !isDeleted(2, 'q7') && {
+            id: "q7",
+            number: 7,
+            question: s2.q7_text || "Indicatore di personalità 1",
+            subtext: `${s2.q7_leftLabel || "Introverso"} ↔ ${s2.q7_rightLabel || "Estroverso"}`,
+            leftLabel: s2.q7_leftLabel || "Introverso",
+            rightLabel: s2.q7_rightLabel || "Estroverso",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q8') && {
+            id: "q8",
+            number: 8,
+            question: s2.q8_text || "Indicatore di personalità 2",
+            subtext: `${s2.q8_leftLabel || "Calmo"} ↔ ${s2.q8_rightLabel || "Esplosivo"}`,
+            leftLabel: s2.q8_leftLabel || "Calmo",
+            rightLabel: s2.q8_rightLabel || "Esplosivo",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q9') && {
+            id: "q9",
+            number: 9,
+            question: s2.q9_text || "Indicatore di personalità 3",
+            subtext: `${s2.q9_leftLabel || "Razionale"} ↔ ${s2.q9_rightLabel || "Istintivo"}`,
+            leftLabel: s2.q9_leftLabel || "Razionale",
+            rightLabel: s2.q9_rightLabel || "Istintivo",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q10') && {
+            id: "q10",
+            number: 10,
+            question: s2.q10_text || "Indicatore di personalità 4",
+            subtext: `${s2.q10_leftLabel || "Serio"} ↔ ${s2.q10_rightLabel || "Ironico"}`,
+            leftLabel: s2.q10_leftLabel || "Serio",
+            rightLabel: s2.q10_rightLabel || "Ironico",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q11') && {
+            id: "q11",
+            number: 11,
+            question: s2.q11_text || "Indicatore di personalità 5",
+            subtext: `${s2.q11_leftLabel || "Spontaneo"} ↔ ${s2.q11_rightLabel || "Controllato"}`,
+            leftLabel: s2.q11_leftLabel || "Spontaneo",
+            rightLabel: s2.q11_rightLabel || "Controllato",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q12') && {
+            id: "q12",
+            number: 12,
+            question: s2.q12_text || "Indicatore di personalità 6",
+            subtext: `${s2.q12_leftLabel || "Discreto"} ↔ ${s2.q12_rightLabel || "Protagonista"}`,
+            leftLabel: s2.q12_leftLabel || "Discreto",
+            rightLabel: s2.q12_rightLabel || "Protagonista",
+            type: 'bipolar_slider'
+          },
+          !isDeleted(2, 'q13') && {
+            id: "q13",
+            number: 13,
+            question: s2.q13_text || "Indicatore di personalità 7",
+            subtext: `${s2.q13_leftLabel || "Diretto"} ↔ ${s2.q13_rightLabel || "Misterioso"}`,
+            leftLabel: s2.q13_leftLabel || "Diretto",
+            rightLabel: s2.q13_rightLabel || "Misterioso",
+            type: 'bipolar_slider'
+          },
+          ...getCustomQs(2)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 3,
+        section_title: s3.title || "3. Come vuoi essere percepito",
+        questions: [
+          !isDeleted(3, 'q14') && {
+            id: "q14",
+            number: 14,
+            question: s3.q14_text || "Scegli 5 parole che descrivono meglio la sensazione che vorresti trasmettere quando le persone entrano nel tuo universo artistico.",
+            subtext: s3.q14_subtext || "Seleziona esattamente 5 parole.",
+            type: 'q14_select'
+          },
+          !isDeleted(3, 'q15') && {
+            id: "q15",
+            number: 15,
+            question: s3.q15_text || "Metti in classifica le 3 parole più importanti che hai scelto alla domanda precedente.",
+            subtext: s3.q15_subtext || "Ordina le 3 parole principali per livello di importanza.",
+            type: 'q15_rank'
+          },
+          !isDeleted(3, 'q16') && {
+            id: "q16",
+            number: 16,
+            question: s3.q16_text || "Quando una persona ascolta per la prima volta una tua canzone, quali sensazioni vorresti che provasse?",
+            subtext: s3.q16_subtext || "Scegli e metti in classifica le 5 più importanti.",
+            type: 'select_and_rank'
+          },
+          ...getCustomQs(3)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 4,
+        section_title: s4.title || "4. Cosa vuoi trasmettere",
+        questions: [
+          !isDeleted(4, 'q17') && {
+            id: "q17",
+            number: 17,
+            question: s4.q17_text || "Scegli 5 concetti che senti più vicini alla tua identità artistica e mettili in classifica.",
+            subtext: s4.q17_subtext || "Seleziona massimo 5 elementi e successivo ordinamento.",
+            type: 'select_and_rank'
+          },
+          ...getCustomQs(4)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 5,
+        section_title: s5.title || "5. La tua storia",
+        questions: [
+          !isDeleted(5, 'q18') && {
+            id: "q18",
+            number: 18,
+            question: s5.q18_text || "C'è un'esperienza, una persona o un periodo della tua vita che ha contribuito a renderti la persona e l'artista che sei oggi?",
+            subtext: s5.q18_subtext || "In che modo ha influenzato il tuo carattere, il tuo modo di vedere le cose o il tuo modo di fare musica?",
+            type: 'textarea'
+          },
+          !isDeleted(5, 'q19') && {
+            id: "q19",
+            number: 19,
+            question: s5.q19_text || "Qual è una cosa che hai fatto o raggiunto e di cui sei realmente orgoglioso?",
+            subtext: s5.q19_subtext || "Cosa rappresenta per te?",
+            type: 'textarea'
+          },
+          !isDeleted(5, 'q20') && {
+            id: "q20",
+            number: 20,
+            question: s5.q20_text || "C'è qualcosa che senti di dover dimostrare attraverso la musica?",
+            subtext: s5.q20_subtext || "Se sì, a chi o a te stesso?",
+            type: 'textarea'
+          },
+          !isDeleted(5, 'q21') && {
+            id: "q21",
+            number: 21,
+            question: s5.q21_text || "Quale caratteristica di te vorresti mantenere anche se la tua carriera dovesse cambiare completamente la tua vita?",
+            subtext: null,
+            type: 'textarea'
+          },
+          ...getCustomQs(5)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 6,
+        section_title: s6.title || "6. Cosa vuoi ottenere attraverso la musica",
+        questions: [
+          !isDeleted(6, 'q22') && {
+            id: "q22",
+            number: 22,
+            question: s6.q22_text || "Quale effetto vorresti che la tua musica avesse sulle persone?",
+            subtext: s6.q22_subtext || "Scegli e metti in classifica i 3 più importanti.",
+            type: 'select_and_rank'
+          },
+          !isDeleted(6, 'q23') && {
+            id: "q23",
+            number: 23,
+            question: s6.q23_text || "Quali elementi vorresti diventassero riconoscibili e associabili al tuo nome nel tempo?",
+            subtext: s6.q23_subtext || "Scegli massimo 4.",
+            type: 'checkbox_group'
+          },
+          !isDeleted(6, 'q24') && {
+            id: "q24",
+            number: 24,
+            question: s6.q24_text || "Qual è la cosa che desideri di più ottenere attraverso la musica?",
+            subtext: s6.q24_subtext || "Scegli massimo 3.",
+            type: 'checkbox_group'
+          },
+          ...getCustomQs(6)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      },
+      {
+        section_id: 7,
+        section_title: s7.title || "7. Mood Visivi e Simboli",
+        questions: [
+          !isDeleted(7, 'q25') && {
+            id: "q25",
+            number: 25,
+            question: s7.q25_text || "I MOOD VISIVI",
+            subtext: s7.q25_subtext || "Osserva tutti i mood visivi e scegli quelli che senti più vicini a te e al tipo di artista che vorresti diventare.",
+            type: 'visual_gallery'
+          },
+          !isDeleted(7, 'q26') && {
+            id: "q26",
+            number: 26,
+            question: s7.q26_text || "I SIMBOLI",
+            subtext: s7.q26_subtext || "Osserva tutti i simboli e scegli quelli che senti più vicini a te.",
+            type: 'visual_gallery'
+          },
+          ...getCustomQs(7)
+        ].filter(Boolean) as { id: string; number: number; question: string; subtext?: string | null; type?: string; leftLabel?: string; rightLabel?: string }[]
+      }
+    ];
+  };
 
   const isArtistQuestionnaire = (quest: Questionnaire | null | undefined): boolean => {
     if (!quest) return false;
@@ -2043,8 +2253,10 @@ const ManageQuestionnaires = () => {
   const getArtistData = (quest: Questionnaire) => {
     let artistName = quest.company_name ? quest.company_name.replace(/^\[ARTISTA\]\s*/, '').trim() : 'Artista Anonimo';
     let email = '';
-    let structuredData: any[] = [];
-    let answers: Record<string, string> = {};
+    let rawStructuredData: any[] = [];
+    let answers: Record<string, any> = {};
+    let sliders: Record<string, any> = {};
+    let otherInputs: Record<string, any> = {};
 
     if (quest.business_description && quest.business_description.includes('Email:')) {
       const parts = quest.business_description.split('Email:');
@@ -2055,8 +2267,14 @@ const ManageQuestionnaires = () => {
     if ((quest as any).answers && typeof (quest as any).answers === 'object') {
       answers = { ...answers, ...(quest as any).answers };
     }
+    if ((quest as any).sliders && typeof (quest as any).sliders === 'object') {
+      sliders = { ...sliders, ...(quest as any).sliders };
+    }
+    if ((quest as any).otherInputs && typeof (quest as any).otherInputs === 'object') {
+      otherInputs = { ...otherInputs, ...(quest as any).otherInputs };
+    }
     if ((quest as any).structured_data && Array.isArray((quest as any).structured_data) && (quest as any).structured_data.length > 0) {
-      structuredData = (quest as any).structured_data;
+      rawStructuredData = (quest as any).structured_data;
     }
     if ((quest as any).artist_name) {
       artistName = (quest as any).artist_name;
@@ -2065,7 +2283,7 @@ const ManageQuestionnaires = () => {
       email = (quest as any).email;
     }
 
-    // 2. Helper to parse object or JSON string from notes/five_years_vision
+    // 2. Helper to parse object or JSON string from notes/five_years_vision/payload
     const processParsedObj = (parsed: any) => {
       if (!parsed) return;
       if (typeof parsed === 'string') {
@@ -2078,12 +2296,23 @@ const ManageQuestionnaires = () => {
       if (typeof parsed !== 'object') return;
 
       if (parsed.artist_name) artistName = parsed.artist_name;
+      if (parsed.company_or_artist_name) artistName = parsed.company_or_artist_name;
+      if (parsed.artistName) artistName = parsed.artistName;
       if (parsed.email) email = parsed.email;
+      if (parsed.contact_email) email = parsed.contact_email;
+      if (parsed.contactEmail) email = parsed.contactEmail;
+
       if (parsed.answers && typeof parsed.answers === 'object') {
         answers = { ...answers, ...parsed.answers };
       }
+      if (parsed.sliders && typeof parsed.sliders === 'object') {
+        sliders = { ...sliders, ...parsed.sliders };
+      }
+      if (parsed.otherInputs && typeof parsed.otherInputs === 'object') {
+        otherInputs = { ...otherInputs, ...parsed.otherInputs };
+      }
       if (parsed.structured_data && Array.isArray(parsed.structured_data) && parsed.structured_data.length > 0) {
-        structuredData = parsed.structured_data;
+        rawStructuredData = parsed.structured_data;
       }
     };
 
@@ -2124,56 +2353,86 @@ const ManageQuestionnaires = () => {
     // 5. Extract answers from raw formatted text if present
     const rawText = typeof quest.notes === 'string' ? quest.notes : (typeof quest.five_years_vision === 'string' ? quest.five_years_vision : '');
     if (rawText && rawText.includes('[Domanda')) {
-      ARTIST_DEFAULT_SECTIONS.forEach(sec => {
-        sec.questions.forEach(q => {
-          const match = rawText.match(new RegExp(`\\[Domanda ${q.number}\\]:[^\\n]*\\n\\[Risposta\\]:\\s*([\\s\\S]*?)(?=\\n\\[Domanda|\\n---|$)`));
-          if (match && match[1] && match[1].trim() !== '(Nessuna risposta)') {
-            answers[q.id] = match[1].trim();
+      const qRegex = /\[Domanda\s*(\d+)\]:[^\n]*\n\[Risposta\]:\s*([\s\S]*?)(?=\n\[Domanda|\n---|---|$|\Z)/g;
+      let match;
+      while ((match = qRegex.exec(rawText)) !== null) {
+        const qNum = match[1];
+        const qAns = match[2]?.trim();
+        if (qAns && qAns !== '(Nessuna risposta)') {
+          if (!answers[`q${qNum}`]) {
+            answers[`q${qNum}`] = qAns;
           }
-        });
+        }
+      }
+    }
+
+    // 6. Extract answers from rawStructuredData if answers are missing
+    if (Array.isArray(rawStructuredData)) {
+      rawStructuredData.forEach((sec: any) => {
+        if (Array.isArray(sec?.questions)) {
+          sec.questions.forEach((q: any) => {
+            const rawAns = q.answer || q.response || '';
+            const key = q.id || (q.number ? `q${q.number}` : null);
+            if (key && rawAns && rawAns !== '(Nessuna risposta)' && !answers[key]) {
+              answers[key] = rawAns;
+            }
+          });
+        }
       });
     }
 
-    // 6. Map fallback answers from standard Questionnaire table columns if available
-    if (quest.five_years_vision && !answers['q7'] && typeof quest.five_years_vision === 'string' && !quest.five_years_vision.includes('[NOTE JSON]:') && !quest.five_years_vision.startsWith('{')) {
-      answers['q7'] = quest.five_years_vision;
-    }
-    if (quest.brand_personified && !answers['q10']) answers['q10'] = quest.brand_personified;
-    if (quest.brand_perception && !answers['q11']) answers['q11'] = quest.brand_perception;
-    if (quest.slogan && !answers['q20']) answers['q20'] = quest.slogan;
+    // 7. Reconstruct complete up-to-date structured sections based on the actual artist questions schema!
+    const activeSections = getArtistSections(artistQuestionsSchema);
 
-    // 7. Reconstruct or fix structuredData so every single question has answer populated!
-    if (!structuredData || structuredData.length === 0) {
-      structuredData = ARTIST_DEFAULT_SECTIONS.map(sec => ({
-        section_id: sec.section_id,
-        section_title: sec.section_title,
-        questions: sec.questions.map(q => ({
+    const structuredData = activeSections.map(sec => ({
+      section_id: sec.section_id,
+      section_title: sec.section_title,
+      questions: sec.questions.map(q => {
+        let answerVal: any = answers[q.id] ?? answers[`q${q.number}`];
+
+        // Format Bipolar Slider values (q7 - q13)
+        if (q.type === 'bipolar_slider' || (q.number >= 7 && q.number <= 13)) {
+          const sliderVal = sliders[q.id] ?? sliders[`q${q.number}`] ?? answerVal;
+          if (sliderVal !== undefined && sliderVal !== null && sliderVal !== '') {
+            const num = typeof sliderVal === 'number' ? sliderVal : parseInt(String(sliderVal), 10);
+            if (!isNaN(num)) {
+              const left = q.leftLabel || "Sinistra";
+              const right = q.rightLabel || "Destra";
+              answerVal = `${left} (${100 - num}%) ⟵✦⟶ ${right} (${num}%)`;
+            } else {
+              answerVal = String(sliderVal);
+            }
+          }
+        }
+
+        // Format Arrays or Ordered lists
+        if (Array.isArray(answerVal)) {
+          answerVal = answerVal.join(' → ');
+        } else if (typeof answerVal === 'object' && answerVal !== null) {
+          answerVal = JSON.stringify(answerVal);
+        }
+
+        // Append custom 'other' input if provided
+        const otherVal = otherInputs[q.id] ?? otherInputs[`q${q.number}`];
+        if (otherVal && typeof otherVal === 'string' && otherVal.trim()) {
+          answerVal = answerVal ? `${answerVal} [Altro: ${otherVal.trim()}]` : `Altro: ${otherVal.trim()}`;
+        }
+
+        const finalAnswer = (answerVal && String(answerVal).trim() !== '' && answerVal !== '(Nessuna risposta)')
+          ? String(answerVal)
+          : '(Nessuna risposta)';
+
+        return {
           id: q.id,
           number: q.number,
           question: q.question,
           subtext: q.subtext || null,
-          answer: answers[q.id] || answers[`q${q.number}`] || ''
-        }))
-      }));
-    } else {
-      // If structuredData exists, ensure each question has answer populated from answers map if q.answer is empty/missing
-      structuredData = structuredData.map((sec: any) => ({
-        ...sec,
-        questions: (sec.questions || []).map((q: any) => {
-          const rawAns = q.answer || q.response || '';
-          const finalAns = (rawAns && rawAns.trim() !== '' && rawAns !== '(Nessuna risposta)') 
-            ? rawAns 
-            : (answers[q.id] || answers[`q${q.number}`] || '');
-          return {
-            ...q,
-            question: q.question || q.text || `Domanda ${q.number}`,
-            answer: finalAns
-          };
-        })
-      }));
-    }
+          answer: finalAnswer
+        };
+      })
+    }));
 
-    return { artistName, email, structuredData, answers };
+    return { artistName, email, structuredData, answers, sliders, otherInputs };
   };
 
   const renderQuestionnaireTemplate = (quest: Questionnaire) => {
@@ -2234,6 +2493,9 @@ const ManageQuestionnaires = () => {
                     {sec.questions.map((q: any) => (
                       <div key={q.id || q.number}>
                         <span className="text-[8.5px] font-bold text-gray-400 uppercase block">Domanda {q.number}: {q.question}</span>
+                        {q.subtext && (
+                          <span className="text-[7.5px] italic text-gray-400 block mb-0.5">{q.subtext}</span>
+                        )}
                         <p className="font-semibold text-gray-750 bg-gray-50/70 p-2 rounded-lg text-[10px] mt-0.5 whitespace-pre-wrap">{q.answer || '(Nessuna risposta)'}</p>
                       </div>
                     ))}
@@ -2723,6 +2985,163 @@ const ManageQuestionnaires = () => {
       }
     } catch (e) {
       // silent fallback if artist_questionnaires table doesn't exist
+    }
+
+    // Also check draft_questionnaires table to ensure completed/active artist questionnaires (e.g. LLuba) are recovered
+    try {
+      const { data: draftRows } = await supabase
+        .from('draft_questionnaires')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (draftRows && draftRows.length > 0) {
+        for (const draft of draftRows) {
+          if (draft.questionnaire_type === 'artist' || draft.payload?.artistName || draft.payload?.answers) {
+            const p = draft.payload || {};
+            const artistName = draft.company_or_artist_name || p.artistName || p.artist_name || 'Artista Anonimo';
+            const email = draft.contact_email || p.contactEmail || p.email || '';
+            const answers = p.answers || {};
+            const sliders = p.sliders || {};
+            const otherInputs = p.otherInputs || {};
+            const structuredData = p.structured_data || p.structuredAnswers || [];
+            
+            const isAlreadyPresent = allQuests.some(q => {
+              if (q.id === draft.id || q.id === `draft-${draft.token}`) return true;
+              if (isArtistQuestionnaire(q)) {
+                const { artistName: aName, email: aEmail } = getArtistData(q);
+                if (aName && artistName && aName.trim().toLowerCase() === artistName.trim().toLowerCase()) return true;
+                if (email && aEmail && email.trim().toLowerCase() === aEmail.trim().toLowerCase()) return true;
+              }
+              return false;
+            });
+
+            if (!isAlreadyPresent && (Object.keys(answers).length > 0 || structuredData.length > 0 || (artistName && artistName !== 'Artista Anonimo'))) {
+              allQuests.push({
+                id: draft.id || `draft-${draft.token}`,
+                company_name: `[ARTISTA] ${artistName}`,
+                name_meaning: '',
+                business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${email || 'Non indicata'}`,
+                products_services: '',
+                strength_point: '',
+                slogan: answers?.q20 || '',
+                target_customers: '',
+                age_range: '',
+                customer_type: '',
+                market_scope: '',
+                brand_perception_target: '',
+                keywords: ['Identità Artistica', 'Musica'],
+                brand_perception: answers?.q14 ? (Array.isArray(answers?.q14) ? answers?.q14.join(', ') : answers?.q14) : '',
+                brand_personified: answers?.q2 ? (Array.isArray(answers?.q2) ? answers?.q2.join(', ') : answers?.q2) : '',
+                palette_favorite: '',
+                palette_avoid: '',
+                logo_style: '',
+                logo_composition: '',
+                logos_liked: '',
+                logos_disliked: '',
+                competitors: '',
+                admired_companies: '',
+                differentiation_strategy: '',
+                logo_applications: [],
+                deadline: '',
+                extra_deliverables: [],
+                five_years_vision: answers?.q24 ? (Array.isArray(answers?.q24) ? answers?.q24.join(', ') : answers?.q24) : '',
+                notes: JSON.stringify({
+                  type: 'artist_questionnaire',
+                  artist_name: artistName,
+                  email: email,
+                  structured_data: structuredData,
+                  answers: answers,
+                  sliders: sliders,
+                  otherInputs: otherInputs
+                }),
+                is_deleted: false,
+                is_read: false,
+                created_at: draft.created_at || draft.updated_at || new Date().toISOString()
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // silent fallback
+    }
+
+    // Merge local drafts from fm_draft_questionnaires_store if present
+    try {
+      const localDraftsRaw = localStorage.getItem('fm_draft_questionnaires_store');
+      if (localDraftsRaw) {
+        const localDrafts = JSON.parse(localDraftsRaw);
+        if (Array.isArray(localDrafts)) {
+          for (const draft of localDrafts) {
+            if (draft.questionnaire_type === 'artist' || draft.payload?.artistName || draft.payload?.answers) {
+              const p = draft.payload || {};
+              const artistName = draft.company_or_artist_name || p.artistName || p.artist_name || 'Artista Anonimo';
+              const email = draft.contact_email || p.contactEmail || p.email || '';
+              const answers = p.answers || {};
+              const sliders = p.sliders || {};
+              const otherInputs = p.otherInputs || {};
+              const structuredData = p.structured_data || p.structuredAnswers || [];
+              
+              const isAlreadyPresent = allQuests.some(q => {
+                if (q.id === draft.id || q.id === `draft-${draft.token}`) return true;
+                if (isArtistQuestionnaire(q)) {
+                  const { artistName: aName, email: aEmail } = getArtistData(q);
+                  if (aName && artistName && aName.trim().toLowerCase() === artistName.trim().toLowerCase()) return true;
+                  if (email && aEmail && email.trim().toLowerCase() === aEmail.trim().toLowerCase()) return true;
+                }
+                return false;
+              });
+
+              if (!isAlreadyPresent && (Object.keys(answers).length > 0 || structuredData.length > 0 || (artistName && artistName !== 'Artista Anonimo'))) {
+                allQuests.push({
+                  id: draft.id || `draft-${draft.token}`,
+                  company_name: `[ARTISTA] ${artistName}`,
+                  name_meaning: '',
+                  business_description: `Sessione di Scoperta dell'Identità Artistica • Email: ${email || 'Non indicata'}`,
+                  products_services: '',
+                  strength_point: '',
+                  slogan: answers?.q20 || '',
+                  target_customers: '',
+                  age_range: '',
+                  customer_type: '',
+                  market_scope: '',
+                  brand_perception_target: '',
+                  keywords: ['Identità Artistica', 'Musica'],
+                  brand_perception: answers?.q14 ? (Array.isArray(answers?.q14) ? answers?.q14.join(', ') : answers?.q14) : '',
+                  brand_personified: answers?.q2 ? (Array.isArray(answers?.q2) ? answers?.q2.join(', ') : answers?.q2) : '',
+                  palette_favorite: '',
+                  palette_avoid: '',
+                  logo_style: '',
+                  logo_composition: '',
+                  logos_liked: '',
+                  logos_disliked: '',
+                  competitors: '',
+                  admired_companies: '',
+                  differentiation_strategy: '',
+                  logo_applications: [],
+                  deadline: '',
+                  extra_deliverables: [],
+                  five_years_vision: answers?.q24 ? (Array.isArray(answers?.q24) ? answers?.q24.join(', ') : answers?.q24) : '',
+                  notes: JSON.stringify({
+                    type: 'artist_questionnaire',
+                    artist_name: artistName,
+                    email: email,
+                    structured_data: structuredData,
+                    answers: answers,
+                    sliders: sliders,
+                    otherInputs: otherInputs
+                  }),
+                  is_deleted: false,
+                  is_read: false,
+                  created_at: draft.created_at || draft.updated_at || new Date().toISOString()
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Errore lettura local drafts:", e);
     }
 
     // Merge local backups from localStorage if present

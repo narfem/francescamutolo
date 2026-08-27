@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowDown } from 'lucide-react';
+import { scrollToSectionWithOffset } from '../lib/scrollUtils';
 
 const Hero: React.FC = () => {
   // URL ottimizzato per Google Drive (Thumbnail bypassa meglio i blocchi CORS e Referrer)
@@ -8,10 +9,7 @@ const Hero: React.FC = () => {
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToSectionWithOffset(id);
   };
 
   return (

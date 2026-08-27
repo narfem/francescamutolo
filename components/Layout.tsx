@@ -4,6 +4,7 @@ import { Menu, X, Instagram, Lock, ArrowUp, Settings } from 'lucide-react';
 import { CookieBanner } from './CookieBanner';
 import { CookiePreferencesModal } from './CookiePreferencesModal';
 import WhatsAppButton from './WhatsAppButton';
+import { scrollToSectionWithOffset } from '../lib/scrollUtils';
 
 const Layout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -41,18 +42,9 @@ const Layout: React.FC = () => {
     setIsMenuOpen(false);
 
     if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(() => {
-        const element = document.getElementById(targetId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
+      navigate('/', { state: { scrollTo: targetId } });
     } else {
-      const element = document.getElementById(targetId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
+      scrollToSectionWithOffset(targetId);
     }
   };
 

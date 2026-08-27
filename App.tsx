@@ -10,6 +10,7 @@ import ArtistQuestionnaire from './pages/ArtistQuestionnaire';
 import ClientFeedback from './pages/ClientFeedback';
 import Reviews from './pages/Reviews';
 import PortfolioCategoryPage from './pages/PortfolioCategoryPage';
+import PsychologistsLanding from './pages/PsychologistsLanding';
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -34,6 +35,7 @@ const App: React.FC = () => {
           <Route path="portfolio/social-media" element={<PortfolioCategoryPage categoryKey="social-media" />} />
           <Route path="portfolio/web" element={<PortfolioCategoryPage categoryKey="web" />} />
           <Route path="portfolio/:categorySlug" element={<PortfolioCategoryPage />} />
+          <Route path="psicologi" element={<PsychologistsLanding />} />
           <Route path="recensioni" element={<Reviews />} />
           <Route path="questionario" element={<Questionnaire />} />
           <Route path="questionario-artista" element={<ArtistQuestionnaire />} />
