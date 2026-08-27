@@ -188,8 +188,8 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border border-gray-200/80 bg-gray-100">
                 <img
-                  src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80"
-                  alt="Consulenza nutrizionale professionale con analisi della composizione corporea e piano alimentare personalizzato"
+                  src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=80"
+                  alt="Pianificazione nutrizionale professionale, educazione alimentare e stile di vita sano ed equilibrato"
                   className="w-full h-80 sm:h-96 object-cover"
                   loading="eager"
                   referrerPolicy="no-referrer"
@@ -288,8 +288,8 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=900&q=80"
-                  alt="Nutrizionista durante la pianificazione e l'ascolto attento degli obiettivi del paziente"
+                  src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80"
+                  alt="Consulenza e colloquio conoscitivo per la definizione del percorso nutrizionale"
                   className="w-full h-72 sm:h-80 object-cover"
                   loading="lazy"
                   referrerPolicy="no-referrer"
