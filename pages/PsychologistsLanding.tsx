@@ -188,8 +188,8 @@ const PsychologistsLanding: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border border-gray-200/80 bg-gray-100">
                 <img
-                  src="https://images.unsplash.com/photo-1586105251261-72a756497a11?auto=format&fit=crop&w=900&q=80"
-                  alt="Studio professionale accogliente e rilassante per colloqui psicologici"
+                  src="https://images.unsplash.com/photo-1590650516494-0c8e4a4dd67e?auto=format&fit=crop&w=900&q=80"
+                  alt="Studio di psicoterapia accogliente e riservato con poltrone per il colloquio clinico"
                   className="w-full h-80 sm:h-96 object-cover"
                   loading="eager"
                   referrerPolicy="no-referrer"
@@ -289,8 +289,8 @@ const PsychologistsLanding: React.FC = () => {
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=900&q=80"
-                  alt="Postazione di lavoro ordinata per psicologo con appunti e computer"
+                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80"
+                  alt="Psicologa professionista durante la riflessione clinica e l'organizzazione delle sedute nello studio"
                   className="w-full h-72 sm:h-80 object-cover"
                   loading="lazy"
                   referrerPolicy="no-referrer"
