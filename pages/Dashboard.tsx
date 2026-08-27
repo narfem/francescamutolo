@@ -4,10 +4,10 @@ import { supabase } from '../lib/supabase';
 import { 
   LayoutDashboard, Image as ImageIcon, MessageSquare, Briefcase, LogOut, 
   Plus, Trash2, Pencil, Star, Download, FileJson, 
-  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check, Sparkles,
+  X, Mail, RefreshCw, Menu as MenuIcon, Flag, FileText, Copy, Check,
   ClipboardList, Building, Users, Target, Palette, Shield, Monitor, Globe, Instagram,
   Archive, GripVertical, ExternalLink, Music, Heart, Compass, BookOpen, Award, Search,
-  BookmarkCheck, Sliders, Eye
+  BookmarkCheck, Sliders, Eye, Layers
 } from 'lucide-react';
 import { PortfolioItem, SimpleContact, BriefContact, Questionnaire } from '../types';
 import JSZip from 'jszip';
@@ -2487,7 +2487,7 @@ const ManageQuestionnaires = () => {
               {structuredData.map((sec: any) => (
                 <div key={sec.section_id} className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
                   <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1">
-                    <Sparkles size={11} /> {sec.section_title}
+                    <Layers size={11} /> {sec.section_title}
                   </h4>
                   <div className="space-y-2">
                     {sec.questions.map((q: any) => (
@@ -2723,7 +2723,7 @@ const ManageQuestionnaires = () => {
             {/* 5. Competitor, Applicazioni & Focus strategico */}
             <div className="border border-gray-150 rounded-xl p-4 bg-white space-y-2">
               <h4 className="text-[10px] font-black text-[#C13C8D] uppercase tracking-widest border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                <Sparkles size={12} /> 5. Canali, Visione e Note
+                <Compass size={12} /> 5. Canali, Visione e Note
               </h4>
               <div className="grid grid-cols-1 gap-2">
                 {quest.competitors && (
@@ -3465,7 +3465,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                   : 'text-gray-500 hover:text-gray-800'
               }`}
             >
-              <Sparkles size={13} fill="currentColor" />
+              <Sliders size={13} />
               Personalizza Domande
             </button>
           </div>
@@ -3547,7 +3547,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                           : 'bg-white text-purple-700 hover:bg-purple-50/50 border border-purple-200/80'
                       }`}
                     >
-                      <Sparkles size={13} />
+                      <Music size={13} />
                       <span>Identità Artistica</span>
                       <span className={`px-1.5 py-0.5 text-[10px] rounded-md font-black ${filterType === 'artist' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
                         {countArtist}
@@ -3593,7 +3593,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-3">
                               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform ${isArtist ? 'bg-purple-50 text-purple-600' : 'bg-primary/10 text-primary'}`}>
-                                {isArtist ? <Sparkles size={22} /> : <ClipboardList size={22} />}
+                                {isArtist ? <Music size={22} /> : <ClipboardList size={22} />}
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
@@ -3653,7 +3653,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                               className="px-3.5 py-1.5 bg-gradient-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm shadow-primary/10"
                               title="Formula Preventivo"
                             >
-                              <Sparkles size={11} />
+                              <FileText size={11} />
                               <span className="hidden xl:inline">preventivo</span>
                             </button>
                             <button 
@@ -3762,7 +3762,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
             <div className="bg-gradient-to-r from-primary/5 to-[#F39637]/5 border border-primary/10 p-6 rounded-[2rem] mb-6">
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 <div className="p-3 bg-gradient-brand text-white rounded-2xl shrink-0">
-                  <Sparkles size={20} />
+                  <Sliders size={20} />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-gray-900 text-base">
@@ -3785,7 +3785,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                 { num: 5, name: 'Concorrenza', icon: Shield },
                 { num: 6, name: 'Utilizzo', icon: Monitor },
                 { num: 7, name: 'Consegna', icon: FileText },
-                { num: 8, name: 'Visione', icon: Sparkles },
+                { num: 8, name: 'Visione', icon: Compass },
               ] : [
                 { num: 1, name: "L'artista", icon: Users },
                 { num: 2, name: 'Personalità', icon: Sliders },
@@ -4155,7 +4155,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight flex items-center gap-1.5">
-                        <Sparkles size={14} className="text-primary" /> Domande Personalizzate Aggiuntive
+                        <Plus size={14} className="text-primary" /> Domande Personalizzate Aggiuntive
                       </h4>
                       <p className="text-[11px] text-gray-400 font-medium">Aggiungi nuove domande dinamiche per questo specifico step.</p>
                     </div>
@@ -4299,7 +4299,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
               <div className="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
                 <div className="flex items-center gap-4">
                   <div className={`w-14 h-14 rounded-2xl text-white flex items-center justify-center shadow-lg ${isArtist ? 'bg-gradient-to-br from-purple-500 to-primary shadow-purple-500/10' : 'bg-gradient-brand shadow-primary/10'}`}>
-                    {isArtist ? <Sparkles size={26} /> : <ClipboardList size={26} />}
+                    {isArtist ? <Music size={26} /> : <ClipboardList size={26} />}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -4365,7 +4365,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                     {structuredData.map((sec: any, idx: number) => (
                       <div key={sec.section_id || idx} className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4">
                         <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
-                          <Sparkles size={16} className="text-purple-600" /> {sec.section_title}
+                          <Layers size={16} className="text-purple-600" /> {sec.section_title}
                         </h4>
                         <div className="space-y-4">
                           {sec.questions.map((q: any) => (
@@ -4681,7 +4681,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
 
                 <div className="bg-white p-6 md:p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 col-span-full">
                   <h4 className="text-sm font-black text-primary uppercase tracking-widest pb-2 border-b border-gray-50 flex items-center gap-2">
-                    <Sparkles size={16} className="text-secondary" /> Visione a 5 Anni (Focus Strategico)
+                    <Compass size={16} className="text-secondary" /> Visione a 5 Anni (Focus Strategico)
                   </h4>
                   <div className="p-6 bg-secondary/5 border-2 border-dashed border-secondary/15 rounded-2xl italic font-serif text-slate-700 leading-relaxed text-base">
                     "{selectedQuest.five_years_vision}"
@@ -4734,7 +4734,7 @@ CREATE POLICY "Eliminazione pubblica artist_questionnaires" ON artist_questionna
                  onClick={() => { setSelectedQuest(null); handleFormulaQuote(selectedQuest); }} 
                  className="w-full py-4 bg-gradient-brand text-white rounded-2xl font-black flex items-center justify-center gap-2.5 hover:scale-[1.02] transition-all shadow-xl active:scale-95 text-sm md:text-base"
                >
-                 <Sparkles size={18} /> 
+                 <FileText size={18} /> 
                  <span>Formula preventivo</span>
                </button>
             </div>

@@ -9,7 +9,6 @@ import {
   MapPin, 
   Send, 
   CheckCircle, 
-  Sparkles, 
   Globe, 
   HeartHandshake, 
   Layers, 
@@ -17,7 +16,8 @@ import {
   MessageCircle,
   Compass,
   Laptop,
-  Check
+  Check,
+  Palette
 } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
@@ -134,7 +134,7 @@ const PsychologistsLanding: React.FC = () => {
             {/* Left: Copy & CTAs */}
             <div className="lg:col-span-7 text-left space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide uppercase">
-                <Sparkles size={14} className="text-secondary" />
+                <Compass size={14} className="text-secondary" />
                 <span>Brand Identity & Siti Web per Psicologi</span>
               </div>
 
@@ -449,7 +449,7 @@ const PsychologistsLanding: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 rounded-3xl bg-white border border-gray-200/80 shadow-sm text-left">
               <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
-                <Sparkles size={20} />
+                <Palette size={20} />
               </div>
               <h3 className="font-bold text-gray-900 text-sm mb-1.5">Identità Visiva Coerente</h3>
               <p className="text-xs text-gray-600 leading-relaxed">

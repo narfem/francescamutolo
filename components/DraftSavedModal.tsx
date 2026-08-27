@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Copy, ExternalLink, BookmarkCheck, X, Sparkles, Share2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, BookmarkCheck, X, Share2 } from 'lucide-react';
 
 interface DraftSavedModalProps {
   isOpen: boolean;
@@ -60,7 +60,7 @@ export const DraftSavedModal: React.FC<DraftSavedModalProps> = ({
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-primary/10 text-primary mb-1">
-              <Sparkles size={12} /> Bozza Salvata
+              <BookmarkCheck size={12} /> Bozza Salvata
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               Bozza salvata con successo

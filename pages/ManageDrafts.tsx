@@ -8,7 +8,7 @@ import {
 import { 
   BookmarkCheck, Copy, ExternalLink, Trash2, Eye, RefreshCw, 
   Search, Filter, Clock, CheckCircle2, AlertCircle, FileText, 
-  User, Building, Sparkles, Check, X, ShieldAlert 
+  User, Building, Check, X, ShieldAlert 
 } from 'lucide-react';
 
 export const ManageDrafts: React.FC = () => {

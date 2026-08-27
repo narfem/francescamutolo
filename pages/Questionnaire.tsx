@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
-  Send, CheckCircle, ArrowRight, ArrowLeft, Sparkles, 
+  Send, CheckCircle, ArrowRight, ArrowLeft, Compass, 
   Building, Users, Target, Palette, Shield, Monitor, FileText,
   BookmarkCheck
 } from 'lucide-react';
@@ -1280,7 +1280,7 @@ const Questionnaire: React.FC<QuestionnaireProps> = ({ initialDraft }) => {
             {currentStep === 8 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
-                  <Sparkles className="text-primary w-6 h-6" />
+                  <Compass className="text-primary w-6 h-6" />
                   <h2 className="text-2xl font-bold text-gray-900">{q.step8.title}</h2>
                 </div>
 

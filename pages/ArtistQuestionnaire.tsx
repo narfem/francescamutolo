@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
-  Music, Sparkles, Send, CheckCircle, ArrowRight, ArrowLeft, 
-  User, Heart, Target, Compass, BookOpen, Star, Award,
+  Music, Send, CheckCircle, ArrowRight, ArrowLeft, 
+  User, Heart, Target, Compass, BookOpen, Award,
   BookmarkCheck, Sliders, Eye, Palette, X, ChevronUp, ChevronDown, Check, Info
 } from 'lucide-react';
 import { useQuestionnaireDraft } from '../hooks/useQuestionnaireDraft';

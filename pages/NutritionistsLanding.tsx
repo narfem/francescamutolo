@@ -9,7 +9,6 @@ import {
   MapPin, 
   Send, 
   CheckCircle, 
-  Sparkles, 
   Globe, 
   HeartHandshake, 
   Layers, 
@@ -19,7 +18,9 @@ import {
   Laptop,
   Check,
   Activity,
-  Award
+  Award,
+  Palette,
+  Compass
 } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
@@ -135,7 +136,7 @@ const NutritionistsLanding: React.FC = () => {
             {/* Left: Headline, Subtitle, CTAs */}
             <div className="lg:col-span-7 text-left space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-bold tracking-wide uppercase">
-                <Sparkles size={14} className="text-emerald-600" />
+                <Compass size={14} className="text-emerald-600" />
                 <span>Brand Identity & Siti Web per Nutrizionisti</span>
               </div>
 
@@ -520,7 +521,7 @@ const NutritionistsLanding: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="bg-gray-50/70 p-5 rounded-3xl border border-gray-200/80 shadow-sm text-left">
               <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-                <Sparkles size={20} />
+                <Palette size={20} />
               </div>
               <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1">Identità Visiva su Misura</h3>
               <p className="text-xs text-gray-600 leading-relaxed">
