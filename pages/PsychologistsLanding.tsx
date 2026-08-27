@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
+import therapyHeroImg from '../src/assets/images/therapy_session_hero_1787866496246.jpg';
+import psychologistBrowseImg from '../src/assets/images/psychologist_website_browse_1787866417189.jpg';
 
 const PsychologistsLanding: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -135,7 +137,7 @@ const PsychologistsLanding: React.FC = () => {
             <div className="lg:col-span-7 text-left space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide uppercase">
                 <Compass size={14} className="text-secondary" />
-                <span>Brand Identity & Siti Web per Psicologi</span>
+                <span>Brand Identity e Siti Web per Psicologi</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-[1.15]">
@@ -175,7 +177,7 @@ const PsychologistsLanding: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={15} className="text-secondary" />
-                  <span>Accoglienza & Riservatezza</span>
+                  <span>Accoglienza e Riservatezza</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={15} className="text-primary" />
@@ -188,8 +190,8 @@ const PsychologistsLanding: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border border-gray-200/80 bg-gray-100">
                 <img
-                  src="https://images.unsplash.com/photo-1590650516494-0c8e4a4dd67e?auto=format&fit=crop&w=900&q=80"
-                  alt="Studio di psicoterapia accogliente e riservato con poltrone per il colloquio clinico"
+                  src={therapyHeroImg}
+                  alt="Seduta di colloquio clinico e psicoterapia in uno studio accogliente, luminoso e naturale"
                   className="w-full h-80 sm:h-96 object-cover"
                   loading="eager"
                   referrerPolicy="no-referrer"
@@ -231,7 +233,7 @@ const PsychologistsLanding: React.FC = () => {
                 <Shield size={22} />
               </div>
               <h3 className="font-bold text-gray-900 text-base mb-2">
-                Autorevolezza & Albo
+                Autorevolezza e Albo
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 Presenti la tua iscrizione all'Albo, formazione ed esperienza in uno spazio limpido e senza distrazioni.
@@ -244,7 +246,7 @@ const PsychologistsLanding: React.FC = () => {
                 <HeartHandshake size={22} />
               </div>
               <h3 className="font-bold text-gray-900 text-base mb-2">
-                Accoglienza & Calma
+                Accoglienza e Calma
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 Un'estetica rilassante studiata per far sentire compreso chi sta vivendo un momento di vulnerabilità.
@@ -289,8 +291,8 @@ const PsychologistsLanding: React.FC = () => {
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80"
-                  alt="Psicologa professionista durante la riflessione clinica e l'organizzazione delle sedute nello studio"
+                  src={psychologistBrowseImg}
+                  alt="Donna che consulta sul laptop il sito web professionale di una psicologa e psicoterapeuta in uno studio accogliente e luminoso"
                   className="w-full h-72 sm:h-80 object-cover"
                   loading="lazy"
                   referrerPolicy="no-referrer"
@@ -373,7 +375,7 @@ const PsychologistsLanding: React.FC = () => {
                 <UserCheck size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Chi Sei & Formazione</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Chi Sei e Formazione</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Presentazione del percorso, iscrizione all'Albo e valori guida.</p>
               </div>
             </div>
@@ -403,7 +405,7 @@ const PsychologistsLanding: React.FC = () => {
                 <Laptop size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio & Online</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio e Online</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Come si svolgono i colloqui in presenza e le consulenze a distanza.</p>
               </div>
             </div>
@@ -413,7 +415,7 @@ const PsychologistsLanding: React.FC = () => {
                 <HelpCircle size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">FAQ & Aspetti Pratici</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">FAQ e Aspetti Pratici</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Durata, frequenza, tariffe e detraibilità delle spese sanitarie.</p>
               </div>
             </div>
@@ -423,7 +425,7 @@ const PsychologistsLanding: React.FC = () => {
                 <MapPin size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio & Contatti</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio e Contatti</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Mappa della sede, modulo sicuro e contatto diretto WhatsApp.</p>
               </div>
             </div>
@@ -461,7 +463,7 @@ const PsychologistsLanding: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center mb-4">
                 <Layers size={20} />
               </div>
-              <h3 className="font-bold text-gray-900 text-sm mb-1.5">Chiarezza & Fluidità</h3>
+              <h3 className="font-bold text-gray-900 text-sm mb-1.5">Chiarezza e Fluidità</h3>
               <p className="text-xs text-gray-600 leading-relaxed">
                 Percorso di lettura lineare e intuitivo da qualsiasi dispositivo mobile o computer.
               </p>

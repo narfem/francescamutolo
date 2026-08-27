@@ -24,7 +24,7 @@ export const CATEGORY_PAGES: Record<string, CategoryInfo> = {
   },
   'flyer-poster': {
     slug: 'flyer-poster',
-    category: 'Flyer & Poster',
+    category: 'Flyer e Poster',
     title: 'Flyer e Poster Pubblicitari a Cagliari | Francesca Mutolo',
     description: 'Progettazione di flyer e poster pubblicitari per attività commerciali in Sardegna. Grafica pubblicitaria efficace firmata Francesca Mutolo.',
     h1: 'Flyer e Poster Pubblicitari',

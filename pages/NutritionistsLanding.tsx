@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import { PrivacyConsentCheckbox } from '../components/PrivacyConsentCheckbox';
+import nutritionHeroImg from '../src/assets/images/nutrition_consultation_hero_1787864914008.jpg';
+import nutritionBrowseImg from '../src/assets/images/nutritionist_website_browse_1787866247095.jpg';
 
 const NutritionistsLanding: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -137,7 +139,7 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-7 text-left space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-bold tracking-wide uppercase">
                 <Compass size={14} className="text-emerald-600" />
-                <span>Brand Identity & Siti Web per Nutrizionisti</span>
+                <span>Brand Identity e Siti Web per Nutrizionisti</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-[1.15]">
@@ -176,7 +178,7 @@ const NutritionistsLanding: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={15} className="text-emerald-600" />
-                  <span>Educazione & Metodo Clinico</span>
+                  <span>Educazione e Metodo Clinico</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check size={15} className="text-primary" />
@@ -189,8 +191,8 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none rounded-3xl overflow-hidden shadow-2xl border border-gray-200/80 bg-gray-100">
                 <img
-                  src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=80"
-                  alt="Pianificazione nutrizionale professionale, educazione alimentare e stile di vita sano ed equilibrato"
+                  src={nutritionHeroImg}
+                  alt="Consulenza nutrizionale professionale tra nutrizionista e cliente in un ambiente luminoso e accogliente"
                   className="w-full h-80 sm:h-96 object-cover"
                   loading="eager"
                   referrerPolicy="no-referrer"
@@ -231,7 +233,7 @@ const NutritionistsLanding: React.FC = () => {
                 <Award size={22} />
               </div>
               <h3 className="font-bold text-gray-900 text-base mb-1.5">
-                Autorevolezza & Albo
+                Autorevolezza e Albo
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 Mostra titolo accademico, iscrizione ONB e percorsi formativi in un contesto trasparente e istituzionale.
@@ -244,7 +246,7 @@ const NutritionistsLanding: React.FC = () => {
                 <HeartHandshake size={22} />
               </div>
               <h3 className="font-bold text-gray-900 text-base mb-1.5">
-                Metodo & Filosofia
+                Metodo e Filosofia
               </h3>
               <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                 Distinguiti dalle diete drastiche: comunica la tua visione di educazione alimentare sostenibile e senza restrizioni punitive.
@@ -289,8 +291,8 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-5 order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80"
-                  alt="Consulenza e colloquio conoscitivo per la definizione del percorso nutrizionale"
+                  src={nutritionBrowseImg}
+                  alt="Uomo che consulta sul laptop il sito web professionale di un nutrizionista in uno studio accogliente e luminoso"
                   className="w-full h-72 sm:h-80 object-cover"
                   loading="lazy"
                   referrerPolicy="no-referrer"
@@ -376,7 +378,7 @@ const NutritionistsLanding: React.FC = () => {
                 <UserCheck size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Chi Sono & Albo ONB</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Chi Sono e Albo ONB</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Presentazione della tua storia, iscrizione all'Ordine e valori scientifici.</p>
               </div>
             </div>
@@ -409,7 +411,7 @@ const NutritionistsLanding: React.FC = () => {
                 <Laptop size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Prima Visita & Online</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Prima Visita e Online</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Cosa portare al primo colloquio e come si svolgono le consulenze a distanza.</p>
               </div>
             </div>
@@ -420,7 +422,7 @@ const NutritionistsLanding: React.FC = () => {
                 <HelpCircle size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">FAQ & Dettagli Pratici</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">FAQ e Dettagli Pratici</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Esami ematici, frequenza dei controlli e detraibilità sanitaria delle visite.</p>
               </div>
             </div>
@@ -431,7 +433,7 @@ const NutritionistsLanding: React.FC = () => {
                 <MapPin size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio, Mappa & Contatti</h3>
+                <h3 className="font-bold text-sm text-gray-900 mb-1">Studio, Mappa e Contatti</h3>
                 <p className="text-xs text-gray-600 leading-relaxed">Posizione dello studio, orari di segreteria, modulo di contatto e WhatsApp.</p>
               </div>
             </div>
@@ -447,7 +449,7 @@ const NutritionistsLanding: React.FC = () => {
             <div className="lg:col-span-7 space-y-4 text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
                 <Search size={13} />
-                <span>Visibilità Locale & Motori di Ricerca</span>
+                <span>Visibilità Locale e Motori di Ricerca</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                 Fatti trovare da chi cerca un nutrizionista nella tua zona

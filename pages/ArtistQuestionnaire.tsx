@@ -827,7 +827,7 @@ const ArtistQuestionnaire: React.FC<ArtistQuestionnaireProps> = ({ initialDraft 
         <div className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
             <Music size={14} />
-            <span>Identità Artistica & Branding</span>
+            <span>Identità Artistica e Branding</span>
           </div>
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">

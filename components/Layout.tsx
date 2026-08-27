@@ -225,7 +225,7 @@ const Layout: React.FC = () => {
                 Francesca Mutolo <br /> Brand Designer | Cagliari, Sardegna
               </p>
               <p className="mb-1 font-bold">© {new Date().getFullYear()} FRANCESCA MUTOLO</p>
-              <p className="mb-3">DESIGN & INNOVATION</p>
+              <p className="mb-3">DESIGN E INNOVAZIONE</p>
               <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 text-[10px] text-gray-500 font-semibold">
                 <button 
                   type="button"

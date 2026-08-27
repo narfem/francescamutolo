@@ -54,7 +54,7 @@ export const CookieBanner: React.FC = () => {
                   <ShieldAlert size={18} />
                 </span>
                 <h3 className="text-base font-black text-gray-900 dark:text-white">
-                  Informativa sui Cookie & Privacy
+                  Informativa sui Cookie e Privacy
                 </h3>
               </div>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">

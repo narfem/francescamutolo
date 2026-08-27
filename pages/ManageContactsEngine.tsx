@@ -384,7 +384,7 @@ document.getElementById('universalContactForm').addEventListener('submit', funct
           <Shield size={24} />
         </div>
         <div className="space-y-1">
-          <h4 className="font-extrabold text-gray-900 text-sm">Sicurezza & Protezione Anti-Spam Integrata di Serie</h4>
+          <h4 className="font-extrabold text-gray-900 text-sm">Sicurezza e Protezione Anti-Spam Integrata di Serie</h4>
           <p className="text-xs text-gray-500 leading-relaxed font-semibold">
             Il backend applica autonomamente una decontaminazione HTML sui messaggi, blocca le stringhe sospette e offre protezione contro gli attacchi bruteforce automatizzati tramite un <strong className="text-amber-800">Rate Limiter basato su indirizzo IP</strong> (massimo 5 richieste al minuto). È supportato anche lo scenario <strong className="text-amber-800">Honeypot anti-bot</strong> tramite l'inclusione di un campo invisibile nel form che scherma integralmente le liste.
           </p>

@@ -45,7 +45,7 @@ const DEFAULT_QUESTIONS = {
     brand_perception_target_placeholder: "Es: Fiducia, lusso, freschezza, innovazione, sicurezza..."
   },
   step3: {
-    title: "3. Posizionamento & Personalità",
+    title: "3. Posizionamento e Personalità",
     keywords_label: "Seleziona le parole chiave che definiscono il tuo Brand (Seleziona max 4):",
     keywords_options: ["Professionale", "Elegante", "Moderno", "Premium", "Minimal", "Innovativo", "Tecnologico", "Affidabile", "Creativo", "Artigianale", "Giovane", "Esclusivo"],
     brand_perception_label: "Come vuoi che il cliente percepisca il tuo brand?",
@@ -83,7 +83,7 @@ const DEFAULT_QUESTIONS = {
     logo_applications_options: ["Online", "Social", "Sito web", "Biglietti da visita", "Insegne", "Veicoli", "Abbigliamento", "Packaging"]
   },
   step7: {
-    title: "7. Consegna & Brand Manual",
+    title: "7. Consegna e Brand Manual",
     deadline_label: "Entro quando serve il progetto?",
     deadline_placeholder: "Es: Entro 2 settimane, entro un mese, nessuna fretta...",
     extra_deliverables_label: "Insieme al logo, hai bisogno di (Seleziona uno o più):",

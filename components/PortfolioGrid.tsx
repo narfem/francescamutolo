@@ -90,7 +90,7 @@ export const getProjectModalDescription = (item: PortfolioItem): string => {
 export const CATEGORY_LINKS = [
   { name: 'Tutti', path: '/' },
   { name: 'Branding', path: '/portfolio/branding' },
-  { name: 'Flyer & Poster', path: '/portfolio/flyer-poster' },
+  { name: 'Flyer e Poster', path: '/portfolio/flyer-poster' },
   { name: 'Social Media', path: '/portfolio/social-media' },
   { name: 'Web', path: '/portfolio/web' },
 ];
@@ -188,8 +188,8 @@ const PortfolioGrid: React.FC<PortfolioGridProps> = ({ fixedCategory = 'Tutti' }
   const categoryItems = activeCategory === 'Tutti' 
     ? items 
     : items.filter(item => {
-        if (activeCategory === 'Flyer & Poster') {
-            return item.category === 'Flyer & Poster' || item.category === 'Flayer & Poster';
+        if (activeCategory === 'Flyer e Poster' || activeCategory === 'Flyer & Poster') {
+            return item.category === 'Flyer e Poster' || item.category === 'Flyer & Poster' || item.category === 'Flayer & Poster';
         }
         return item.category === activeCategory;
       });
